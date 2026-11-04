@@ -17,3 +17,4 @@ _, sketch_lines = cv2.threshold(dog, 240, 255, cv2.THRESH_BINARY)
 cv2.imwrite('C:/Users/yousa/.gemini/antigravity/scratch/multilingual-portrait/public/test-dog-sketch.png', sketch_lines)
 
 print("Saved test-dog-sketch.png")
+

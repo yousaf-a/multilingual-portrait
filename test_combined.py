@@ -60,3 +60,4 @@ for y in range(10, target_h - 10, 8):
 
 out.save('C:/Users/yousa/.gemini/antigravity/scratch/multilingual-portrait/public/test-combined-perfect.png')
 print("Combined perfect sketch + scribble saved!")
+

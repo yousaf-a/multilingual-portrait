@@ -5,7 +5,7 @@ import { TranslatedItem } from '@/lib/languages';
 import { Play, Pause, RotateCcw, Volume2, VolumeX, Download, ArrowLeft, Video } from 'lucide-react';
 import { audioController } from '@/lib/audio';
 
-interface CurlyCoil {
+interface MicroScribble {
   cx: number;
   cy: number;
   radius: number;
@@ -53,13 +53,13 @@ export default function ScribbleVideoRenderer({
   const [isRecording, setIsRecording] = useState(false);
 
   const durationMs = 8500; // 8.5 seconds sketch sweep
-  const pauseDurationMs = 3500; // 3.5s pause on full reveal
+  const pauseDurationMs = 3500; // 3.5s pause to admire completed artwork
   const totalCycleMs = durationMs + pauseDurationMs;
   const startTimeRef = useRef<number>(Date.now());
 
-  // Cached processed sketch canvas & coils
+  // High-resolution sketch canvas & data
   const sketchCanvasRef = useRef<HTMLCanvasElement | null>(null);
-  const curlyCoilsRef = useRef<CurlyCoil[]>([]);
+  const microScribblesRef = useRef<MicroScribble[]>([]);
   const backgroundTextsRef = useRef<BackgroundText[]>([]);
   const imageBoundsRef = useRef<{ x: number; y: number; w: number; h: number }>({ x: 0, y: 0, w: 0, h: 0 });
 
@@ -70,8 +70,8 @@ export default function ScribbleVideoRenderer({
         return {
           bg: '#fbfaf8',
           darkBg: false,
-          ink: '#14381e',
-          bgText: 'rgba(29, 74, 42, 0.42)',
+          ink: '#112918',
+          bgText: 'rgba(29, 74, 42, 0.35)',
           paperVignette: '#f2ece4',
           penGlow: '#1d4a2a'
         };
@@ -80,7 +80,7 @@ export default function ScribbleVideoRenderer({
           bg: '#08080a',
           darkBg: true,
           ink: '#e6c364',
-          bgText: 'rgba(230, 195, 100, 0.38)',
+          bgText: 'rgba(230, 195, 100, 0.32)',
           paperVignette: '#000000',
           penGlow: '#e6c364'
         };
@@ -89,7 +89,7 @@ export default function ScribbleVideoRenderer({
           bg: '#080d1a',
           darkBg: true,
           ink: '#e2e8f0',
-          bgText: 'rgba(56, 189, 248, 0.35)',
+          bgText: 'rgba(56, 189, 248, 0.30)',
           paperVignette: '#040710',
           penGlow: '#38bdf8'
         };
@@ -98,25 +98,25 @@ export default function ScribbleVideoRenderer({
           bg: '#060a17',
           darkBg: true,
           ink: '#00e5ff',
-          bgText: 'rgba(0, 229, 255, 0.35)',
+          bgText: 'rgba(0, 229, 255, 0.30)',
           paperVignette: '#03050c',
           penGlow: '#00e5ff'
         };
       case 'monochrome':
       default:
-        // Pure Authentic sudhin__art black ballpoint/gel pen on paper
+        // Authentic sudhin__art black fine pen on textured paper
         return {
           bg: '#fbf9f5',
           darkBg: false,
-          ink: '#18181b',
-          bgText: 'rgba(113, 113, 122, 0.42)',
+          ink: '#16161a', // Rich black ink
+          bgText: 'rgba(113, 113, 122, 0.38)',
           paperVignette: '#ece7de',
           penGlow: '#18181b'
         };
     }
   }, [themeStyle]);
 
-  // Pre-process the uploaded photo into authentic line sketch + curly coils + outside text
+  // Pre-process image: high-accuracy line sketch + micro-scribbles for dark hair/fabrics only
   useEffect(() => {
     const width = 800;
     const height = 1000;
@@ -145,7 +145,7 @@ export default function ScribbleVideoRenderer({
 
     // Calculate image placement centered on canvas
     const imgAspect = photoImage.width / photoImage.height;
-    let targetW = width * 0.76;
+    let targetW = width * 0.78;
     let targetH = targetW / imgAspect;
     if (targetH > height * 0.82) {
       targetH = height * 0.82;
@@ -155,13 +155,13 @@ export default function ScribbleVideoRenderer({
     const targetY = (height - targetH) / 2;
     imageBoundsRef.current = { x: targetX, y: targetY, w: targetW, h: targetH };
 
-    // 1. GENERATE CLEAN LINE ART VIA COLOR DODGE FILTER (Features are 100% sharp & recognizable)
+    // High-resolution processing canvas (2x scale for sharp line accuracy)
     const procCanvas = document.createElement('canvas');
-    procCanvas.width = Math.round(targetW);
-    procCanvas.height = Math.round(targetH);
+    procCanvas.width = Math.round(targetW * 1.5);
+    procCanvas.height = Math.round(targetH * 1.5);
     const pCtx = procCanvas.getContext('2d');
 
-    const curlyCoils: CurlyCoil[] = [];
+    const microScribbles: MicroScribble[] = [];
 
     if (pCtx) {
       pCtx.drawImage(photoImage, 0, 0, procCanvas.width, procCanvas.height);
@@ -170,20 +170,20 @@ export default function ScribbleVideoRenderer({
       const pw = procCanvas.width;
       const ph = procCanvas.height;
 
-      // Convert to grayscale & compute simple blur for color dodge
+      // Grayscale calculation
       const gray = new Uint8Array(pw * ph);
       for (let i = 0; i < data.length; i += 4) {
         gray[i / 4] = Math.round(data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114);
       }
 
-      // 5x5 Box Blur approximation
+      // Edge-preserving blur (radius 3)
       const blurred = new Uint8Array(pw * ph);
-      const r = 4;
+      const br = 3;
       for (let y = 0; y < ph; y++) {
         for (let x = 0; x < pw; x++) {
           let sum = 0, count = 0;
-          for (let dy = -r; dy <= r; dy += 2) {
-            for (let dx = -r; dx <= r; dx += 2) {
+          for (let dy = -br; dy <= br; dy += 2) {
+            for (let dx = -br; dx <= br; dx += 2) {
               const ny = y + dy;
               const nx = x + dx;
               if (ny >= 0 && ny < ph && nx >= 0 && nx < pw) {
@@ -196,54 +196,55 @@ export default function ScribbleVideoRenderer({
         }
       }
 
-      // Color Dodge calculation & Contrast enhance
+      // High-precision sketch generation
       const sketchData = pCtx.createImageData(pw, ph);
       const sData = sketchData.data;
 
       for (let i = 0; i < gray.length; i++) {
         const g = gray[i];
         const b = blurred[i];
-        // Color dodge
+
+        // Color dodge pencil line calculation
         let val = Math.min(255, Math.floor((g * 256) / Math.max(1, 255 - b)));
-        // Contrast curve: push highlights to transparent, keep sharp pencil lines
         const norm = val / 255;
-        const contrastVal = Math.pow(norm, 2.2) * 255;
+        // Non-linear curve: keeps fine details, eyelashes, smiles, stethoscopes razor-sharp
+        const contrastVal = Math.pow(norm, 1.8) * 255;
 
         const pIdx = i * 4;
-        const isDark = contrastVal < 225;
+        const isDarkLine = contrastVal < 235;
 
         if (palette.darkBg) {
-          // Inverted for dark mode: bright line on dark
-          const inkBrightness = Math.round(255 - contrastVal);
+          const inkBright = Math.round(255 - contrastVal);
           sData[pIdx] = 226;
           sData[pIdx + 1] = 195;
           sData[pIdx + 2] = 100;
-          sData[pIdx + 3] = isDark ? Math.min(255, inkBrightness * 1.5) : 0;
+          sData[pIdx + 3] = isDarkLine ? Math.min(255, Math.round(inkBright * 1.8)) : 0;
         } else {
-          // Black gel pen ink on paper
-          sData[pIdx] = 24;
-          sData[pIdx + 1] = 24;
-          sData[pIdx + 2] = 27;
-          sData[pIdx + 3] = isDark ? Math.min(255, Math.round((255 - contrastVal) * 1.6)) : 0;
+          // Sharp black/charcoal pencil lines
+          sData[pIdx] = 20;
+          sData[pIdx + 1] = 20;
+          sData[pIdx + 2] = 24;
+          sData[pIdx + 3] = isDarkLine ? Math.min(255, Math.round((255 - contrastVal) * 1.85)) : 0;
         }
 
-        // 2. Sample dark regions for CURLY SCRIBBLE COILS (sudhin__art texture)
+        // Micro-scribbles: ONLY for dense dark shadows / dark hair / dark scrubs (G < 75)
+        // NEVER on faces or skin highlights (G >= 75)
         const yCoord = Math.floor(i / pw);
         const xCoord = i % pw;
 
-        if (g < 130 && yCoord % 9 === 0 && xCoord % 9 === 0) {
-          const darkness = (130 - g) / 130;
-          const radius = Math.max(2.5, Math.min(8.0, 7.0 * (1 - darkness * 0.5)));
-          const absY = targetY + yCoord;
-          const absX = targetX + xCoord;
+        if (g < 75 && yCoord % 12 === 0 && xCoord % 12 === 0) {
+          const darkness = (75 - g) / 75;
+          const canvasX = targetX + (xCoord / pw) * targetW;
+          const canvasY = targetY + (yCoord / ph) * targetH;
 
-          curlyCoils.push({
-            cx: absX,
-            cy: absY,
-            radius,
-            steps: Math.round(14 + darkness * 16),
-            angleStart: (xCoord * 1.7 + yCoord * 2.3) % (Math.PI * 2),
-            progressY: absY / height
+          // Tiny fine micro-loops (radius 2.5px to 4.5px) that weave into realistic fabric/hair texture
+          microScribbles.push({
+            cx: canvasX + ((xCoord % 5) - 2) * 1.2,
+            cy: canvasY + ((yCoord % 5) - 2) * 1.2,
+            radius: Math.max(2.2, Math.min(4.8, 3.8 * (1 - darkness * 0.3))),
+            steps: Math.round(10 + darkness * 12),
+            angleStart: (xCoord * 1.4 + yCoord * 2.1) % (Math.PI * 2),
+            progressY: canvasY / height
           });
         }
       }
@@ -252,36 +253,37 @@ export default function ScribbleVideoRenderer({
       sketchCanvasRef.current = procCanvas;
     }
 
-    curlyCoils.sort((a, b) => a.progressY - b.progressY);
-    curlyCoilsRef.current = curlyCoils;
+    microScribbles.sort((a, b) => a.progressY - b.progressY);
+    microScribblesRef.current = microScribbles;
 
-    // 3. GENERATE BACKGROUND MULTILINGUAL TEXT (OUTSIDE SUBJECT ONLY)
-    // Neatly fill the outer canvas margins without disturbing the portrait
+    // 2. BACKGROUND MULTILINGUAL TYPOGRAPHY (OUTSIDE SUBJECT WITH GENEROUS BREATHING ROOM)
     const bgTexts: BackgroundText[] = [];
     let wordIdx = 0;
-    const textRowGap = 34;
-    const textColGap = 88;
+    const rowGap = 44; // Generous line height so text never clashes
+    const colGap = 120; // Wide word spacing
 
-    for (let y = 30; y < height - 30; y += textRowGap) {
+    for (let y = 35; y < height - 35; y += rowGap) {
       const progressY = y / height;
-      for (let x = 25; x < width - 75; x += textColGap) {
-        // Place strictly in the outer background margins (do not touch image)
-        const isInsidePortrait = (
-          x > targetX - 15 &&
-          x < targetX + targetW + 15 &&
-          y > targetY - 15 &&
-          y < targetY + targetH + 15
+      const stagger = (Math.floor(y / rowGap) % 2) * 45;
+
+      for (let x = 20 + stagger; x < width - 60; x += colGap) {
+        // Safe buffer zone around image bounds so text never touches the subject
+        const isNearPortrait = (
+          x > targetX - 25 &&
+          x < targetX + targetW + 25 &&
+          y > targetY - 20 &&
+          y < targetY + targetH + 20
         );
 
-        if (!isInsidePortrait) {
+        if (!isNearPortrait) {
           const phrase = phrases[wordIdx % phrases.length];
           wordIdx++;
 
           bgTexts.push({
-            x: x + Math.sin(y) * 8,
+            x,
             y,
             text: phrase.text,
-            fontSize: 13,
+            fontSize: 12.5,
             progressY,
             color: palette.bgText
           });
@@ -345,7 +347,7 @@ export default function ScribbleVideoRenderer({
 
     // 2. DRAW BACKGROUND MULTILINGUAL TEXT (OUTSIDE SUBJECT ONLY)
     const bgTexts = backgroundTextsRef.current;
-    ctx.font = `500 13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+    ctx.font = `500 12.5px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
 
@@ -357,13 +359,13 @@ export default function ScribbleVideoRenderer({
       }
     }
 
-    // 3. DRAW THE CRISP SKETCH LINE-ART (Revealed Top-to-Bottom)
+    // 3. DRAW HIGH-RESOLUTION SKETCH LINE-ART (Revealed Top-to-Bottom)
     const sketchCanvas = sketchCanvasRef.current;
     const bounds = imageBoundsRef.current;
 
     if (sketchCanvas && bounds.w > 0) {
       ctx.save();
-      // Clip to current pen sweep line Y
+      // Smooth clip to the current pen sweep line Y
       ctx.beginPath();
       ctx.rect(bounds.x, bounds.y, bounds.w, Math.max(0, currentY - bounds.y));
       ctx.clip();
@@ -372,28 +374,28 @@ export default function ScribbleVideoRenderer({
       ctx.restore();
     }
 
-    // 4. DRAW CURLY SCRIBBLE COILS FOR SHADOWS & HAIR (sudhin__art style)
-    const coils = curlyCoilsRef.current;
+    // 4. DRAW DELICATE MICRO-SCRIBBLE SHADING FOR DARK FABRIC & HAIR ONLY
+    const scribbles = microScribblesRef.current;
     let penX = centerX;
 
     ctx.strokeStyle = palette.ink;
-    ctx.lineWidth = 0.9;
+    ctx.lineWidth = 0.85; // Fine pen stroke
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
 
-    for (let i = 0; i < coils.length; i++) {
-      const c = coils[i];
-      if (c.progressY <= progressRatio) {
+    for (let i = 0; i < scribbles.length; i++) {
+      const s = scribbles[i];
+      if (s.progressY <= progressRatio) {
         ctx.beginPath();
-        for (let s = 0; s < c.steps; s++) {
-          const th = c.angleStart + s * 0.55;
-          const cx = c.cx + Math.cos(th) * c.radius;
-          const cy = c.cy + Math.sin(th) * c.radius;
-          if (s === 0) ctx.moveTo(cx, cy);
+        for (let step = 0; step < s.steps; step++) {
+          const th = s.angleStart + step * 0.58;
+          const cx = s.cx + Math.cos(th) * s.radius;
+          const cy = s.cy + Math.sin(th) * s.radius;
+          if (step === 0) ctx.moveTo(cx, cy);
           else ctx.lineTo(cx, cy);
         }
         ctx.stroke();
-        penX = c.cx;
+        penX = s.cx;
       } else {
         break;
       }

@@ -316,14 +316,14 @@ export default function ScribbleVideoRenderer({
           baseR = 18; baseG = 43; baseB = 28; // Deep forest pine
         }
 
-        if ((themeStyle === 'emerald' || themeStyle === 'gold_rose') && sat > 0.14) {
-          // 1. Antique Gold & Rose Accents (Reference Art)
-          const colorFactor = Math.min(0.85, (sat - 0.12) * 2.2);
+        if ((themeStyle === 'emerald' || themeStyle === 'gold_rose') && sat > 0.36) {
+          // 1. Antique Gold & Rose Accents (Reference Art) - applied to vivid jewelry & florals only
+          const colorFactor = Math.min(0.85, (sat - 0.30) * 2.5);
           sData[pIdx] = Math.round(rOrig * 1.15 * pencilFactor);
           sData[pIdx + 1] = Math.round(gOrig * 1.12 * pencilFactor);
           sData[pIdx + 2] = Math.round(bOrig * 1.08 * pencilFactor);
           sData[pIdx + 3] = Math.min(255, Math.round((inkDarkness * 1.4 + colorFactor * 210) * edgeFade));
-        } else if ((themeStyle === 'sepia_gold' || themeStyle === 'gold') && sat > 0.14) {
+        } else if ((themeStyle === 'sepia_gold' || themeStyle === 'gold') && sat > 0.36) {
           // 2. Vintage Sepia with Gilded Gold Leaf glaze
           sData[pIdx] = Math.round(Math.min(255, rOrig * 1.25) * pencilFactor);
           sData[pIdx + 1] = Math.round(Math.min(255, gOrig * 1.12) * pencilFactor);
@@ -331,35 +331,28 @@ export default function ScribbleVideoRenderer({
           sData[pIdx + 3] = Math.min(255, Math.round((inkDarkness * 1.35 + 175) * edgeFade));
         } else if (themeStyle === 'sanguine' || themeStyle === 'neon') {
           // 3. Renaissance Sanguine & Terracotta Chalk
-          if (sat > 0.16) {
-            sData[pIdx] = Math.round(Math.min(255, rOrig * 1.2) * pencilFactor);
-            sData[pIdx + 1] = Math.round(gOrig * 0.9 * pencilFactor);
-            sData[pIdx + 2] = Math.round(bOrig * 0.85 * pencilFactor);
-            sData[pIdx + 3] = Math.min(255, Math.round((inkDarkness * 1.35 + 155) * edgeFade));
-          } else {
-            sData[pIdx] = baseR;
-            sData[pIdx + 1] = baseG;
-            sData[pIdx + 2] = baseB;
-            sData[pIdx + 3] = combined < 244 ? Math.min(255, Math.round((255 - combined) * 1.68 * edgeFade)) : 0;
-          }
-        } else if ((themeStyle === 'prussian_blue' || themeStyle === 'rain_storm') && sat > 0.14) {
+          sData[pIdx] = baseR;
+          sData[pIdx + 1] = baseG;
+          sData[pIdx + 2] = baseB;
+          sData[pIdx + 3] = combined < 244 ? Math.min(255, Math.round((255 - combined) * 1.68 * edgeFade)) : 0;
+        } else if ((themeStyle === 'prussian_blue' || themeStyle === 'rain_storm') && sat > 0.36) {
           // 4. Prussian Blue with Cerulean Watercolor Wash
           sData[pIdx] = Math.round(rOrig * 0.8 * pencilFactor);
           sData[pIdx + 1] = Math.round(Math.min(255, gOrig * 1.1) * pencilFactor);
           sData[pIdx + 2] = Math.round(Math.min(255, bOrig * 1.35) * pencilFactor);
           sData[pIdx + 3] = Math.min(255, Math.round((inkDarkness * 1.35 + 175) * edgeFade));
-        } else if (themeStyle === 'emerald_gold' && sat > 0.14) {
+        } else if (themeStyle === 'emerald_gold' && sat > 0.36) {
           // 5. Royal Pine with Champagne Gold
           sData[pIdx] = Math.round(Math.min(255, rOrig * 1.2) * pencilFactor);
           sData[pIdx + 1] = Math.round(Math.min(255, gOrig * 1.15) * pencilFactor);
           sData[pIdx + 2] = Math.round(bOrig * 0.8 * pencilFactor);
           sData[pIdx + 3] = Math.min(255, Math.round((inkDarkness * 1.35 + 175) * edgeFade));
         } else {
-          // 6. Monochrome Graphite & Charcoal
+          // 6. Master Hand-Drawn Graphite & Charcoal Sketch (Pure pencil drawing)
           sData[pIdx] = baseR;
           sData[pIdx + 1] = baseG;
           sData[pIdx + 2] = baseB;
-          sData[pIdx + 3] = combined < 242 ? Math.min(255, Math.round((255 - combined) * 1.75 * edgeFade)) : 0;
+          sData[pIdx + 3] = combined < 246 ? Math.min(255, Math.round((255 - combined) * 1.75 * edgeFade)) : 0;
         }
       }
 

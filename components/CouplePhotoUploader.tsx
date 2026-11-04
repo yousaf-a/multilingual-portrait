@@ -240,50 +240,49 @@ Output: One cohesive portrait featuring both individuals.`;
         if (mode === 'split_face') {
           // =========================================================================
           // --- STYLE A: FUSED MACRO SPLIT-FACE PORTRAIT (References 3 & 4) ---
-          // Both faces are scaled so that each head fills the canvas height.
-          // Partner 1's nose bridge is at X=400, eye level at Y=430.
-          // Partner 2's nose bridge is ALSO at X=400, eye level at Y=430.
-          // At X=400, their skin and facial features seamlessly fuse into ONE face.
-          // NO dividing line! NO black bar! Zero rectangular borders!
+          // Both faces are scaled so that each head fills the canvas.
+          // Partner 1's nose bridge is centered at X=400, eye level at Y=420.
+          // Partner 2's nose bridge is ALSO centered at X=400, eye level at Y=420.
+          // At X=400, Partner 1 (left half) seamlessly fuses into Partner 2 (right half).
+          // NO dividing line! NO white halo! Both faces 100% visible and fused!
           // =========================================================================
-          const baseZoom = 1.62; // Macro face close-up
-          const layer1 = renderPartnerLayer(img1, w, h, midX, 430, baseZoom, t1);
-          const layer2 = renderPartnerLayer(img2, w, h, midX, 430, baseZoom, t2);
+          const baseZoom = 1.35;
+          const targetY = 420;
 
-          // 1. Draw Partner 1 (Left Half)
+          const layer1 = renderPartnerLayer(img1, w, h, midX, targetY, baseZoom, t1);
+          const layer2 = renderPartnerLayer(img2, w, h, midX, targetY, baseZoom, t2);
+
+          // 1. Draw Partner 1 (Left Half of Face)
           ctx.drawImage(layer1, 0, 0);
 
-          // 2. Feathered Overlay for Partner 2 (Right Half)
-          const seamW = Math.max(10, blend);
+          // 2. Feathered Overlay for Partner 2 (Right Half of Face)
+          const seamW = Math.max(8, blend);
           const maskCanvas = document.createElement('canvas');
           maskCanvas.width = w;
           maskCanvas.height = h;
           const mCtx = maskCanvas.getContext('2d');
           if (mCtx) {
+            // Draw full layer 2 (Partner 2)
             mCtx.drawImage(layer2, 0, 0);
 
-            // Apply horizontal alpha gradient across the center seam
+            // Single unified horizontal alpha ramp mask across the entire canvas width
+            // (CRITICAL: Must be a single fillRect with destination-in so neither side is erased!)
             mCtx.globalCompositeOperation = 'destination-in';
-            const grad = mCtx.createLinearGradient(midX - seamW / 2, 0, midX + seamW / 2, 0);
+            const grad = mCtx.createLinearGradient(0, 0, w, 0);
+            const x0 = Math.max(0, (midX - seamW / 2) / w);
+            const x1 = Math.min(1, (midX + seamW / 2) / w);
+
             grad.addColorStop(0, 'rgba(0,0,0,0)');
+            grad.addColorStop(x0, 'rgba(0,0,0,0)');
+            grad.addColorStop(x1, 'rgba(0,0,0,1)');
             grad.addColorStop(1, 'rgba(0,0,0,1)');
 
-            mCtx.fillStyle = '#000000';
-            mCtx.fillRect(midX + seamW / 2, 0, w - (midX + seamW / 2), h);
             mCtx.fillStyle = grad;
-            mCtx.fillRect(midX - seamW / 2, 0, seamW, h);
+            mCtx.fillRect(0, 0, w, h);
 
+            // Draw the masked Right Partner seamlessly over the Left Partner
             ctx.drawImage(maskCanvas, 0, 0);
           }
-
-          // 3. Soft outer perimeter vignette to paper (#faf8f5) - eliminates hard photo crops
-          ctx.save();
-          const vigGrad = ctx.createRadialGradient(midX, 480, 280, midX, 480, 460);
-          vigGrad.addColorStop(0, 'rgba(250, 248, 245, 0)');
-          vigGrad.addColorStop(1, 'rgba(250, 248, 245, 0.95)');
-          ctx.fillStyle = vigGrad;
-          ctx.fillRect(0, 0, w, h);
-          ctx.restore();
 
         } else {
           // =========================================================================
@@ -293,9 +292,8 @@ Output: One cohesive portrait featuring both individuals.`;
           // In the center (X=340..460), their bodies/shoulders meet and touch organically
           // with a smooth 120px blend.
           // NO rectangular clipping boxes! NO vertical divider bar!
-          // Outer margins softly fade into paper tone.
           // =========================================================================
-          const baseZoom = 1.06;
+          const baseZoom = 1.05;
           const p1CenterX = 285;
           const p2CenterX = 515;
           const centerFaceY = 450;
@@ -308,9 +306,6 @@ Output: One cohesive portrait featuring both individuals.`;
 
           // 2. Soft Organic Shoulder Cross-Fade for Partner 2 (Right Companion)
           const overlapW = Math.max(60, blend * 2.5); // Wide, gentle body transition
-          const blendStart = midX - overlapW / 2;
-          const blendEnd = midX + overlapW / 2;
-
           const maskCanvas = document.createElement('canvas');
           maskCanvas.width = w;
           maskCanvas.height = h;
@@ -319,48 +314,46 @@ Output: One cohesive portrait featuring both individuals.`;
             mCtx.drawImage(layer2, 0, 0);
 
             mCtx.globalCompositeOperation = 'destination-in';
-            const grad = mCtx.createLinearGradient(blendStart, 0, blendEnd, 0);
+            const grad = mCtx.createLinearGradient(0, 0, w, 0);
+            const x0 = Math.max(0, (midX - overlapW / 2) / w);
+            const x1 = Math.min(1, (midX + overlapW / 2) / w);
+
             grad.addColorStop(0, 'rgba(0,0,0,0)');
+            grad.addColorStop(x0, 'rgba(0,0,0,0)');
+            grad.addColorStop(x1, 'rgba(0,0,0,1)');
             grad.addColorStop(1, 'rgba(0,0,0,1)');
 
-            mCtx.fillStyle = '#000000';
-            mCtx.fillRect(blendEnd, 0, w - blendEnd, h);
             mCtx.fillStyle = grad;
-            mCtx.fillRect(blendStart, 0, overlapW, h);
+            mCtx.fillRect(0, 0, w, h);
 
             ctx.drawImage(maskCanvas, 0, 0);
           }
 
           // 3. Soft Fine-Art Paper Vignette on Outer Borders (Top, Bottom, Left, Right)
-          // This completely prevents rectangular box edges from being detected as borders!
           ctx.save();
-          // Left feather
-          const lGrad = ctx.createLinearGradient(0, 0, 45, 0);
+          const lGrad = ctx.createLinearGradient(0, 0, 40, 0);
           lGrad.addColorStop(0, '#faf8f5');
           lGrad.addColorStop(1, 'rgba(250, 248, 245, 0)');
           ctx.fillStyle = lGrad;
-          ctx.fillRect(0, 0, 45, h);
+          ctx.fillRect(0, 0, 40, h);
 
-          // Right feather
-          const rGrad = ctx.createLinearGradient(w - 45, 0, w, 0);
+          const rGrad = ctx.createLinearGradient(w - 40, 0, w, 0);
           rGrad.addColorStop(0, 'rgba(250, 248, 245, 0)');
           rGrad.addColorStop(1, '#faf8f5');
           ctx.fillStyle = rGrad;
-          ctx.fillRect(w - 45, 0, 45, h);
+          ctx.fillRect(w - 40, 0, 40, h);
 
-          // Top feather
-          const tGrad = ctx.createLinearGradient(0, 0, 0, 50);
+          const tGrad = ctx.createLinearGradient(0, 0, 0, 40);
           tGrad.addColorStop(0, '#faf8f5');
           tGrad.addColorStop(1, 'rgba(250, 248, 245, 0)');
           ctx.fillStyle = tGrad;
-          ctx.fillRect(0, 0, w, 50);
+          ctx.fillRect(0, 0, w, 40);
 
-          // Bottom feather
-          const bGrad = ctx.createLinearGradient(0, h - 70, 0, h);
+          const bGrad = ctx.createLinearGradient(0, h - 50, 0, h);
           bGrad.addColorStop(0, 'rgba(250, 248, 245, 0)');
           bGrad.addColorStop(1, '#faf8f5');
           ctx.fillStyle = bGrad;
-          ctx.fillRect(0, h - 70, w, 70);
+          ctx.fillRect(0, h - 50, w, 50);
           ctx.restore();
         }
       } else {

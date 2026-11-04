@@ -26,18 +26,18 @@ const MUSIC_PRESETS: { id: string; name: string; desc: string }[] = [];
 
 const THEME_OPTIONS = [
   {
-    id: 'emerald',
-    name: 'Antique Gold & Rose Accents',
-    desc: 'Charcoal pencil with selective 24K gold & rose petal tint (Reference Art)',
-    color: '#d4af37',
-    accent: '#be185d'
-  },
-  {
     id: 'monochrome',
     name: 'Pure Graphite & Charcoal',
-    desc: 'Classic master pencil sketch on fine cold-press art paper',
+    desc: 'Classic master hand-drawn pencil sketch on fine art paper (Reference Style)',
     color: '#18181b',
     accent: '#52525b'
+  },
+  {
+    id: 'emerald',
+    name: 'Antique Gold & Rose Accents',
+    desc: 'Charcoal pencil with selective 24K gold & rose petal tint',
+    color: '#d4af37',
+    accent: '#be185d'
   },
   {
     id: 'sepia_gold',
@@ -76,7 +76,7 @@ export default function Home() {
   const [photoImage, setPhotoImage] = useState<HTMLImageElement | null>(null);
   const [portraitMode, setPortraitMode] = useState<'single' | 'couple'>('single');
   const [titleText, setTitleText] = useState<string>('');
-  const [selectedTheme, setSelectedTheme] = useState<string>('emerald');
+  const [selectedTheme, setSelectedTheme] = useState<string>('monochrome');
   const [selectedTrackId, setSelectedTrackId] = useState<string>('until_i_found_you');
   const [musicTrack, setMusicTrack] = useState<string>('romantic_piano');
   const [customAudioUrl, setCustomAudioUrl] = useState<string | null>(null);

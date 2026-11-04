@@ -55,3 +55,4 @@ for y in range(35, h - 35, 7):
 
 out.save('C:/Users/yousa/.gemini/antigravity/scratch/multilingual-portrait/public/test-no-crosslines.png')
 print("Saved test-no-crosslines.png without crosslines!")
+

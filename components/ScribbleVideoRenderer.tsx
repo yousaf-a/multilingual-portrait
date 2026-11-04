@@ -5,17 +5,15 @@ import { TranslatedItem } from '@/lib/languages';
 import { Play, Pause, RotateCcw, Volume2, VolumeX, Download, ArrowLeft, Video } from 'lucide-react';
 import { audioController } from '@/lib/audio';
 
-// An individual curly scribble coil (exactly like sudhin__art)
-interface ScribbleCluster {
-  x: number;
-  y: number;
+interface CurlyCoil {
+  cx: number;
+  cy: number;
   radius: number;
-  numLoops: number;
-  progressY: number;
+  steps: number;
   angleStart: number;
+  progressY: number;
 }
 
-// Background multilingual text placed strictly OUTSIDE the subject
 interface BackgroundText {
   x: number;
   y: number;
@@ -54,24 +52,26 @@ export default function ScribbleVideoRenderer({
   const [currentProgress, setCurrentProgress] = useState(0);
   const [isRecording, setIsRecording] = useState(false);
 
-  const durationMs = 8500; // 8.5s drawing sweep
-  const pauseDurationMs = 3500; // 3.5s pause to admire completed artwork
+  const durationMs = 8500; // 8.5 seconds sketch sweep
+  const pauseDurationMs = 3500; // 3.5s pause on full reveal
   const totalCycleMs = durationMs + pauseDurationMs;
   const startTimeRef = useRef<number>(Date.now());
 
-  // Cached pre-computed clusters & background text
-  const scribbleClustersRef = useRef<ScribbleCluster[]>([]);
+  // Cached processed sketch canvas & coils
+  const sketchCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const curlyCoilsRef = useRef<CurlyCoil[]>([]);
   const backgroundTextsRef = useRef<BackgroundText[]>([]);
+  const imageBoundsRef = useRef<{ x: number; y: number; w: number; h: number }>({ x: 0, y: 0, w: 0, h: 0 });
 
   // Theme palettes
   const getThemePalette = useCallback(() => {
     switch (themeStyle) {
       case 'emerald':
         return {
-          bg: '#fcfbfa',
+          bg: '#fbfaf8',
           darkBg: false,
           ink: '#14381e',
-          bgText: 'rgba(29, 74, 42, 0.38)',
+          bgText: 'rgba(29, 74, 42, 0.42)',
           paperVignette: '#f2ece4',
           penGlow: '#1d4a2a'
         };
@@ -80,7 +80,7 @@ export default function ScribbleVideoRenderer({
           bg: '#08080a',
           darkBg: true,
           ink: '#e6c364',
-          bgText: 'rgba(230, 195, 100, 0.35)',
+          bgText: 'rgba(230, 195, 100, 0.38)',
           paperVignette: '#000000',
           penGlow: '#e6c364'
         };
@@ -89,7 +89,7 @@ export default function ScribbleVideoRenderer({
           bg: '#080d1a',
           darkBg: true,
           ink: '#e2e8f0',
-          bgText: 'rgba(56, 189, 248, 0.32)',
+          bgText: 'rgba(56, 189, 248, 0.35)',
           paperVignette: '#040710',
           penGlow: '#38bdf8'
         };
@@ -98,25 +98,25 @@ export default function ScribbleVideoRenderer({
           bg: '#060a17',
           darkBg: true,
           ink: '#00e5ff',
-          bgText: 'rgba(0, 229, 255, 0.32)',
+          bgText: 'rgba(0, 229, 255, 0.35)',
           paperVignette: '#03050c',
           penGlow: '#00e5ff'
         };
       case 'monochrome':
       default:
-        // Pure Authentic sudhin__art black ballpoint pen on textured paper
+        // Pure Authentic sudhin__art black ballpoint/gel pen on paper
         return {
           bg: '#fbf9f5',
           darkBg: false,
           ink: '#18181b',
-          bgText: 'rgba(113, 113, 122, 0.45)',
+          bgText: 'rgba(113, 113, 122, 0.42)',
           paperVignette: '#ece7de',
           penGlow: '#18181b'
         };
     }
   }, [themeStyle]);
 
-  // Precompute the pure curly scribble clusters and background text
+  // Pre-process the uploaded photo into authentic line sketch + curly coils + outside text
   useEffect(() => {
     const width = 800;
     const height = 1000;
@@ -141,156 +141,145 @@ export default function ScribbleVideoRenderer({
       { text: "Σ' αγαπώ", language: "Greek" }
     ];
 
-    const clusters: ScribbleCluster[] = [];
-    const bgTexts: BackgroundText[] = [];
+    if (!photoImage) return;
 
-    const cols = 120;
-    const rows = 150;
-    const cellW = width / cols;
-    const cellH = height / rows;
-    const densityMap: number[][] = Array.from({ length: rows }, () => Array(cols).fill(0));
+    // Calculate image placement centered on canvas
+    const imgAspect = photoImage.width / photoImage.height;
+    let targetW = width * 0.76;
+    let targetH = targetW / imgAspect;
+    if (targetH > height * 0.82) {
+      targetH = height * 0.82;
+      targetW = targetH * imgAspect;
+    }
+    const targetX = (width - targetW) / 2;
+    const targetY = (height - targetH) / 2;
+    imageBoundsRef.current = { x: targetX, y: targetY, w: targetW, h: targetH };
 
-    if (photoImage) {
-      const sampleCanvas = document.createElement('canvas');
-      sampleCanvas.width = cols;
-      sampleCanvas.height = rows;
-      const sCtx = sampleCanvas.getContext('2d');
+    // 1. GENERATE CLEAN LINE ART VIA COLOR DODGE FILTER (Features are 100% sharp & recognizable)
+    const procCanvas = document.createElement('canvas');
+    procCanvas.width = Math.round(targetW);
+    procCanvas.height = Math.round(targetH);
+    const pCtx = procCanvas.getContext('2d');
 
-      if (sCtx) {
-        sCtx.fillStyle = '#ffffff';
-        sCtx.fillRect(0, 0, cols, rows);
+    const curlyCoils: CurlyCoil[] = [];
 
-        const imgAspect = photoImage.width / photoImage.height;
-        let dw = cols * 0.72;
-        let dh = dw / imgAspect;
-        if (dh > rows * 0.8) {
-          dh = rows * 0.8;
-          dw = dh * imgAspect;
-        }
-        const dx = (cols - dw) / 2;
-        const dy = (rows - dh) / 2 + 5;
+    if (pCtx) {
+      pCtx.drawImage(photoImage, 0, 0, procCanvas.width, procCanvas.height);
+      const imgData = pCtx.getImageData(0, 0, procCanvas.width, procCanvas.height);
+      const data = imgData.data;
+      const pw = procCanvas.width;
+      const ph = procCanvas.height;
 
-        sCtx.drawImage(photoImage, dx, dy, dw, dh);
-        const data = sCtx.getImageData(0, 0, cols, rows).data;
+      // Convert to grayscale & compute simple blur for color dodge
+      const gray = new Uint8Array(pw * ph);
+      for (let i = 0; i < data.length; i += 4) {
+        gray[i / 4] = Math.round(data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114);
+      }
 
-        // Auto-detect background color from the 4 corners
-        const cornerIdxs = [0, (cols - 1) * 4, ((rows - 1) * cols) * 4, ((rows - 1) * cols + cols - 1) * 4];
-        let bgR = 0, bgG = 0, bgB = 0;
-        cornerIdxs.forEach(ci => {
-          bgR += data[ci] / 4;
-          bgG += data[ci + 1] / 4;
-          bgB += data[ci + 2] / 4;
-        });
-
-        for (let y = 0; y < rows; y++) {
-          for (let x = 0; x < cols; x++) {
-            const idx = (y * cols + x) * 4;
-            const r = data[idx];
-            const g = data[idx + 1];
-            const b = data[idx + 2];
-            const a = data[idx + 3];
-
-            if (a > 30) {
-              const diffFromBg = Math.sqrt(
-                Math.pow(r - bgR, 2) + Math.pow(g - bgG, 2) + Math.pow(b - bgB, 2)
-              ) / 255;
-
-              const luminance = (r * 0.299 + g * 0.587 + b * 0.114) / 255;
-              const shadowVal = 1 - luminance;
-
-              // Is this pixel part of the subject?
-              if (diffFromBg > 0.15 || shadowVal > 0.2) {
-                densityMap[y][x] = Math.max(diffFromBg, shadowVal);
+      // 5x5 Box Blur approximation
+      const blurred = new Uint8Array(pw * ph);
+      const r = 4;
+      for (let y = 0; y < ph; y++) {
+        for (let x = 0; x < pw; x++) {
+          let sum = 0, count = 0;
+          for (let dy = -r; dy <= r; dy += 2) {
+            for (let dx = -r; dx <= r; dx += 2) {
+              const ny = y + dy;
+              const nx = x + dx;
+              if (ny >= 0 && ny < ph && nx >= 0 && nx < pw) {
+                sum += (255 - gray[ny * pw + nx]); // Invert
+                count++;
               }
             }
           }
+          blurred[y * pw + x] = sum / count;
         }
       }
-    } else {
-      // Procedural silhouette if no image
-      for (let y = 0; y < rows; y++) {
-        for (let x = 0; x < cols; x++) {
-          const nx = (x - cols / 2) / (cols * 0.32);
-          const ny = (y - rows * 0.45) / (rows * 0.35);
-          const dist = Math.sqrt(nx * nx + ny * ny);
-          if (dist < 1.0) {
-            densityMap[y][x] = Math.max(0, 1 - dist);
-          }
+
+      // Color Dodge calculation & Contrast enhance
+      const sketchData = pCtx.createImageData(pw, ph);
+      const sData = sketchData.data;
+
+      for (let i = 0; i < gray.length; i++) {
+        const g = gray[i];
+        const b = blurred[i];
+        // Color dodge
+        let val = Math.min(255, Math.floor((g * 256) / Math.max(1, 255 - b)));
+        // Contrast curve: push highlights to transparent, keep sharp pencil lines
+        const norm = val / 255;
+        const contrastVal = Math.pow(norm, 2.2) * 255;
+
+        const pIdx = i * 4;
+        const isDark = contrastVal < 225;
+
+        if (palette.darkBg) {
+          // Inverted for dark mode: bright line on dark
+          const inkBrightness = Math.round(255 - contrastVal);
+          sData[pIdx] = 226;
+          sData[pIdx + 1] = 195;
+          sData[pIdx + 2] = 100;
+          sData[pIdx + 3] = isDark ? Math.min(255, inkBrightness * 1.5) : 0;
+        } else {
+          // Black gel pen ink on paper
+          sData[pIdx] = 24;
+          sData[pIdx + 1] = 24;
+          sData[pIdx + 2] = 27;
+          sData[pIdx + 3] = isDark ? Math.min(255, Math.round((255 - contrastVal) * 1.6)) : 0;
         }
-      }
-    }
 
-    // 1. GENERATE CURLY SCRIBBLE LOOPS FOR SUBJECT ONLY (NO HORIZONTAL CROSS LINES!)
-    // Iterate and create standalone curly spirograph clusters
-    const step = 2; // Step size across cells
-    let seed = 12345;
-    const pseudoRandom = () => {
-      seed = (seed * 9301 + 49297) % 233280;
-      return seed / 233280;
-    };
+        // 2. Sample dark regions for CURLY SCRIBBLE COILS (sudhin__art texture)
+        const yCoord = Math.floor(i / pw);
+        const xCoord = i % pw;
 
-    for (let y = 3; y < rows - 3; y += step) {
-      const py = y * cellH;
-      const progressY = py / height;
+        if (g < 130 && yCoord % 9 === 0 && xCoord % 9 === 0) {
+          const darkness = (130 - g) / 130;
+          const radius = Math.max(2.5, Math.min(8.0, 7.0 * (1 - darkness * 0.5)));
+          const absY = targetY + yCoord;
+          const absX = targetX + xCoord;
 
-      for (let x = 3; x < cols - 3; x += step) {
-        const d = densityMap[y][x];
-
-        // Only draw where subject density exists
-        if (d > 0.18) {
-          const px = x * cellW;
-
-          // Number of overlapping loops based on darkness:
-          // Hair & deep shadows: 3-5 tight loops
-          // Light skin & midtones: 1-2 open loops
-          const numLoops = d > 0.65 ? 4 : d > 0.4 ? 2.5 : 1.5;
-          const radius = Math.max(3.0, Math.min(11.0, 9.0 * (1 - d * 0.55)));
-
-          clusters.push({
-            x: px + (pseudoRandom() - 0.5) * 4,
-            y: py + (pseudoRandom() - 0.5) * 4,
+          curlyCoils.push({
+            cx: absX,
+            cy: absY,
             radius,
-            numLoops,
-            progressY,
-            angleStart: pseudoRandom() * Math.PI * 2
+            steps: Math.round(14 + darkness * 16),
+            angleStart: (xCoord * 1.7 + yCoord * 2.3) % (Math.PI * 2),
+            progressY: absY / height
           });
         }
       }
+
+      pCtx.putImageData(sketchData, 0, 0);
+      sketchCanvasRef.current = procCanvas;
     }
 
-    // 2. GENERATE BACKGROUND MULTILINGUAL TEXT (STRICTLY OUTSIDE THE SUBJECT)
-    // Neatly fill the margin and outer portrait area
+    curlyCoils.sort((a, b) => a.progressY - b.progressY);
+    curlyCoilsRef.current = curlyCoils;
+
+    // 3. GENERATE BACKGROUND MULTILINGUAL TEXT (OUTSIDE SUBJECT ONLY)
+    // Neatly fill the outer canvas margins without disturbing the portrait
+    const bgTexts: BackgroundText[] = [];
     let wordIdx = 0;
-    const textRowGap = 32;
-    const textColGap = 20;
+    const textRowGap = 34;
+    const textColGap = 88;
 
-    for (let y = 5; y < rows - 5; y += textRowGap) {
-      const py = y * cellH;
-      const progressY = py / height;
+    for (let y = 30; y < height - 30; y += textRowGap) {
+      const progressY = y / height;
+      for (let x = 25; x < width - 75; x += textColGap) {
+        // Place strictly in the outer background margins (do not touch image)
+        const isInsidePortrait = (
+          x > targetX - 15 &&
+          x < targetX + targetW + 15 &&
+          y > targetY - 15 &&
+          y < targetY + targetH + 15
+        );
 
-      for (let x = 4; x < cols - 4; x += textColGap) {
-        // Confirm this area is strictly OUTSIDE the subject
-        let hasSubject = false;
-        for (let dy = -6; dy <= 6; dy += 3) {
-          for (let dx = -6; dx <= 6; dx += 3) {
-            const cy = Math.max(0, Math.min(rows - 1, y + dy));
-            const cx = Math.max(0, Math.min(cols - 1, x + dx));
-            if (densityMap[cy][cx] > 0.1) {
-              hasSubject = true;
-              break;
-            }
-          }
-          if (hasSubject) break;
-        }
-
-        // Only render text in the empty background outside the subject
-        if (!hasSubject) {
+        if (!isInsidePortrait) {
           const phrase = phrases[wordIdx % phrases.length];
           wordIdx++;
 
           bgTexts.push({
-            x: x * cellW,
-            y: py,
+            x: x + Math.sin(y) * 8,
+            y,
             text: phrase.text,
             fontSize: 13,
             progressY,
@@ -300,11 +289,7 @@ export default function ScribbleVideoRenderer({
       }
     }
 
-    // Sort top to bottom
-    clusters.sort((a, b) => a.progressY - b.progressY);
     bgTexts.sort((a, b) => a.progressY - b.progressY);
-
-    scribbleClustersRef.current = clusters;
     backgroundTextsRef.current = bgTexts;
   }, [photoImage, items, titleText, getThemePalette]);
 
@@ -321,6 +306,7 @@ export default function ScribbleVideoRenderer({
     const palette = getThemePalette();
     const centerX = width / 2;
     const centerY = height / 2;
+    const currentY = progressRatio * height;
 
     // 1. Paper Background
     ctx.save();
@@ -328,7 +314,7 @@ export default function ScribbleVideoRenderer({
     ctx.fillRect(0, 0, width, height);
 
     if (!palette.darkBg) {
-      // Warm off-white paper vignette
+      // Warm textured paper vignette
       const paperGrad = ctx.createRadialGradient(centerX, centerY, width * 0.25, centerX, centerY, width * 0.72);
       paperGrad.addColorStop(0, '#ffffff');
       paperGrad.addColorStop(1, palette.paperVignette);
@@ -371,55 +357,72 @@ export default function ScribbleVideoRenderer({
       }
     }
 
-    // 3. DRAW CURLY SCRIBBLE ART FOR THE SUBJECT (sudhin__art style)
-    // Individual, independent looping cycloid coils (NO STRAIGHT HORIZONTAL CONNECTING LINES!)
-    const clusters = scribbleClustersRef.current;
+    // 3. DRAW THE CRISP SKETCH LINE-ART (Revealed Top-to-Bottom)
+    const sketchCanvas = sketchCanvasRef.current;
+    const bounds = imageBoundsRef.current;
+
+    if (sketchCanvas && bounds.w > 0) {
+      ctx.save();
+      // Clip to current pen sweep line Y
+      ctx.beginPath();
+      ctx.rect(bounds.x, bounds.y, bounds.w, Math.max(0, currentY - bounds.y));
+      ctx.clip();
+
+      ctx.drawImage(sketchCanvas, bounds.x, bounds.y, bounds.w, bounds.h);
+      ctx.restore();
+    }
+
+    // 4. DRAW CURLY SCRIBBLE COILS FOR SHADOWS & HAIR (sudhin__art style)
+    const coils = curlyCoilsRef.current;
     let penX = centerX;
-    let penY = progressRatio * height;
 
     ctx.strokeStyle = palette.ink;
-    ctx.lineWidth = 0.95; // Fine black gel/ballpoint pen weight
+    ctx.lineWidth = 0.9;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
 
-    for (let i = 0; i < clusters.length; i++) {
-      const c = clusters[i];
+    for (let i = 0; i < coils.length; i++) {
+      const c = coils[i];
       if (c.progressY <= progressRatio) {
-        // Draw this cluster as its own independent circular scribble loop
         ctx.beginPath();
-        const totalSteps = Math.round(c.numLoops * 14);
-        for (let s = 0; s < totalSteps; s++) {
-          const th = c.angleStart + s * 0.52;
-          const currentR = c.radius * (0.8 + 0.3 * Math.sin(s * 0.25));
-          const cx = c.x + Math.cos(th) * currentR;
-          const cy = c.y + Math.sin(th) * currentR;
-
+        for (let s = 0; s < c.steps; s++) {
+          const th = c.angleStart + s * 0.55;
+          const cx = c.cx + Math.cos(th) * c.radius;
+          const cy = c.cy + Math.sin(th) * c.radius;
           if (s === 0) ctx.moveTo(cx, cy);
           else ctx.lineTo(cx, cy);
         }
         ctx.stroke();
-
-        penX = c.x;
-        penY = c.y;
+        penX = c.cx;
       } else {
         break;
       }
     }
 
-    // 4. ACTIVE PEN NIB & SKETCHING SPARKLE (Sweeping down)
+    // 5. ACTIVE PEN NIB & SKETCHING SPARKLE (Sweeping down)
     if (progressRatio < 1.0) {
-      const currentY = progressRatio * height;
-
       ctx.save();
-      // Fine ink nib aura
-      const nibGrad = ctx.createRadialGradient(penX, currentY, 1, penX, currentY, 18);
+      // Shimmer sweep line
+      const sweepGrad = ctx.createLinearGradient(0, currentY, width, currentY);
+      sweepGrad.addColorStop(0, 'rgba(0,0,0,0)');
+      sweepGrad.addColorStop(0.5, palette.ink);
+      sweepGrad.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.strokeStyle = sweepGrad;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(0, currentY);
+      ctx.lineTo(width, currentY);
+      ctx.stroke();
+
+      // Stylus glow
+      const nibGrad = ctx.createRadialGradient(penX, currentY, 1, penX, currentY, 16);
       nibGrad.addColorStop(0, '#ffffff');
       nibGrad.addColorStop(0.3, palette.penGlow);
       nibGrad.addColorStop(1, 'rgba(0,0,0,0)');
 
       ctx.fillStyle = nibGrad;
       ctx.beginPath();
-      ctx.arc(penX, currentY, 18, 0, Math.PI * 2);
+      ctx.arc(penX, currentY, 16, 0, Math.PI * 2);
       ctx.fill();
 
       ctx.fillStyle = palette.ink;
@@ -430,7 +433,7 @@ export default function ScribbleVideoRenderer({
       ctx.restore();
     }
 
-    // 5. Signature / Watermark at Bottom Right
+    // 6. Watermark at Bottom Right
     ctx.save();
     ctx.font = `italic 11px sans-serif`;
     ctx.fillStyle = palette.bgText;

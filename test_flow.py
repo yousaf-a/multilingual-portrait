@@ -74,3 +74,4 @@ for i in range(num_strokes):
 
 out.save('C:/Users/yousa/.gemini/antigravity/scratch/multilingual-portrait/public/test-flow-scribble.png')
 print("Flow scribble generated!")
+

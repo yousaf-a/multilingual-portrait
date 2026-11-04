@@ -11,3 +11,4 @@ img = img.resize((w, h))
 edges = img.filter(ImageFilter.FIND_EDGES)
 edges.save('C:/Users/yousa/.gemini/antigravity/scratch/multilingual-portrait/public/test-edges.png')
 print("Edges saved")
+

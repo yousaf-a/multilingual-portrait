@@ -59,3 +59,4 @@ for y in range(40, h - 40, 4):
 
 out.save('C:/Users/yousa/.gemini/antigravity/scratch/multilingual-portrait/public/test-perfect-scribble.png')
 print("Saved test-perfect-scribble.png successfully")
+

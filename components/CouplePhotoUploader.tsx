@@ -22,6 +22,10 @@ export default function CouplePhotoUploader({
 
   const [compositePreviewUrl, setCompositePreviewUrl] = useState<string | null>(null);
 
+  // Latest image references to avoid any stale closures
+  const partner1Ref = useRef<HTMLImageElement | null>(null);
+  const partner2Ref = useRef<HTMLImageElement | null>(null);
+
   // Merge the two portraits into a single seamless split portrait
   const mergeImages = useCallback(
     (img1: HTMLImageElement | null, img2: HTMLImageElement | null) => {
@@ -40,7 +44,6 @@ export default function CouplePhotoUploader({
       const w = canvas.width;
       const h = canvas.height;
       const midX = w / 2;
-      const featherW = 50; // 50px smooth gradient transition at center
 
       // Background paper tone
       ctx.fillStyle = '#faf8f5';
@@ -54,7 +57,7 @@ export default function CouplePhotoUploader({
         destW: number,
         destH: number,
         focusX: number = 0.5,
-        focusY: number = 0.38
+        focusY: number = 0.35
       ) => {
         const imgAspect = img.width / img.height;
         const destAspect = destW / destH;
@@ -75,71 +78,35 @@ export default function CouplePhotoUploader({
         ctx.drawImage(img, sX, sY, sW, sH, destX, destY, destW, destH);
       };
 
-      // Case 1: Both images provided -> Seamless dual split with feathered seam
+      // Case 1: Both images provided -> Clean side-by-side split with delicate golden seam bridge
       if (img1 && img2) {
-        // Draw Left Portrait (Partner 1)
+        // Draw Left Portrait (Partner 1) on Left Half
         ctx.save();
         ctx.beginPath();
-        ctx.rect(0, 0, midX + featherW / 2, h);
+        ctx.rect(0, 0, midX, h);
         ctx.clip();
-        drawCover(img1, 0, 0, midX + featherW / 2, h, 0.5, 0.35);
+        drawCover(img1, 0, 0, midX, h, 0.5, 0.35);
         ctx.restore();
 
-        // Draw Right Portrait (Partner 2) with soft feather gradient mask
-        const offCanvas = document.createElement('canvas');
-        offCanvas.width = w;
-        offCanvas.height = h;
-        const offCtx = offCanvas.getContext('2d');
-        if (offCtx) {
-          const rightX = midX - featherW / 2;
-          const rightW = w - rightX;
-
-          // Draw partner 2 on right half
-          const imgAspect = img2.width / img2.height;
-          const destAspect = rightW / h;
-          let sW, sH, sX, sY;
-          if (imgAspect > destAspect) {
-            sH = img2.height;
-            sW = sH * destAspect;
-            sX = (img2.width - sW) * 0.5;
-            sY = 0;
-          } else {
-            sW = img2.width;
-            sH = sW / destAspect;
-            sX = 0;
-            sY = (img2.height - sH) * 0.35;
-          }
-          offCtx.drawImage(img2, sX, sY, sW, sH, rightX, 0, rightW, h);
-
-          // Apply feather mask: transition smoothly at seam, and keep 100% alpha for all pixels to the right
-          offCtx.globalCompositeOperation = 'destination-in';
-
-          // 1. Feather transition strip at center seam (alpha ramps 0 -> 1)
-          const maskGrad = offCtx.createLinearGradient(rightX, 0, rightX + featherW, 0);
-          maskGrad.addColorStop(0, 'rgba(0,0,0,0)');
-          maskGrad.addColorStop(1, 'rgba(0,0,0,1)');
-          offCtx.fillStyle = maskGrad;
-          offCtx.fillRect(rightX, 0, featherW, h);
-
-          // 2. Full opacity for the entire right half
-          offCtx.fillStyle = 'rgba(0,0,0,1)';
-          offCtx.fillRect(rightX + featherW, 0, w - (rightX + featherW), h);
-
-          // Stamp feathered right image onto main canvas
-          ctx.drawImage(offCanvas, 0, 0);
-        }
-
-        // Delicate organic dividing shimmer at seam
+        // Draw Right Portrait (Partner 2) on Right Half
         ctx.save();
-        const seamGrad = ctx.createLinearGradient(midX - 1.5, 0, midX + 1.5, 0);
+        ctx.beginPath();
+        ctx.rect(midX, 0, midX, h);
+        ctx.clip();
+        drawCover(img2, midX, 0, midX, h, 0.5, 0.35);
+        ctx.restore();
+
+        // Delicate organic dividing seam line / golden bridge down the center
+        ctx.save();
+        const seamGrad = ctx.createLinearGradient(midX - 2, 0, midX + 2, 0);
         seamGrad.addColorStop(0, 'rgba(212, 175, 55, 0)');
-        seamGrad.addColorStop(0.5, 'rgba(212, 175, 55, 0.45)');
+        seamGrad.addColorStop(0.5, 'rgba(212, 175, 55, 0.65)');
         seamGrad.addColorStop(1, 'rgba(212, 175, 55, 0)');
         ctx.fillStyle = seamGrad;
-        ctx.fillRect(midX - 1.5, 0, 3, h);
+        ctx.fillRect(midX - 2, 0, 4, h);
         ctx.restore();
       } else {
-        // Only one of the images is loaded yet -> Fill center
+        // Only one of the images is loaded yet -> Fill canvas
         const single = img1 || img2!;
         drawCover(single, 0, 0, w, h, 0.5, 0.35);
       }
@@ -160,32 +127,34 @@ export default function CouplePhotoUploader({
   const loadCouplePreset = () => {
     const p1Url = '/sample-target-art.png';
     const p2Url = '/sample-scribble.jpg';
+    const splitUrl = '/sample-couple-split.png';
 
     setPartner1Name('Goddess (Her)');
     setPartner1Url(p1Url);
     setPartner2Name('Sudhin (Him)');
     setPartner2Url(p2Url);
+    setCompositePreviewUrl(splitUrl);
 
-    let loadedCount = 0;
+    // Set image elements
     const img1 = new Image();
-    const img2 = new Image();
+    img1.src = p1Url;
+    partner1Ref.current = img1;
+    setPartner1Img(img1);
 
-    const checkBoth = () => {
-      loadedCount++;
-      if (loadedCount === 2) {
-        setPartner1Img(img1);
-        setPartner2Img(img2);
-        mergeImages(img1, img2);
-        if (onPartnerNamesSuggested) {
-          onPartnerNamesSuggested('Sophia & Lucas');
-        }
+    const img2 = new Image();
+    img2.src = p2Url;
+    partner2Ref.current = img2;
+    setPartner2Img(img2);
+
+    // Directly load the pre-composited dual portrait
+    const composite = new Image();
+    composite.onload = () => {
+      onImageLoaded(composite, splitUrl);
+      if (onPartnerNamesSuggested) {
+        onPartnerNamesSuggested('Sophia & Lucas');
       }
     };
-
-    img1.onload = checkBoth;
-    img2.onload = checkBoth;
-    img1.src = p1Url;
-    img2.src = p2Url;
+    composite.src = splitUrl;
   };
 
   const handlePartner1File = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -198,8 +167,9 @@ export default function CouplePhotoUploader({
       setPartner1Url(res);
       const img = new Image();
       img.onload = () => {
+        partner1Ref.current = img;
         setPartner1Img(img);
-        mergeImages(img, partner2Img);
+        mergeImages(img, partner2Ref.current);
       };
       img.src = res;
     };
@@ -217,8 +187,9 @@ export default function CouplePhotoUploader({
       setPartner2Url(res);
       const img = new Image();
       img.onload = () => {
+        partner2Ref.current = img;
         setPartner2Img(img);
-        mergeImages(partner1Img, img);
+        mergeImages(partner1Ref.current, img);
       };
       img.src = res;
     };
@@ -340,7 +311,7 @@ export default function CouplePhotoUploader({
               <span>Fused Split Portrait Ready</span>
             </span>
             <p className="text-[10px] text-slate-400 leading-snug">
-              Center seam smoothly feathered with multilingual calligraphy bridging both partners.
+              Center seam smoothly bridged with multilingual calligraphy connecting both partners.
             </p>
           </div>
         </div>
@@ -352,7 +323,7 @@ export default function CouplePhotoUploader({
         <button
           type="button"
           onClick={loadCouplePreset}
-          className="text-[11px] px-3 py-1.5 rounded-xl bg-gradient-to-r from-pink-900/40 to-purple-900/40 hover:from-pink-900/60 hover:to-purple-900/60 text-pink-200 border border-pink-500/40 transition flex items-center gap-1.5 shadow-sm"
+          className="text-[11px] px-3 py-1.5 rounded-xl bg-gradient-to-r from-pink-900/40 to-purple-900/40 hover:from-pink-900/60 hover:to-purple-900/60 text-pink-200 border border-pink-500/40 transition flex items-center gap-1.5 shadow-sm cursor-pointer"
         >
           <Heart size={12} className="text-pink-400 fill-pink-400" />
           <span>💑 Load Couple Split Preset</span>

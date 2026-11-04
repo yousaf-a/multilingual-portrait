@@ -930,6 +930,29 @@ export default function ScribbleVideoRenderer({
     }
   };
 
+  const downloadHalfImage = (which: 'left' | 'right') => {
+    const exportCanvas = document.createElement('canvas');
+    exportCanvas.width = 1600;
+    exportCanvas.height = 2000;
+    const exportCtx = exportCanvas.getContext('2d');
+    if (!exportCtx) return;
+
+    drawFrame(exportCtx, 1600, 2000, 1.0, false);
+
+    const halfCanvas = document.createElement('canvas');
+    halfCanvas.width = 800;
+    halfCanvas.height = 2000;
+    const hCtx = halfCanvas.getContext('2d');
+    if (hCtx) {
+      const srcX = which === 'left' ? 0 : 800;
+      hCtx.drawImage(exportCanvas, srcX, 0, 800, 2000, 0, 0, 800, 2000);
+      const link = document.createElement('a');
+      link.download = `${titleText || 'masterpiece'}-${which}-isolated.png`;
+      link.href = halfCanvas.toDataURL('image/png', 1.0);
+      link.click();
+    }
+  };
+
   const recordVideo = async () => {
     const canvas = canvasRef.current;
     if (!canvas || isRecording) return;
@@ -1120,9 +1143,30 @@ export default function ScribbleVideoRenderer({
             type="button"
             onClick={downloadHighResImage}
             className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#0c1429] hover:bg-[#162347] text-slate-300 hover:text-white text-xs font-medium border border-[#243356] transition"
+            title="Download full 4K artwork"
           >
             <Download size={13} />
             <span>Save 4K</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => downloadHalfImage('left')}
+            className="hidden md:flex items-center justify-center gap-1 px-2.5 py-2 rounded-xl bg-[#0c1429] hover:bg-[#162347] text-slate-400 hover:text-white text-[11px] font-medium border border-[#243356] transition"
+            title="Download left partner artwork separately"
+          >
+            <Download size={11} />
+            <span>Left 1/2</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => downloadHalfImage('right')}
+            className="hidden md:flex items-center justify-center gap-1 px-2.5 py-2 rounded-xl bg-[#0c1429] hover:bg-[#162347] text-slate-400 hover:text-white text-[11px] font-medium border border-[#243356] transition"
+            title="Download right partner artwork separately"
+          >
+            <Download size={11} />
+            <span>Right 1/2</span>
           </button>
 
           <button

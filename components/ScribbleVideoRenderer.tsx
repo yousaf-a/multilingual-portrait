@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { TranslatedItem, getMultilingualList } from '@/lib/languages';
-import { Play, Pause, RotateCcw, Volume2, VolumeX, Download, ArrowLeft, Video, Gift } from 'lucide-react';
+import { Play, Pause, RotateCcw, Volume2, VolumeX, Download, ArrowLeft, Video, Gift, MessageSquare } from 'lucide-react';
 import { audioController } from '@/lib/audio';
 import ShareGiftModal from '@/components/ShareGiftModal';
+import LiveDuoChat from '@/components/LiveDuoChat';
 
 interface HatchStroke {
   x1: number;
@@ -43,6 +44,8 @@ interface ScribbleVideoRendererProps {
   titleText: string;
   musicTrack: string;
   customMusicUrl: string | null;
+  roomId?: string;
+  senderName?: string;
   onBackToEdit: () => void;
 }
 
@@ -54,6 +57,8 @@ export default function ScribbleVideoRenderer({
   titleText,
   musicTrack,
   customMusicUrl,
+  roomId: propRoomId,
+  senderName = 'You',
   onBackToEdit
 }: ScribbleVideoRendererProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -64,6 +69,22 @@ export default function ScribbleVideoRenderer({
   const [currentProgress, setCurrentProgress] = useState(0);
   const [isRecording, setIsRecording] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [activeWhisper, setActiveWhisper] = useState<string | null>(null);
+
+  // Stable room ID for live 2-person chat
+  const activeRoomId = useMemo(() => {
+    if (propRoomId) return propRoomId;
+    const cleanTitle = (titleText || 'studio').toLowerCase().replace(/[^a-z0-9]/g, '');
+    return `room_${cleanTitle || 'live'}`;
+  }, [propRoomId, titleText]);
+
+  const handleWhisper = (text: string) => {
+    setActiveWhisper(text);
+    setTimeout(() => {
+      setActiveWhisper(null);
+    }, 4500);
+  };
 
   const durationMs = 8500; // 8.5 seconds sketch sweep
   const pauseDurationMs = 3500; // 3.5s pause to admire completed artwork
@@ -800,6 +821,16 @@ export default function ScribbleVideoRenderer({
             <Gift size={14} className="text-pink-400" />
             <span>Share Gift Link 🎁</span>
           </button>
+
+          <button
+            type="button"
+            onClick={() => setIsChatOpen(!isChatOpen)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-cyan-500/20 to-blue-600/20 hover:from-cyan-500/30 hover:to-blue-600/30 text-cyan-300 font-semibold text-xs border border-cyan-500/40 transition shadow-sm cursor-pointer"
+            title="Open 2-Person Chat"
+          >
+            <MessageSquare size={14} className="text-cyan-400" />
+            <span>Live Chat 💬</span>
+          </button>
         </div>
 
         <div className="flex items-center gap-3">
@@ -835,6 +866,18 @@ export default function ScribbleVideoRenderer({
           <div className="absolute top-4 right-4 bg-red-600/90 text-white text-xs font-semibold px-3 py-1.5 rounded-full flex items-center gap-2 backdrop-blur-md animate-pulse">
             <span className="w-2 h-2 rounded-full bg-white"></span>
             Recording Video...
+          </div>
+        )}
+
+        {/* Live Partner Whisper on Canvas */}
+        {activeWhisper && (
+          <div className="absolute inset-x-6 top-1/2 -translate-y-1/2 p-5 rounded-3xl bg-black/85 backdrop-blur-md border border-amber-400/60 text-center animate-in fade-in zoom-in-95 duration-300 z-30 shadow-[0_0_40px_rgba(251,191,36,0.4)]">
+            <span className="text-[10px] uppercase font-bold tracking-widest text-amber-300 block mb-1.5">
+              ✦ Partner Whisper on Canvas ✦
+            </span>
+            <p className="text-base sm:text-xl font-serif italic text-white drop-shadow leading-relaxed">
+              &ldquo;{activeWhisper}&rdquo;
+            </p>
           </div>
         )}
       </div>
@@ -902,6 +945,15 @@ export default function ScribbleVideoRenderer({
         themeStyle={themeStyle}
         musicTrack={musicTrack}
         photoImage={photoImage}
+      />
+
+      {/* 2-Person Live Duo Chat */}
+      <LiveDuoChat
+        roomId={activeRoomId}
+        defaultSender={senderName}
+        onWhisper={handleWhisper}
+        isOpen={isChatOpen}
+        onToggleOpen={setIsChatOpen}
       />
     </div>
   );

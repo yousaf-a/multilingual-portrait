@@ -16,6 +16,7 @@ function GiftExperience() {
   const themeParam = (searchParams.get('theme') as any) || 'emerald';
   const musicParam = searchParams.get('music') || 'piano';
   const imgParam = searchParams.get('img') || 'sudhin';
+  const roomParam = searchParams.get('room') || `room_${(toName || 'gift').toLowerCase().replace(/[^a-z0-9]/g, '')}`;
 
   // State
   const [isOpened, setIsOpened] = useState(false);
@@ -149,6 +150,8 @@ function GiftExperience() {
             titleText={customMsg}
             musicTrack={musicParam}
             customMusicUrl={null}
+            roomId={roomParam}
+            senderName={toName || 'Recipient'}
             onBackToEdit={() => setIsOpened(false)}
           />
 

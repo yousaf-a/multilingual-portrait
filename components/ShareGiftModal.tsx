@@ -72,7 +72,9 @@ export default function ShareGiftModal({
   }
 
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-  const giftUrl = `${baseUrl}/gift?to=${recipient}&msg=${msg}&theme=${theme}&music=${music}&img=${imageParam}${hashFragment}`;
+  const cleanTitle = (toName || message || 'gift').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const roomId = `room_${cleanTitle || 'live'}`;
+  const giftUrl = `${baseUrl}/gift?to=${recipient}&msg=${msg}&theme=${theme}&music=${music}&img=${imageParam}&room=${roomId}${hashFragment}`;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(giftUrl);

@@ -14,3 +14,26 @@ body {
   min-height: 100vh;
   overflow-x: hidden;
 }
+
+@keyframes floating-reaction {
+  0% {
+    transform: translateY(0) scale(0.6);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+    transform: translateY(-40px) scale(1.15);
+  }
+  75% {
+    opacity: 0.9;
+    transform: translateY(-240px) scale(1.0);
+  }
+  100% {
+    transform: translateY(-380px) scale(0.8);
+    opacity: 0;
+  }
+}
+
+.animate-floating-reaction {
+  animation: floating-reaction 2.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}

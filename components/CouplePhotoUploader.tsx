@@ -15,7 +15,9 @@ import {
   RefreshCw,
   ChevronDown,
   ChevronUp,
-  Maximize2
+  Maximize2,
+  Copy,
+  Check
 } from 'lucide-react';
 
 export type CoupleLayoutMode = 'split_face' | 'side_by_side';
@@ -118,6 +120,50 @@ export default function CouplePhotoUploader({
   const [showGuideLines, setShowGuideLines] = useState<boolean>(false);
 
   const [compositePreviewUrl, setCompositePreviewUrl] = useState<string | null>(null);
+
+  // AI Master Prompt state
+  const [copiedStyle, setCopiedStyle] = useState<'cinematic' | 'anime' | null>(null);
+  const [selectedAiStyle, setSelectedAiStyle] = useState<'cinematic' | 'anime'>('anime');
+  const [showAiPromptCard, setShowAiPromptCard] = useState<boolean>(true);
+
+  const getMasterPrompt = (style: 'cinematic' | 'anime') => {
+    const styleInstruction = style === 'cinematic'
+      ? 'Style: Ultra-realistic cinematic couple photography, natural skin texture, detailed eyes, soft dramatic lighting, professional editorial portrait, shallow depth of field, warm earthy tones.'
+      : 'Style: Highly detailed hand-drawn graphite pencil illustration, romantic anime-inspired couple portrait, realistic facial resemblance to both references, delicate pencil strokes, intricate hair details, expressive eyes, soft cross-hatching, monochrome shading on textured sketchbook paper.';
+
+    return `Transform the two uploaded individual reference images (Image 1 and Image 2) into a single aesthetically composed couple portrait.
+
+Core Instructions:
+- Use the two uploaded images as separate identity references.
+- Bring both people together naturally, positioning their faces close to each other, either side by side or slightly leaning against one another.
+
+Identity Preservation (Strict):
+- Person 1 must retain the exact facial features, face shape, hairstyle, skin tone, and recognizable appearance from Image 1.
+- Person 2 must retain the exact facial features, face shape, hairstyle, skin tone, and recognizable appearance from Image 2.
+- Do not blend their faces together, do not swap identities, and do not change their defining characteristics.
+
+Composition:
+- Create an intimate, close-up portrait of both individuals.
+- Their faces should occupy most of the frame.
+- Position them naturally, with their heads close together.
+- Create a balanced composition with both faces clearly visible.
+- Use subtle, natural expressions and aesthetically pleasing poses.
+
+Artistic Direction:
+- Create a visually beautiful, professionally composed couple portrait inspired by the uploaded reference style. Maintain realistic facial proportions, natural details, and beautiful lighting.
+- The final image should look like a deliberately created couple portrait, NOT two separate images pasted together.
+- No borders, no collage, no split screen, no extra people, no text, no watermark.
+
+${styleInstruction}
+
+Output: One cohesive portrait featuring both individuals.`;
+  };
+
+  const copyMasterPrompt = (style: 'cinematic' | 'anime') => {
+    navigator.clipboard.writeText(getMasterPrompt(style));
+    setCopiedStyle(style);
+    setTimeout(() => setCopiedStyle(null), 2500);
+  };
 
   const partner1Ref = useRef<HTMLImageElement | null>(null);
   const partner2Ref = useRef<HTMLImageElement | null>(null);
@@ -915,6 +961,98 @@ export default function CouplePhotoUploader({
             </button>
           ))}
         </div>
+      </div>
+
+      {/* AI Master Prompt Generator Card */}
+      <div className="flex flex-col gap-2.5 p-3.5 rounded-2xl bg-gradient-to-br from-[#0b132e] to-[#080d21] border border-cyan-500/30 shadow-lg">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-cyan-300 flex items-center gap-1.5">
+              <Sparkles size={13} className="text-cyan-400" />
+              <span>AI Master Generation Prompt</span>
+            </span>
+            <span className="text-[9px] uppercase px-1.5 py-0.5 rounded bg-cyan-950/80 border border-cyan-500/30 text-cyan-300 font-mono">
+              2 Images $\rightarrow$ 1 Portrait
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => copyMasterPrompt(selectedAiStyle)}
+              className="py-1 px-2.5 rounded-lg bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white text-[11px] font-semibold flex items-center gap-1 cursor-pointer shadow-sm transition"
+              title="Copy the master prompt to clipboard"
+            >
+              {copiedStyle === selectedAiStyle ? (
+                <>
+                  <Check size={12} className="text-emerald-300" />
+                  <span className="text-emerald-200">Copied!</span>
+                </>
+              ) : (
+                <>
+                  <Copy size={12} />
+                  <span>Copy Prompt</span>
+                </>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setShowAiPromptCard(!showAiPromptCard)}
+              className="text-slate-400 hover:text-white p-1 rounded cursor-pointer"
+            >
+              {showAiPromptCard ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+            </button>
+          </div>
+        </div>
+
+        {showAiPromptCard && (
+          <div className="flex flex-col gap-2 pt-1 animate-in fade-in duration-150">
+            {/* Style Selector Tabs */}
+            <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[#060a1a] border border-[#1b2b52]">
+              <button
+                type="button"
+                onClick={() => setSelectedAiStyle('anime')}
+                className={`flex-1 py-1 px-2.5 rounded-lg text-[11px] font-semibold transition cursor-pointer flex items-center justify-center gap-1.5 ${
+                  selectedAiStyle === 'anime'
+                    ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-sm'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <span>✏️ Anime Pencil Sketch</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedAiStyle('cinematic')}
+                className={`flex-1 py-1 px-2.5 rounded-lg text-[11px] font-semibold transition cursor-pointer flex items-center justify-center gap-1.5 ${
+                  selectedAiStyle === 'cinematic'
+                    ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-sm'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <span>📷 Cinematic Realistic</span>
+              </button>
+            </div>
+
+            {/* Active Style Instruction preview */}
+            <div className="p-2 rounded-xl bg-[#050816] border border-[#182647] font-mono text-[10px] leading-relaxed text-slate-300">
+              <span className="text-cyan-400 font-bold block mb-1">
+                {selectedAiStyle === 'anime'
+                  ? '🎨 Style Option 2 (Hand-drawn Anime Pencil Sketch):'
+                  : '📸 Style Option 1 (Cinematic Realistic Portrait):'}
+              </span>
+              <p className="text-slate-300">
+                {selectedAiStyle === 'anime'
+                  ? 'Style: Highly detailed hand-drawn graphite pencil illustration, romantic anime-inspired couple portrait, realistic facial resemblance to both references, delicate pencil strokes, intricate hair details, expressive eyes, soft cross-hatching, monochrome shading on textured sketchbook paper.'
+                  : 'Style: Ultra-realistic cinematic couple photography, natural skin texture, detailed eyes, soft dramatic lighting, professional editorial portrait, shallow depth of field, warm earthy tones.'}
+              </p>
+            </div>
+
+            <p className="text-[10px] text-slate-400 leading-snug">
+              💡 <span className="text-slate-300 font-semibold">Workflow Tip:</span> Attach your 2 uploaded photos as <span className="text-cyan-300">Image 1</span> and <span className="text-pink-300">Image 2</span> in Midjourney, FLUX, ChatGPT/DALL-E 3, or Gemini, then paste this prompt. It ensures strict identity preservation with your chosen aesthetic.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

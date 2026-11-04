@@ -5,12 +5,14 @@ import { TranslatedItem } from '@/lib/languages';
 import { Play, Pause, RotateCcw, Volume2, VolumeX, Download, ArrowLeft, Video } from 'lucide-react';
 import { audioController } from '@/lib/audio';
 
-// Continuous curly scribble loop point
-interface ScribblePoint {
+// An individual curly scribble coil (exactly like sudhin__art)
+interface ScribbleCluster {
   x: number;
   y: number;
-  progressY: number; // 0 to 1
-  isStart?: boolean;
+  radius: number;
+  numLoops: number;
+  progressY: number;
+  angleStart: number;
 }
 
 // Background multilingual text placed strictly OUTSIDE the subject
@@ -52,13 +54,13 @@ export default function ScribbleVideoRenderer({
   const [currentProgress, setCurrentProgress] = useState(0);
   const [isRecording, setIsRecording] = useState(false);
 
-  const durationMs = 9000; // 9 seconds sketching sweep
+  const durationMs = 8500; // 8.5s drawing sweep
   const pauseDurationMs = 3500; // 3.5s pause to admire completed artwork
   const totalCycleMs = durationMs + pauseDurationMs;
   const startTimeRef = useRef<number>(Date.now());
 
-  // Cached geometry
-  const scribblePointsRef = useRef<ScribblePoint[]>([]);
+  // Cached pre-computed clusters & background text
+  const scribbleClustersRef = useRef<ScribbleCluster[]>([]);
   const backgroundTextsRef = useRef<BackgroundText[]>([]);
 
   // Theme palettes
@@ -68,19 +70,17 @@ export default function ScribbleVideoRenderer({
         return {
           bg: '#fcfbfa',
           darkBg: false,
-          ink: '#112918', // Deep forest green ink
-          inkSecondary: '#524021',
-          bgText: 'rgba(29, 74, 42, 0.45)',
+          ink: '#14381e',
+          bgText: 'rgba(29, 74, 42, 0.38)',
           paperVignette: '#f2ece4',
-          penGlow: '#2e7d32'
+          penGlow: '#1d4a2a'
         };
       case 'gold':
         return {
           bg: '#08080a',
           darkBg: true,
-          ink: '#e6c364', // Fine gold pen
-          inkSecondary: '#b89130',
-          bgText: 'rgba(230, 195, 100, 0.4)',
+          ink: '#e6c364',
+          bgText: 'rgba(230, 195, 100, 0.35)',
           paperVignette: '#000000',
           penGlow: '#e6c364'
         };
@@ -88,9 +88,8 @@ export default function ScribbleVideoRenderer({
         return {
           bg: '#080d1a',
           darkBg: true,
-          ink: '#e2e8f0', // Clean silver/white pen
-          inkSecondary: '#38bdf8',
-          bgText: 'rgba(56, 189, 248, 0.35)',
+          ink: '#e2e8f0',
+          bgText: 'rgba(56, 189, 248, 0.32)',
           paperVignette: '#040710',
           penGlow: '#38bdf8'
         };
@@ -98,28 +97,26 @@ export default function ScribbleVideoRenderer({
         return {
           bg: '#060a17',
           darkBg: true,
-          ink: '#00e5ff', // Neon cyan pen
-          inkSecondary: '#e024c3',
-          bgText: 'rgba(0, 229, 255, 0.35)',
+          ink: '#00e5ff',
+          bgText: 'rgba(0, 229, 255, 0.32)',
           paperVignette: '#03050c',
           penGlow: '#00e5ff'
         };
       case 'monochrome':
       default:
-        // Pure Authentic sudhin__art black ballpoint/gel pen on textured paper
+        // Pure Authentic sudhin__art black ballpoint pen on textured paper
         return {
-          bg: '#faf8f5',
+          bg: '#fbf9f5',
           darkBg: false,
-          ink: '#18181b', // Crisp black gel pen
-          inkSecondary: '#3f3f46',
-          bgText: 'rgba(82, 82, 91, 0.45)',
+          ink: '#18181b',
+          bgText: 'rgba(113, 113, 122, 0.45)',
           paperVignette: '#ece7de',
           penGlow: '#18181b'
         };
     }
   }, [themeStyle]);
 
-  // Generate Curly Scribbles for the Subject & Multilingual Text for the Background
+  // Precompute the pure curly scribble clusters and background text
   useEffect(() => {
     const width = 800;
     const height = 1000;
@@ -144,68 +141,77 @@ export default function ScribbleVideoRenderer({
       { text: "Σ' αγαπώ", language: "Greek" }
     ];
 
-    const scribblePoints: ScribblePoint[] = [];
+    const clusters: ScribbleCluster[] = [];
     const bgTexts: BackgroundText[] = [];
 
-    // Grid dimensions for image sampling
-    const sampleCols = 160;
-    const sampleRows = 200;
-    const cellW = width / sampleCols;
-    const cellH = height / sampleRows;
-
-    // Subject density map
-    const densityMap: number[][] = Array.from({ length: sampleRows }, () => Array(sampleCols).fill(0));
+    const cols = 120;
+    const rows = 150;
+    const cellW = width / cols;
+    const cellH = height / rows;
+    const densityMap: number[][] = Array.from({ length: rows }, () => Array(cols).fill(0));
 
     if (photoImage) {
-      const offCanvas = document.createElement('canvas');
-      offCanvas.width = sampleCols;
-      offCanvas.height = sampleRows;
-      const offCtx = offCanvas.getContext('2d');
+      const sampleCanvas = document.createElement('canvas');
+      sampleCanvas.width = cols;
+      sampleCanvas.height = rows;
+      const sCtx = sampleCanvas.getContext('2d');
 
-      if (offCtx) {
-        // Draw image centered in the canvas
-        offCtx.fillStyle = '#ffffff';
-        offCtx.fillRect(0, 0, sampleCols, sampleRows);
+      if (sCtx) {
+        sCtx.fillStyle = '#ffffff';
+        sCtx.fillRect(0, 0, cols, rows);
 
         const imgAspect = photoImage.width / photoImage.height;
-        let dw = sampleCols * 0.78;
+        let dw = cols * 0.72;
         let dh = dw / imgAspect;
-        if (dh > sampleRows * 0.85) {
-          dh = sampleRows * 0.85;
+        if (dh > rows * 0.8) {
+          dh = rows * 0.8;
           dw = dh * imgAspect;
         }
-        const dx = (sampleCols - dw) / 2;
-        const dy = (sampleRows - dh) / 2 + 5;
+        const dx = (cols - dw) / 2;
+        const dy = (rows - dh) / 2 + 5;
 
-        offCtx.drawImage(photoImage, dx, dy, dw, dh);
-        const imgData = offCtx.getImageData(0, 0, sampleCols, sampleRows).data;
+        sCtx.drawImage(photoImage, dx, dy, dw, dh);
+        const data = sCtx.getImageData(0, 0, cols, rows).data;
 
-        for (let y = 0; y < sampleRows; y++) {
-          for (let x = 0; x < sampleCols; x++) {
-            const idx = (y * sampleCols + x) * 4;
-            const r = imgData[idx];
-            const g = imgData[idx + 1];
-            const b = imgData[idx + 2];
-            const a = imgData[idx + 3];
+        // Auto-detect background color from the 4 corners
+        const cornerIdxs = [0, (cols - 1) * 4, ((rows - 1) * cols) * 4, ((rows - 1) * cols + cols - 1) * 4];
+        let bgR = 0, bgG = 0, bgB = 0;
+        cornerIdxs.forEach(ci => {
+          bgR += data[ci] / 4;
+          bgG += data[ci + 1] / 4;
+          bgB += data[ci + 2] / 4;
+        });
+
+        for (let y = 0; y < rows; y++) {
+          for (let x = 0; x < cols; x++) {
+            const idx = (y * cols + x) * 4;
+            const r = data[idx];
+            const g = data[idx + 1];
+            const b = data[idx + 2];
+            const a = data[idx + 3];
 
             if (a > 30) {
+              const diffFromBg = Math.sqrt(
+                Math.pow(r - bgR, 2) + Math.pow(g - bgG, 2) + Math.pow(b - bgB, 2)
+              ) / 255;
+
               const luminance = (r * 0.299 + g * 0.587 + b * 0.114) / 255;
-              // Detect subject vs white background
-              if (luminance < 0.92) {
-                // Non-linear contrast curve for rich shadows and delicate skin highlights
-                const rawDensity = 1 - luminance;
-                densityMap[y][x] = Math.pow(rawDensity, 1.3);
+              const shadowVal = 1 - luminance;
+
+              // Is this pixel part of the subject?
+              if (diffFromBg > 0.15 || shadowVal > 0.2) {
+                densityMap[y][x] = Math.max(diffFromBg, shadowVal);
               }
             }
           }
         }
       }
     } else {
-      // Procedural silhouette if no photo loaded
-      for (let y = 0; y < sampleRows; y++) {
-        for (let x = 0; x < sampleCols; x++) {
-          const nx = (x - sampleCols / 2) / (sampleCols * 0.35);
-          const ny = (y - sampleRows * 0.45) / (sampleRows * 0.35);
+      // Procedural silhouette if no image
+      for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+          const nx = (x - cols / 2) / (cols * 0.32);
+          const ny = (y - rows * 0.45) / (rows * 0.35);
           const dist = Math.sqrt(nx * nx + ny * ny);
           if (dist < 1.0) {
             densityMap[y][x] = Math.max(0, 1 - dist);
@@ -214,96 +220,76 @@ export default function ScribbleVideoRenderer({
       }
     }
 
-    // 1. GENERATE CURLY SCRIBBLE LOOPS (Exactly like sudhin__art)
-    // Scan horizontal bands with connected looping cycloid curls
-    const rowStep = 3; // Scan every 3 rows for high-fidelity pen lines
+    // 1. GENERATE CURLY SCRIBBLE LOOPS FOR SUBJECT ONLY (NO HORIZONTAL CROSS LINES!)
+    // Iterate and create standalone curly spirograph clusters
+    const step = 2; // Step size across cells
+    let seed = 12345;
+    const pseudoRandom = () => {
+      seed = (seed * 9301 + 49297) % 233280;
+      return seed / 233280;
+    };
 
-    for (let y = 4; y < sampleRows - 4; y += rowStep) {
-      let isDrawingStreak = false;
+    for (let y = 3; y < rows - 3; y += step) {
       const py = y * cellH;
       const progressY = py / height;
 
-      for (let x = 3; x < sampleCols - 3; x++) {
+      for (let x = 3; x < cols - 3; x += step) {
         const d = densityMap[y][x];
 
-        // Is this part of the subject?
-        if (d > 0.08) {
+        // Only draw where subject density exists
+        if (d > 0.18) {
           const px = x * cellW;
 
-          // Number of curly loops per cell depends on shadow density (1 loop for light skin, up to 4 tight loops for dark hair)
-          const loopCount = d > 0.65 ? 4 : d > 0.35 ? 2 : 1;
-          const radius = Math.max(2.5, Math.min(10, 8.5 * (1 - d * 0.65)));
+          // Number of overlapping loops based on darkness:
+          // Hair & deep shadows: 3-5 tight loops
+          // Light skin & midtones: 1-2 open loops
+          const numLoops = d > 0.65 ? 4 : d > 0.4 ? 2.5 : 1.5;
+          const radius = Math.max(3.0, Math.min(11.0, 9.0 * (1 - d * 0.55)));
 
-          if (!isDrawingStreak) {
-            scribblePoints.push({ x: px, y: py, progressY, isStart: true });
-            isDrawingStreak = true;
-          }
-
-          // Generate curling loop points (cycloid coils)
-          for (let l = 0; l < loopCount; l++) {
-            const angleOffset = (x * 1.5 + l * Math.PI) % (Math.PI * 2);
-            const steps = 6;
-            for (let s = 0; s < steps; s++) {
-              const theta = angleOffset + (s / steps) * Math.PI * 2;
-              const cx = px + Math.cos(theta) * radius + (Math.sin(y + s) * 1.2);
-              const cy = py + Math.sin(theta) * radius + (Math.cos(x + s) * 1.2);
-
-              scribblePoints.push({
-                x: cx,
-                y: cy,
-                progressY
-              });
-            }
-          }
-
-          // In ultra-dark areas (hair, deep shadows), add counter-clockwise cross curls for rich ink saturation
-          if (d > 0.55 && x % 2 === 0) {
-            for (let s = 0; s < 5; s++) {
-              const theta = -(s / 5) * Math.PI * 2;
-              const cx = px + Math.cos(theta) * (radius * 0.7);
-              const cy = py + Math.sin(theta) * (radius * 0.7);
-              scribblePoints.push({ x: cx, y: cy, progressY });
-            }
-          }
-
-        } else {
-          isDrawingStreak = false;
+          clusters.push({
+            x: px + (pseudoRandom() - 0.5) * 4,
+            y: py + (pseudoRandom() - 0.5) * 4,
+            radius,
+            numLoops,
+            progressY,
+            angleStart: pseudoRandom() * Math.PI * 2
+          });
         }
       }
     }
 
     // 2. GENERATE BACKGROUND MULTILINGUAL TEXT (STRICTLY OUTSIDE THE SUBJECT)
-    // Place words in the margins/background where density == 0, never touching the face/body!
+    // Neatly fill the margin and outer portrait area
     let wordIdx = 0;
-    const bgRowStep = 24; // Vertical spacing between text lines in background
-    const bgColStep = 20;
+    const textRowGap = 32;
+    const textColGap = 20;
 
-    for (let y = 6; y < sampleRows - 6; y += bgRowStep) {
+    for (let y = 5; y < rows - 5; y += textRowGap) {
       const py = y * cellH;
       const progressY = py / height;
 
-      for (let x = 4; x < sampleCols - 4; x += bgColStep) {
-        // Check if this region is CLEAR of the subject
-        let hasSubjectNearby = false;
+      for (let x = 4; x < cols - 4; x += textColGap) {
+        // Confirm this area is strictly OUTSIDE the subject
+        let hasSubject = false;
         for (let dy = -6; dy <= 6; dy += 3) {
           for (let dx = -6; dx <= 6; dx += 3) {
-            const checkY = Math.max(0, Math.min(sampleRows - 1, y + dy));
-            const checkX = Math.max(0, Math.min(sampleCols - 1, x + dx));
-            if (densityMap[checkY][checkX] > 0.05) {
-              hasSubjectNearby = true;
+            const cy = Math.max(0, Math.min(rows - 1, y + dy));
+            const cx = Math.max(0, Math.min(cols - 1, x + dx));
+            if (densityMap[cy][cx] > 0.1) {
+              hasSubject = true;
               break;
             }
           }
-          if (hasSubjectNearby) break;
+          if (hasSubject) break;
         }
 
-        // Only place in pure background space outside the subject
-        if (!hasSubjectNearby) {
+        // Only render text in the empty background outside the subject
+        if (!hasSubject) {
           const phrase = phrases[wordIdx % phrases.length];
           wordIdx++;
 
           bgTexts.push({
-            x: x * cellW + (Math.sin(y) * 10),
+            x: x * cellW,
             y: py,
             text: phrase.text,
             fontSize: 13,
@@ -314,11 +300,11 @@ export default function ScribbleVideoRenderer({
       }
     }
 
-    // Sort all background text and scribble points from top to bottom
-    scribblePoints.sort((a, b) => a.progressY - b.progressY);
+    // Sort top to bottom
+    clusters.sort((a, b) => a.progressY - b.progressY);
     bgTexts.sort((a, b) => a.progressY - b.progressY);
 
-    scribblePointsRef.current = scribblePoints;
+    scribbleClustersRef.current = clusters;
     backgroundTextsRef.current = bgTexts;
   }, [photoImage, items, titleText, getThemePalette]);
 
@@ -341,8 +327,8 @@ export default function ScribbleVideoRenderer({
     ctx.fillStyle = palette.bg;
     ctx.fillRect(0, 0, width, height);
 
-    // Warm paper texture / vignette
     if (!palette.darkBg) {
+      // Warm off-white paper vignette
       const paperGrad = ctx.createRadialGradient(centerX, centerY, width * 0.25, centerX, centerY, width * 0.72);
       paperGrad.addColorStop(0, '#ffffff');
       paperGrad.addColorStop(1, palette.paperVignette);
@@ -356,7 +342,7 @@ export default function ScribbleVideoRenderer({
       ctx.fillRect(0, 0, width, height);
     }
 
-    // Falling rain streaks if rain_storm
+    // Rain streaks if rain_storm
     if (themeStyle === 'rain_storm') {
       const now = Date.now() * 0.001;
       ctx.strokeStyle = 'rgba(148, 163, 184, 0.2)';
@@ -371,7 +357,7 @@ export default function ScribbleVideoRenderer({
       }
     }
 
-    // 2. DRAW BACKGROUND MULTILINGUAL TEXT (OUTSIDE IMAGE ONLY)
+    // 2. DRAW BACKGROUND MULTILINGUAL TEXT (OUTSIDE SUBJECT ONLY)
     const bgTexts = backgroundTextsRef.current;
     ctx.font = `500 13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
     ctx.textAlign = 'left';
@@ -385,67 +371,71 @@ export default function ScribbleVideoRenderer({
       }
     }
 
-    // 3. DRAW CURLY SCRIBBLE ART FOR THE PORTRAIT (sudhin__art style)
-    const pts = scribblePointsRef.current;
-    if (pts.length > 0) {
-      ctx.strokeStyle = palette.ink;
-      ctx.lineWidth = 0.95; // Fine ballpoint pen weight
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
+    // 3. DRAW CURLY SCRIBBLE ART FOR THE SUBJECT (sudhin__art style)
+    // Individual, independent looping cycloid coils (NO STRAIGHT HORIZONTAL CONNECTING LINES!)
+    const clusters = scribbleClustersRef.current;
+    let penX = centerX;
+    let penY = progressRatio * height;
 
-      ctx.beginPath();
-      let hasOpenPath = false;
-      let lastX = centerX;
-      let lastY = 0;
+    ctx.strokeStyle = palette.ink;
+    ctx.lineWidth = 0.95; // Fine black gel/ballpoint pen weight
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
 
-      for (let i = 0; i < pts.length; i++) {
-        const pt = pts[i];
-        if (pt.progressY <= progressRatio) {
-          if (pt.isStart || !hasOpenPath) {
-            ctx.moveTo(pt.x, pt.y);
-            hasOpenPath = true;
-          } else {
-            ctx.lineTo(pt.x, pt.y);
-          }
-          lastX = pt.x;
-          lastY = pt.y;
-        } else {
-          break;
+    for (let i = 0; i < clusters.length; i++) {
+      const c = clusters[i];
+      if (c.progressY <= progressRatio) {
+        // Draw this cluster as its own independent circular scribble loop
+        ctx.beginPath();
+        const totalSteps = Math.round(c.numLoops * 14);
+        for (let s = 0; s < totalSteps; s++) {
+          const th = c.angleStart + s * 0.52;
+          const currentR = c.radius * (0.8 + 0.3 * Math.sin(s * 0.25));
+          const cx = c.x + Math.cos(th) * currentR;
+          const cy = c.y + Math.sin(th) * currentR;
+
+          if (s === 0) ctx.moveTo(cx, cy);
+          else ctx.lineTo(cx, cy);
         }
-      }
-      ctx.stroke();
+        ctx.stroke();
 
-      // 4. ACTIVE PEN NIB & SKETCHING SPARKLE (Sweeping down)
-      if (progressRatio < 1.0) {
-        const currentY = progressRatio * height;
-
-        ctx.save();
-        // Fine ink nib stylus
-        const nibGrad = ctx.createRadialGradient(lastX, currentY, 1, lastX, currentY, 16);
-        nibGrad.addColorStop(0, '#ffffff');
-        nibGrad.addColorStop(0.3, palette.penGlow);
-        nibGrad.addColorStop(1, 'rgba(0,0,0,0)');
-
-        ctx.fillStyle = nibGrad;
-        ctx.beginPath();
-        ctx.arc(lastX, currentY, 16, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.fillStyle = palette.ink;
-        ctx.beginPath();
-        ctx.arc(lastX, currentY, 2, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.restore();
+        penX = c.x;
+        penY = c.y;
+      } else {
+        break;
       }
     }
 
-    // 5. Signature Watermark at Bottom Right (like sudhin__art)
+    // 4. ACTIVE PEN NIB & SKETCHING SPARKLE (Sweeping down)
+    if (progressRatio < 1.0) {
+      const currentY = progressRatio * height;
+
+      ctx.save();
+      // Fine ink nib aura
+      const nibGrad = ctx.createRadialGradient(penX, currentY, 1, penX, currentY, 18);
+      nibGrad.addColorStop(0, '#ffffff');
+      nibGrad.addColorStop(0.3, palette.penGlow);
+      nibGrad.addColorStop(1, 'rgba(0,0,0,0)');
+
+      ctx.fillStyle = nibGrad;
+      ctx.beginPath();
+      ctx.arc(penX, currentY, 18, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = palette.ink;
+      ctx.beginPath();
+      ctx.arc(penX, currentY, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.restore();
+    }
+
+    // 5. Signature / Watermark at Bottom Right
     ctx.save();
     ctx.font = `italic 11px sans-serif`;
     ctx.fillStyle = palette.bgText;
     ctx.textAlign = 'right';
-    ctx.fillText(`${titleText || 'Scribble Art'} • sudhin_art style`, width - 24, height - 20);
+    ctx.fillText(`${titleText || 'Scribble Portrait'} • sudhin_art style`, width - 24, height - 20);
     ctx.restore();
 
     ctx.restore();
@@ -469,7 +459,7 @@ export default function ScribbleVideoRenderer({
         if (elapsed < durationMs) {
           progress = elapsed / durationMs;
         } else {
-          progress = 1.0; // Drawing completely sketched and visible
+          progress = 1.0;
         }
 
         setCurrentProgress(Math.round(progress * 100));

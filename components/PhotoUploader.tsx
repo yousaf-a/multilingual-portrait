@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useRef, useState, useEffect } from 'react';
-import { Upload, X } from 'lucide-react';
+import { Upload } from 'lucide-react';
 
 interface PhotoUploaderProps {
   onImageLoaded: (img: HTMLImageElement | null, dataUrl: string | null) => void;
@@ -53,11 +53,12 @@ export default function PhotoUploader({ onImageLoaded }: PhotoUploaderProps) {
 
   return (
     <div className="grid grid-cols-2 gap-4 w-full items-center">
+      {/* Hidden file input with inline style guard */}
       <input
         ref={fileInputRef}
         type="file"
         accept="image/*"
-        className="hidden"
+        style={{ display: 'none' }}
         onChange={(e) => {
           if (e.target.files?.[0]) processFile(e.target.files[0]);
         }}
@@ -88,12 +89,15 @@ export default function PhotoUploader({ onImageLoaded }: PhotoUploaderProps) {
 
       {/* Right Box: Thumbnail & Label */}
       <div className="flex flex-col items-center justify-center p-2">
-        <div className="relative w-20 h-20 rounded-2xl overflow-hidden border border-[#2b3a63] bg-[#0c1429] shadow-md shadow-black/40">
+        <div
+          className="relative rounded-2xl overflow-hidden border border-[#2b3a63] bg-[#0c1429] shadow-md shadow-black/40 flex items-center justify-center"
+          style={{ width: '80px', height: '80px' }}
+        >
           {previewUrl ? (
             <img
               src={previewUrl}
               alt="Portrait Preview"
-              className="w-full h-full object-cover"
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-slate-500 text-xs">

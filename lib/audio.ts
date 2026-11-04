@@ -1,10 +1,11 @@
-// Web Audio API procedural music generator + custom audio handler
-// Provides beautiful, royalty-free ambient piano/lofi chord progressions that work 100% offline!
+// Web Audio API procedural music & rain sound generator + custom audio handler
+// Provides beautiful, royalty-free ambient piano/lofi chord progressions + soothing rain!
 
 class AudioController {
   private ctx: AudioContext | null = null;
   private isPlaying: boolean = false;
   private intervalId: any = null;
+  private rainNode: AudioNode | null = null;
   private customAudio: HTMLAudioElement | null = null;
   private currentTrack: string = 'piano';
 
@@ -17,7 +18,43 @@ class AudioController {
     }
   }
 
-  // Play a gentle, soothing chord using Web Audio API synthesis
+  // Generate soothing rain sound via filtered pink noise
+  private startRainNoise() {
+    if (!this.ctx) return;
+    const bufferSize = this.ctx.sampleRate * 2;
+    const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+    const output = noiseBuffer.getChannelData(0);
+
+    let b0 = 0, b1 = 0, b2 = 0;
+    for (let i = 0; i < bufferSize; i++) {
+      const white = Math.random() * 2 - 1;
+      b0 = 0.99886 * b0 + white * 0.0555179;
+      b1 = 0.99332 * b1 + white * 0.0750759;
+      b2 = 0.96900 * b2 + white * 0.1538520;
+      output[i] = (b0 + b1 + b2 + white * 0.5362) * 0.08;
+    }
+
+    const whiteNoise = this.ctx.createBufferSource();
+    whiteNoise.buffer = noiseBuffer;
+    whiteNoise.loop = true;
+
+    // Filter to simulate soft raindrops
+    const filter = this.ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(800, this.ctx.currentTime);
+
+    const gain = this.ctx.createGain();
+    gain.gain.setValueAtTime(0.025, this.ctx.currentTime);
+
+    whiteNoise.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.ctx.destination);
+
+    whiteNoise.start();
+    this.rainNode = whiteNoise;
+  }
+
+  // Play gentle piano/rhodes chords
   private playChord(frequencies: number[], duration: number) {
     if (!this.ctx) return;
     const now = this.ctx.currentTime;
@@ -27,13 +64,11 @@ class AudioController {
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
 
-      // Soft triangle/sine blend for warm piano/rhodes timbre
       osc.type = idx === 0 ? 'sine' : 'triangle';
       osc.frequency.setValueAtTime(freq, now);
 
-      // Gentle envelope: soft attack, warm sustain, smooth decay
       gain.gain.setValueAtTime(0.001, now);
-      gain.gain.linearRampToValueAtTime(0.06 / (idx + 1), now + 0.15);
+      gain.gain.linearRampToValueAtTime(0.05 / (idx + 1), now + 0.18);
       gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
 
       osc.connect(gain);
@@ -71,13 +106,21 @@ class AudioController {
       return;
     }
 
-    // Procedural ambient chord progressions
-    // Progression: Cmaj7 -> Am9 -> Fmaj7 -> Gsus4 (warm romantic/reflective chords)
+    if (track === 'none') {
+      return;
+    }
+
+    // Rain & Storm audio (Adri reel reference)
+    if (track === 'rain' || track === 'piano_rain') {
+      this.startRainNoise();
+    }
+
+    // Ambient chords
     const chords: number[][] = [
-      [261.63, 329.63, 392.00, 493.88], // Cmaj7 (C4, E4, G4, B4)
-      [220.00, 261.63, 329.63, 392.00, 493.88], // Am9 (A3, C4, E4, G4, B4)
-      [174.61, 261.63, 329.63, 349.23], // Fmaj7 (F3, C4, E4, F4)
-      [196.00, 261.63, 293.66, 392.00]  // Gsus4 (G3, C4, D4, G4)
+      [261.63, 329.63, 392.00, 493.88], // Cmaj7
+      [220.00, 261.63, 329.63, 392.00], // Am9
+      [174.61, 261.63, 329.63, 349.23], // Fmaj7
+      [196.00, 261.63, 293.66, 392.00]  // Gsus4
     ];
 
     let chordIdx = 0;
@@ -95,6 +138,12 @@ class AudioController {
     if (this.intervalId) {
       clearInterval(this.intervalId);
       this.intervalId = null;
+    }
+    if (this.rainNode) {
+      try {
+        (this.rainNode as any).stop?.();
+      } catch (_) {}
+      this.rainNode = null;
     }
     if (this.customAudio) {
       this.customAudio.pause();

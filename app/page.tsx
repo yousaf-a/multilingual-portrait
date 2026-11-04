@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 
 const MUSIC_PRESETS = [
+  { id: 'piano_rain', name: '🌧️ Piano & Raindrops', desc: 'Soothing rain + warm acoustic chords' },
   { id: 'piano', name: '🎹 Romantic Piano', desc: 'Warm acoustic piano chords' },
   { id: 'lofi', name: '☕ Lo-Fi Cafe', desc: 'Chill ambient coffee vibes' },
   { id: 'strings', name: '🎻 Cinematic Ambient', desc: 'Dreamy orchestral texture' },
@@ -29,6 +30,13 @@ const THEME_OPTIONS = [
     desc: 'Matches reference teacup art',
     color: '#1d4a2a',
     accent: '#8a7138'
+  },
+  {
+    id: 'rain_storm',
+    name: 'Rain & Storm Haven',
+    desc: 'Falling rain with sky-blue calligraphy',
+    color: '#38bdf8',
+    accent: '#94a3b8'
   },
   {
     id: 'gold',
@@ -59,7 +67,7 @@ export default function Home() {
 
   const [photoImage, setPhotoImage] = useState<HTMLImageElement | null>(null);
   const [titleText, setTitleText] = useState<string>('AC Tea Cup');
-  const [selectedTheme, setSelectedTheme] = useState<'emerald' | 'gold' | 'neon' | 'monochrome'>('emerald');
+  const [selectedTheme, setSelectedTheme] = useState<'emerald' | 'gold' | 'neon' | 'monochrome' | 'rain_storm'>('emerald');
   const [musicTrack, setMusicTrack] = useState<string>('piano');
   const [customAudioUrl, setCustomAudioUrl] = useState<string | null>(null);
   const [customAudioName, setCustomAudioName] = useState<string | null>(null);

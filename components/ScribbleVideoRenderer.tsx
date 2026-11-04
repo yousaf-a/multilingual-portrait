@@ -21,7 +21,7 @@ interface ScribbleVideoRendererProps {
   photoImage: HTMLImageElement | null;
   items: TranslatedItem[];
   primaryColor: string;
-  themeStyle: 'emerald' | 'gold' | 'neon' | 'monochrome';
+  themeStyle: 'emerald' | 'gold' | 'neon' | 'monochrome' | 'rain_storm';
   titleText: string;
   musicTrack: string;
   customMusicUrl: string | null;
@@ -82,6 +82,15 @@ export default function ScribbleVideoRenderer({
           secondary: '#374151',
           accent: '#000000',
           glow: 'rgba(0, 0, 0, 0.15)'
+        };
+      case 'rain_storm': // Inspired by AdriPan reel (rain, storm, safe haven)
+        return {
+          bg: '#080d1a',
+          darkBg: true,
+          primary: '#38bdf8', // Rain sky blue
+          secondary: '#94a3b8', // Storm cloud gray
+          accent: '#f8fafc', // Warm bright white
+          glow: 'rgba(56, 189, 248, 0.4)'
         };
       case 'neon':
       default:
@@ -264,6 +273,19 @@ export default function ScribbleVideoRenderer({
       grad.addColorStop(1, '#f3ece3');
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, width, height);
+    } else if (themeStyle === 'rain_storm') {
+      // Gentle animated falling rain streaks (Adri reel reference)
+      const now = Date.now() * 0.001;
+      ctx.strokeStyle = 'rgba(148, 163, 184, 0.22)';
+      ctx.lineWidth = 1;
+      for (let r = 0; r < 40; r++) {
+        const rx = (r * 37 + (r % 7) * 11) % width;
+        const ry = (now * 650 + r * 53) % (height + 60) - 30;
+        ctx.beginPath();
+        ctx.moveTo(rx, ry);
+        ctx.lineTo(rx - 2, ry + 18);
+        ctx.stroke();
+      }
     }
 
     const nodes = nodesRef.current;
@@ -559,3 +581,4 @@ export default function ScribbleVideoRenderer({
     </div>
   );
 }
+

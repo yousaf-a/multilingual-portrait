@@ -208,10 +208,10 @@ export default function ScribbleVideoRenderer({
 
     // Calculate image placement centered on canvas with generous calligraphy framing margins
     const imgAspect = photoImage.width / photoImage.height;
-    let targetW = Math.min(width * 0.62, 480);
+    let targetW = Math.min(width * 0.74, 590);
     let targetH = targetW / imgAspect;
-    if (targetH > height * 0.72) {
-      targetH = height * 0.72;
+    if (targetH > height * 0.76) {
+      targetH = height * 0.76;
       targetW = targetH * imgAspect;
     }
     const targetX = (width - targetW) / 2;

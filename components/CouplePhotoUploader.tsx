@@ -37,9 +37,9 @@ const PRESETS = [
     name: 'Split Face (Look Ahead)',
     desc: 'Close-up fused split face (Reference 3)',
     layout: 'split_face' as CoupleLayoutMode,
-    p1: { zoom: 1.45, panX: -22, panY: -4 },
-    p2: { zoom: 1.45, panX: 22, panY: -4 },
-    seam: 30,
+    p1: { zoom: 1.0, panX: 0, panY: 0 },
+    p2: { zoom: 1.0, panX: 0, panY: 0 },
+    seam: 26,
     fullUrl: '/couple-presets/preset-split-face-1.jpg',
     leftUrl: '/couple-presets/preset-split-face-1-left.jpg',
     rightUrl: '/couple-presets/preset-split-face-1-right.jpg',
@@ -52,9 +52,9 @@ const PRESETS = [
     name: 'Split Face (Serene Eyes)',
     desc: 'Intimate serene split face (Reference 4)',
     layout: 'split_face' as CoupleLayoutMode,
-    p1: { zoom: 1.5, panX: -25, panY: -2 },
-    p2: { zoom: 1.5, panX: 25, panY: -2 },
-    seam: 35,
+    p1: { zoom: 1.05, panX: 0, panY: 2 },
+    p2: { zoom: 1.05, panX: 0, panY: 2 },
+    seam: 30,
     fullUrl: '/couple-presets/preset-split-face-2.jpg',
     leftUrl: '/couple-presets/preset-split-face-2-left.jpg',
     rightUrl: '/couple-presets/preset-split-face-2-right.jpg',
@@ -65,11 +65,11 @@ const PRESETS = [
   {
     id: 'side_by_side_1',
     name: 'Anime Shoulder-to-Shoulder',
-    desc: 'Full side-by-side companions (Reference 1)',
+    desc: 'Shoulder-to-shoulder couple portrait (Reference 1)',
     layout: 'side_by_side' as CoupleLayoutMode,
-    p1: { zoom: 1.1, panX: 8, panY: 0 },
-    p2: { zoom: 1.1, panX: -8, panY: 0 },
-    seam: 15,
+    p1: { zoom: 1.05, panX: 2, panY: -2 },
+    p2: { zoom: 1.02, panX: -2, panY: 2 },
+    seam: 130,
     fullUrl: '/couple-presets/preset-side-by-side-1.jpg',
     leftUrl: '/couple-presets/preset-side-by-side-1-left.jpg',
     rightUrl: '/couple-presets/preset-side-by-side-1-right.jpg',
@@ -82,9 +82,9 @@ const PRESETS = [
     name: 'Anime Back-to-Back Duo',
     desc: 'Back-to-back smiling couple (Reference 2)',
     layout: 'side_by_side' as CoupleLayoutMode,
-    p1: { zoom: 1.15, panX: 12, panY: 0 },
-    p2: { zoom: 1.15, panX: -12, panY: 0 },
-    seam: 15,
+    p1: { zoom: 1.02, panX: -5, panY: 0 },
+    p2: { zoom: 1.02, panX: 5, panY: 0 },
+    seam: 110,
     fullUrl: '/couple-presets/preset-side-by-side-2.jpg',
     leftUrl: '/couple-presets/preset-side-by-side-2-left.jpg',
     rightUrl: '/couple-presets/preset-side-by-side-2-right.jpg',
@@ -110,9 +110,9 @@ export default function CouplePhotoUploader({
   const [partner2Name, setPartner2Name] = useState<string>('');
 
   // Face Adaptation Transforms (Position, Scale & Alignment)
-  const [p1Transform, setP1Transform] = useState<FaceTransform>({ zoom: 1.4, panX: -20, panY: 0 });
-  const [p2Transform, setP2Transform] = useState<FaceTransform>({ zoom: 1.4, panX: 20, panY: 0 });
-  const [seamBlendWidth, setSeamBlendWidth] = useState<number>(30); // 0 (crisp) to 60 (soft feather)
+  const [p1Transform, setP1Transform] = useState<FaceTransform>({ zoom: 1.0, panX: 0, panY: 0 });
+  const [p2Transform, setP2Transform] = useState<FaceTransform>({ zoom: 1.0, panX: 0, panY: 0 });
+  const [seamBlendWidth, setSeamBlendWidth] = useState<number>(26);
 
   const [showAdjustDrawer, setShowAdjustDrawer] = useState<boolean>(false);
   const [showGuideLines, setShowGuideLines] = useState<boolean>(false);
@@ -121,6 +121,44 @@ export default function CouplePhotoUploader({
 
   const partner1Ref = useRef<HTMLImageElement | null>(null);
   const partner2Ref = useRef<HTMLImageElement | null>(null);
+
+  // Helper to render one partner photo into a full-canvas layer centered at (targetCenterX, targetCenterY)
+  const renderPartnerLayer = (
+    img: HTMLImageElement,
+    canvasW: number,
+    canvasH: number,
+    targetCenterX: number,
+    targetCenterY: number,
+    baseZoom: number,
+    transform: FaceTransform
+  ): HTMLCanvasElement => {
+    const layer = document.createElement('canvas');
+    layer.width = canvasW;
+    layer.height = canvasH;
+    const lCtx = layer.getContext('2d');
+    if (!lCtx) return layer;
+
+    const zoom = Math.max(0.4, Math.min(3.0, (transform.zoom || 1.0) * baseZoom));
+    const normPanX = (transform.panX || 0) / 100;
+    const normPanY = (transform.panY || 0) / 100;
+
+    // Default focal anchor is center (50%) and slightly above midline (40% upper third for face)
+    const focalX = Math.max(0.05, Math.min(0.95, 0.50 + normPanX));
+    const focalY = Math.max(0.05, Math.min(0.95, 0.40 + normPanY));
+
+    // Cover scale factor
+    const coverScale = Math.max(canvasW / img.width, canvasH / img.height);
+    const effectiveScale = coverScale * zoom;
+
+    const renderedW = img.width * effectiveScale;
+    const renderedH = img.height * effectiveScale;
+
+    const drawX = targetCenterX - (focalX * img.width * effectiveScale);
+    const drawY = targetCenterY - (focalY * img.height * effectiveScale);
+
+    lCtx.drawImage(img, drawX, drawY, renderedW, renderedH);
+    return layer;
+  };
 
   // Core Face Adaptation & Canvas Merging Engine
   const mergeImages = useCallback(
@@ -152,171 +190,138 @@ export default function CouplePhotoUploader({
       ctx.fillStyle = '#faf8f5';
       ctx.fillRect(0, 0, w, h);
 
-      // Advanced Face Adaptation Painter: maps photo into target panel with zoom & pan offsets
-      const drawFaceAdapted = (
-        img: HTMLImageElement,
-        destX: number,
-        destY: number,
-        destW: number,
-        destH: number,
-        transform: FaceTransform,
-        isLeftPartner: boolean
-      ) => {
-        const imgW = img.width;
-        const imgH = img.height;
-        const imgAspect = imgW / imgH;
-        const destAspect = destW / destH;
-
-        // Base cover dimensions
-        let sW, sH;
-        if (imgAspect > destAspect) {
-          sH = imgH;
-          sW = sH * destAspect;
-        } else {
-          sW = imgW;
-          sH = sW / destAspect;
-        }
-
-        // Apply zoom scale
-        const zoom = Math.max(0.5, Math.min(3.0, transform.zoom || 1.0));
-        sW = sW / zoom;
-        sH = sH / zoom;
-
-        // Calculate center anchor with pan offsets
-        // In split face mode: default focal point is slightly shifted so noses meet at center line
-        let defaultFocusX = 0.5;
-        if (mode === 'split_face') {
-          defaultFocusX = isLeftPartner ? 0.62 : 0.38;
-        }
-
-        const normPanX = (transform.panX || 0) / 100;
-        const normPanY = (transform.panY || 0) / 100;
-
-        const focalX = Math.max(0.05, Math.min(0.95, defaultFocusX + normPanX));
-        const focalY = Math.max(0.05, Math.min(0.95, 0.36 + normPanY));
-
-        let sX = (imgW * focalX) - (sW / 2);
-        let sY = (imgH * focalY) - (sH / 2);
-
-        // Clamp to image bounds
-        sX = Math.max(0, Math.min(imgW - sW, sX));
-        sY = Math.max(0, Math.min(imgH - sH, sY));
-
-        ctx.drawImage(img, sX, sY, sW, sH, destX, destY, destW, destH);
-      };
-
       if (img1 && img2) {
         if (mode === 'split_face') {
-          // --- STYLE A: FUSED SPLIT-FACE PORTRAIT (References 3 & 4) ---
-          const featherW = Math.max(0, blend);
+          // =========================================================================
+          // --- STYLE A: FUSED MACRO SPLIT-FACE PORTRAIT (References 3 & 4) ---
+          // Both faces are scaled so that each head fills the canvas height.
+          // Partner 1's nose bridge is at X=400, eye level at Y=430.
+          // Partner 2's nose bridge is ALSO at X=400, eye level at Y=430.
+          // At X=400, their skin and facial features seamlessly fuse into ONE face.
+          // NO dividing line! NO black bar! Zero rectangular borders!
+          // =========================================================================
+          const baseZoom = 1.62; // Macro face close-up
+          const layer1 = renderPartnerLayer(img1, w, h, midX, 430, baseZoom, t1);
+          const layer2 = renderPartnerLayer(img2, w, h, midX, 430, baseZoom, t2);
 
-          // 1. Draw Left Partner (Her / Partner 1)
-          ctx.save();
-          ctx.beginPath();
-          ctx.rect(0, 0, midX + featherW / 2, h);
-          ctx.clip();
-          drawFaceAdapted(img1, 0, 0, midX + featherW / 2, h, t1, true);
-          ctx.restore();
+          // 1. Draw Partner 1 (Left Half)
+          ctx.drawImage(layer1, 0, 0);
 
-          // 2. Draw Right Partner (Him / Partner 2) with soft feather gradient
-          if (featherW > 4) {
-            const offCanvas = document.createElement('canvas');
-            offCanvas.width = w;
-            offCanvas.height = h;
-            const offCtx = offCanvas.getContext('2d');
-            if (offCtx) {
-              const rightX = midX - featherW / 2;
-              const rightW = w - rightX;
+          // 2. Feathered Overlay for Partner 2 (Right Half)
+          const seamW = Math.max(10, blend);
+          const maskCanvas = document.createElement('canvas');
+          maskCanvas.width = w;
+          maskCanvas.height = h;
+          const mCtx = maskCanvas.getContext('2d');
+          if (mCtx) {
+            mCtx.drawImage(layer2, 0, 0);
 
-              // Draw Partner 2 on right portion
-              const p2Aspect = (w - midX) / h;
-              let sW = img2.width;
-              let sH = img2.height;
-              const imgAspect = sW / sH;
-              if (imgAspect > p2Aspect) {
-                sW = sH * p2Aspect;
-              } else {
-                sH = sW / p2Aspect;
-              }
-              const zoom = Math.max(0.5, Math.min(3.0, t2.zoom || 1.0));
-              sW = sW / zoom;
-              sH = sH / zoom;
+            // Apply horizontal alpha gradient across the center seam
+            mCtx.globalCompositeOperation = 'destination-in';
+            const grad = mCtx.createLinearGradient(midX - seamW / 2, 0, midX + seamW / 2, 0);
+            grad.addColorStop(0, 'rgba(0,0,0,0)');
+            grad.addColorStop(1, 'rgba(0,0,0,1)');
 
-              const focalX = Math.max(0.05, Math.min(0.95, 0.38 + (t2.panX || 0) / 100));
-              const focalY = Math.max(0.05, Math.min(0.95, 0.36 + (t2.panY || 0) / 100));
-              let sX = Math.max(0, Math.min(img2.width - sW, (img2.width * focalX) - (sW / 2)));
-              let sY = Math.max(0, Math.min(img2.height - sH, (img2.height * focalY) - (sH / 2)));
+            mCtx.fillStyle = '#000000';
+            mCtx.fillRect(midX + seamW / 2, 0, w - (midX + seamW / 2), h);
+            mCtx.fillStyle = grad;
+            mCtx.fillRect(midX - seamW / 2, 0, seamW, h);
 
-              offCtx.drawImage(img2, sX, sY, sW, sH, rightX, 0, rightW, h);
-
-              // Single unified feather mask (no destination-in zero bug!)
-              offCtx.globalCompositeOperation = 'destination-in';
-              const maskGrad = offCtx.createLinearGradient(0, 0, w, 0);
-              maskGrad.addColorStop(0, 'rgba(0,0,0,0)');
-              maskGrad.addColorStop(Math.max(0, (midX - featherW / 2) / w), 'rgba(0,0,0,0)');
-              maskGrad.addColorStop(Math.min(1, (midX + featherW / 2) / w), 'rgba(0,0,0,1)');
-              maskGrad.addColorStop(1, 'rgba(0,0,0,1)');
-
-              offCtx.fillStyle = maskGrad;
-              offCtx.fillRect(0, 0, w, h);
-
-              ctx.drawImage(offCanvas, 0, 0);
-            }
-          } else {
-            // Crisp midline cut
-            ctx.save();
-            ctx.beginPath();
-            ctx.rect(midX, 0, midX, h);
-            ctx.clip();
-            drawFaceAdapted(img2, midX, 0, midX, h, t2, false);
-            ctx.restore();
+            ctx.drawImage(maskCanvas, 0, 0);
           }
 
-          // Delicate fine-line seam glow
+          // 3. Soft outer perimeter vignette to paper (#faf8f5) - eliminates hard photo crops
           ctx.save();
-          const seamGrad = ctx.createLinearGradient(midX - 1.5, 0, midX + 1.5, 0);
-          seamGrad.addColorStop(0, 'rgba(212, 175, 55, 0)');
-          seamGrad.addColorStop(0.5, 'rgba(212, 175, 55, 0.55)');
-          seamGrad.addColorStop(1, 'rgba(212, 175, 55, 0)');
-          ctx.fillStyle = seamGrad;
-          ctx.fillRect(midX - 1.5, 0, 3, h);
+          const vigGrad = ctx.createRadialGradient(midX, 480, 280, midX, 480, 460);
+          vigGrad.addColorStop(0, 'rgba(250, 248, 245, 0)');
+          vigGrad.addColorStop(1, 'rgba(250, 248, 245, 0.95)');
+          ctx.fillStyle = vigGrad;
+          ctx.fillRect(0, 0, w, h);
           ctx.restore();
+
         } else {
+          // =========================================================================
           // --- STYLE B: DUAL SIDE-BY-SIDE COMPANIONS (References 1 & 2) ---
-          const margin = 18;
-          const boxW = midX - margin * 1.5;
-          const boxH = h - margin * 2;
+          // Both people share the canvas space.
+          // Partner 1 centered around X=285, Partner 2 centered around X=515.
+          // In the center (X=340..460), their bodies/shoulders meet and touch organically
+          // with a smooth 120px blend.
+          // NO rectangular clipping boxes! NO vertical divider bar!
+          // Outer margins softly fade into paper tone.
+          // =========================================================================
+          const baseZoom = 1.06;
+          const p1CenterX = 285;
+          const p2CenterX = 515;
+          const centerFaceY = 450;
 
-          // Partner 1: Left Card
-          ctx.save();
-          ctx.beginPath();
-          ctx.rect(margin, margin, boxW, boxH);
-          ctx.clip();
-          drawFaceAdapted(img1, margin, margin, boxW, boxH, t1, true);
-          ctx.restore();
+          const layer1 = renderPartnerLayer(img1, w, h, p1CenterX, centerFaceY, baseZoom, t1);
+          const layer2 = renderPartnerLayer(img2, w, h, p2CenterX, centerFaceY, baseZoom, t2);
 
-          // Partner 2: Right Card
-          ctx.save();
-          ctx.beginPath();
-          ctx.rect(midX + margin * 0.5, margin, boxW, boxH);
-          ctx.clip();
-          drawFaceAdapted(img2, midX + margin * 0.5, margin, boxW, boxH, t2, false);
-          ctx.restore();
+          // 1. Draw Partner 1 (Left Companion)
+          ctx.drawImage(layer1, 0, 0);
 
-          // Studio divider strip separating the twin canvases
+          // 2. Soft Organic Shoulder Cross-Fade for Partner 2 (Right Companion)
+          const overlapW = Math.max(60, blend * 2.5); // Wide, gentle body transition
+          const blendStart = midX - overlapW / 2;
+          const blendEnd = midX + overlapW / 2;
+
+          const maskCanvas = document.createElement('canvas');
+          maskCanvas.width = w;
+          maskCanvas.height = h;
+          const mCtx = maskCanvas.getContext('2d');
+          if (mCtx) {
+            mCtx.drawImage(layer2, 0, 0);
+
+            mCtx.globalCompositeOperation = 'destination-in';
+            const grad = mCtx.createLinearGradient(blendStart, 0, blendEnd, 0);
+            grad.addColorStop(0, 'rgba(0,0,0,0)');
+            grad.addColorStop(1, 'rgba(0,0,0,1)');
+
+            mCtx.fillStyle = '#000000';
+            mCtx.fillRect(blendEnd, 0, w - blendEnd, h);
+            mCtx.fillStyle = grad;
+            mCtx.fillRect(blendStart, 0, overlapW, h);
+
+            ctx.drawImage(maskCanvas, 0, 0);
+          }
+
+          // 3. Soft Fine-Art Paper Vignette on Outer Borders (Top, Bottom, Left, Right)
+          // This completely prevents rectangular box edges from being detected as borders!
           ctx.save();
-          const divGrad = ctx.createLinearGradient(midX - 2, 0, midX + 2, 0);
-          divGrad.addColorStop(0, 'rgba(20, 25, 40, 0.0)');
-          divGrad.addColorStop(0.5, 'rgba(212, 175, 55, 0.5)');
-          divGrad.addColorStop(1, 'rgba(20, 25, 40, 0.0)');
-          ctx.fillStyle = divGrad;
-          ctx.fillRect(midX - 1.5, margin, 3, boxH);
+          // Left feather
+          const lGrad = ctx.createLinearGradient(0, 0, 45, 0);
+          lGrad.addColorStop(0, '#faf8f5');
+          lGrad.addColorStop(1, 'rgba(250, 248, 245, 0)');
+          ctx.fillStyle = lGrad;
+          ctx.fillRect(0, 0, 45, h);
+
+          // Right feather
+          const rGrad = ctx.createLinearGradient(w - 45, 0, w, 0);
+          rGrad.addColorStop(0, 'rgba(250, 248, 245, 0)');
+          rGrad.addColorStop(1, '#faf8f5');
+          ctx.fillStyle = rGrad;
+          ctx.fillRect(w - 45, 0, 45, h);
+
+          // Top feather
+          const tGrad = ctx.createLinearGradient(0, 0, 0, 50);
+          tGrad.addColorStop(0, '#faf8f5');
+          tGrad.addColorStop(1, 'rgba(250, 248, 245, 0)');
+          ctx.fillStyle = tGrad;
+          ctx.fillRect(0, 0, w, 50);
+
+          // Bottom feather
+          const bGrad = ctx.createLinearGradient(0, h - 70, 0, h);
+          bGrad.addColorStop(0, 'rgba(250, 248, 245, 0)');
+          bGrad.addColorStop(1, '#faf8f5');
+          ctx.fillStyle = bGrad;
+          ctx.fillRect(0, h - 70, w, 70);
           ctx.restore();
         }
       } else {
-        // Fallback for 1 image
+        // Fallback for single image
         const single = img1 || img2!;
-        drawFaceAdapted(single, 0, 0, w, h, t1, true);
+        const singleLayer = renderPartnerLayer(single, w, h, midX, 440, 1.15, t1);
+        ctx.drawImage(singleLayer, 0, 0);
       }
 
       const compositeDataUrl = canvas.toDataURL('image/png', 0.95);
@@ -335,21 +340,24 @@ export default function CouplePhotoUploader({
   const handleAutoAlign = () => {
     let t1: FaceTransform;
     let t2: FaceTransform;
+    let blend: number;
 
     if (layoutMode === 'split_face') {
-      t1 = { zoom: 1.45, panX: -22, panY: -3 };
-      t2 = { zoom: 1.45, panX: 22, panY: -3 };
+      t1 = { zoom: 1.0, panX: 0, panY: 0 };
+      t2 = { zoom: 1.0, panX: 0, panY: 0 };
+      blend = 26;
     } else {
-      t1 = { zoom: 1.15, panX: 8, panY: 0 };
-      t2 = { zoom: 1.15, panX: -8, panY: 0 };
+      t1 = { zoom: 1.04, panX: 2, panY: -2 };
+      t2 = { zoom: 1.02, panX: -2, panY: 2 };
+      blend = 120;
     }
 
     setP1Transform(t1);
     setP2Transform(t2);
-    setSeamBlendWidth(30);
+    setSeamBlendWidth(blend);
 
     if (partner1Ref.current && partner2Ref.current) {
-      mergeImages(partner1Ref.current, partner2Ref.current, layoutMode, t1, t2, 30);
+      mergeImages(partner1Ref.current, partner2Ref.current, layoutMode, t1, t2, blend);
     }
   };
 
@@ -357,17 +365,19 @@ export default function CouplePhotoUploader({
   const handleLayoutChange = (mode: CoupleLayoutMode) => {
     setLayoutMode(mode);
     const t1 = mode === 'split_face'
-      ? { zoom: 1.45, panX: -22, panY: -3 }
-      : { zoom: 1.15, panX: 8, panY: 0 };
+      ? { zoom: 1.0, panX: 0, panY: 0 }
+      : { zoom: 1.04, panX: 2, panY: -2 };
     const t2 = mode === 'split_face'
-      ? { zoom: 1.45, panX: 22, panY: -3 }
-      : { zoom: 1.15, panX: -8, panY: 0 };
+      ? { zoom: 1.0, panX: 0, panY: 0 }
+      : { zoom: 1.02, panX: -2, panY: 2 };
+    const blend = mode === 'split_face' ? 26 : 120;
 
     setP1Transform(t1);
     setP2Transform(t2);
+    setSeamBlendWidth(blend);
 
     if (partner1Ref.current && partner2Ref.current) {
-      mergeImages(partner1Ref.current, partner2Ref.current, mode, t1, t2, seamBlendWidth);
+      mergeImages(partner1Ref.current, partner2Ref.current, mode, t1, t2, blend);
     }
   };
 
@@ -380,7 +390,7 @@ export default function CouplePhotoUploader({
     setP2Transform(preset.p2);
     setSeamBlendWidth(preset.seam);
 
-    // If user already has photos uploaded, adapt THEIR photos using this preset's style!
+    // If user already has photos uploaded, adapt THEIR photos using this preset's exact style!
     if (partner1Ref.current && partner2Ref.current) {
       mergeImages(partner1Ref.current, partner2Ref.current, preset.layout, preset.p1, preset.p2, preset.seam);
       if (onPartnerNamesSuggested) {
@@ -690,23 +700,25 @@ export default function CouplePhotoUploader({
           </div>
 
           {/* Seam Feathering Slider */}
-          {layoutMode === 'split_face' && (
-            <div className="flex flex-col gap-1.5 pt-1">
-              <div className="flex items-center justify-between text-[11px] text-slate-300">
-                <span>Center Seam Soft Blend Feathering:</span>
-                <span className="text-amber-400 font-mono">{seamBlendWidth}px</span>
-              </div>
-              <input
-                type="range"
-                min="0"
-                max="60"
-                step="2"
-                value={seamBlendWidth}
-                onChange={(e) => updateSeam(parseInt(e.target.value))}
-                className="w-full accent-amber-400 cursor-pointer h-1.5 bg-[#14203d] rounded-lg"
-              />
+          <div className="flex flex-col gap-1.5 pt-1">
+            <div className="flex items-center justify-between text-[11px] text-slate-300">
+              <span>
+                {layoutMode === 'split_face'
+                  ? 'Center Seam Feathering (Nose Bridge Blend):'
+                  : 'Shoulder Overlap & Soft Blend Width:'}
+              </span>
+              <span className="text-amber-400 font-mono">{seamBlendWidth}px</span>
             </div>
-          )}
+            <input
+              type="range"
+              min={layoutMode === 'split_face' ? 8 : 40}
+              max={layoutMode === 'split_face' ? 60 : 220}
+              step="2"
+              value={seamBlendWidth}
+              onChange={(e) => updateSeam(parseInt(e.target.value))}
+              className="w-full accent-amber-400 cursor-pointer h-1.5 bg-[#14203d] rounded-lg"
+            />
+          </div>
         </div>
       )}
 
@@ -866,7 +878,7 @@ export default function CouplePhotoUploader({
             <p className="text-[11px] text-slate-400 leading-snug mt-1">
               {layoutMode === 'split_face'
                 ? 'Both faces scaled and aligned at the nose bridge. Adjust sliders to match eye level if needed.'
-                : 'Both full figures framed side-by-side with studio margin divider.'}
+                : 'Unified couple portrait sharing one canvas, touching shoulder-to-shoulder with seamless paper vignette.'}
             </p>
           </div>
         </div>

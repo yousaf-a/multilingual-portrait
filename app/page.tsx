@@ -4,220 +4,319 @@ import React, { useState, useEffect } from 'react';
 import PhotoUploader from '@/components/PhotoUploader';
 import CanvasRenderer, { VisualStyle } from '@/components/CanvasRenderer';
 import { getMultilingualList, TranslatedItem } from '@/lib/languages';
-import { Sparkles, Heart, CircleDot, User, Palette, Globe } from 'lucide-react';
+import {
+  Sparkles,
+  Heart,
+  Flower2,
+  User,
+  Sun,
+  Zap,
+  Eye,
+  Maximize2,
+  Globe,
+  Smile,
+  Wand2,
+  Check
+} from 'lucide-react';
 
 const PRESET_COLORS = [
-  { name: 'Neon Pink', value: '#ec4899' },
-  { name: 'Cyan Glow', value: '#06b6d4' },
-  { name: 'Golden Sun', value: '#eab308' },
-  { name: 'Electric Purple', value: '#a855f7' },
+  { name: 'Magenta Glow', value: '#e024c3' },
+  { name: 'Electric Cyan', value: '#00e5ff' },
+  { name: 'Violet Glow', value: '#8b5cf6' },
   { name: 'Emerald Neon', value: '#10b981' },
-  { name: 'Crimson Red', value: '#ef4444' }
+  { name: 'Orange Flame', value: '#f97316' },
+  { name: 'Rainbow', value: '#ec4899', isRainbow: true }
 ];
 
 export default function Home() {
   const [photoImage, setPhotoImage] = useState<HTMLImageElement | null>(null);
-  const [name, setName] = useState<string>('Sophia');
-  const [mode, setMode] = useState<'name' | 'love' | 'sorry'>('love');
+  const [name, setName] = useState<string>('');
+  const [message, setMessage] = useState<string>('Love You');
+  const [mode, setMode] = useState<'love' | 'sorry' | 'name'>('love');
   const [style, setStyle] = useState<VisualStyle>('heart');
-  const [primaryColor, setPrimaryColor] = useState<string>('#ec4899');
+  const [primaryColor, setPrimaryColor] = useState<string>('#e024c3');
   const [glowIntensity, setGlowIntensity] = useState<number>(18);
   const [rotationSpeed, setRotationSpeed] = useState<number>(1.2);
-  const [fontSize, setFontSize] = useState<number>(13);
+  const [fontSize, setFontSize] = useState<number>(14);
   const [items, setItems] = useState<TranslatedItem[]>([]);
+  const [triggerPulse, setTriggerPulse] = useState<number>(0);
 
-  // Generate / update multilingual list when name or mode changes
+  // Sync mode with message
+  const handleModeChange = (newMode: 'love' | 'sorry' | 'name') => {
+    setMode(newMode);
+    if (newMode === 'love') setMessage('Love You');
+    else if (newMode === 'sorry') setMessage("I'm Sorry");
+    else setMessage(name || 'Portrait');
+  };
+
   useEffect(() => {
     const list = getMultilingualList(name || 'You', mode);
     setItems(list);
   }, [name, mode]);
 
-  return (
-    <main className="min-h-screen bg-[#030712] text-white flex flex-col items-center justify-between p-4 md:p-8 selection:bg-pink-500/30">
-      {/* Background radial glow */}
-      <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-purple-900/15 via-transparent to-transparent -z-10" />
+  const handleGenerateClick = () => {
+    setTriggerPulse(prev => prev + 1);
+  };
 
-      {/* Header */}
-      <header className="w-full max-w-6xl flex flex-col md:flex-row items-center justify-between pb-6 border-b border-white/10 gap-4">
+  return (
+    <main className="min-h-screen bg-[#070d1e] text-white flex flex-col items-center justify-start p-4 md:p-8 relative overflow-x-hidden selection:bg-cyan-500/30">
+      {/* Background Dotted World Map Graphic (matches top-right in reference) */}
+      <div className="absolute top-0 right-0 w-[600px] h-[320px] pointer-events-none opacity-20 -z-10 overflow-hidden">
+        <svg viewBox="0 0 1000 500" className="w-full h-full fill-cyan-400">
+          {/* Subtle world map dots pattern */}
+          <circle cx="200" cy="150" r="2" /><circle cx="215" cy="145" r="2" /><circle cx="230" cy="140" r="2" />
+          <circle cx="245" cy="145" r="2" /><circle cx="260" cy="155" r="2" /><circle cx="275" cy="160" r="2" />
+          <circle cx="290" cy="170" r="2" /><circle cx="305" cy="180" r="2" /><circle cx="320" cy="190" r="2" />
+          <circle cx="500" cy="120" r="2" /><circle cx="515" cy="115" r="2" /><circle cx="530" cy="125" r="2" />
+          <circle cx="545" cy="130" r="2" /><circle cx="560" cy="140" r="2" /><circle cx="575" cy="145" r="2" />
+          <circle cx="590" cy="150" r="2" /><circle cx="605" cy="155" r="2" /><circle cx="620" cy="160" r="2" />
+          <circle cx="635" cy="165" r="2" /><circle cx="650" cy="170" r="2" /><circle cx="665" cy="180" r="2" />
+          <circle cx="700" cy="130" r="2" /><circle cx="715" cy="135" r="2" /><circle cx="730" cy="140" r="2" />
+          <circle cx="745" cy="145" r="2" /><circle cx="760" cy="150" r="2" /><circle cx="775" cy="160" r="2" />
+          <circle cx="790" cy="170" r="2" /><circle cx="805" cy="180" r="2" /><circle cx="820" cy="190" r="2" />
+          <circle cx="835" cy="200" r="2" /><circle cx="850" cy="210" r="2" /><circle cx="865" cy="220" r="2" />
+          <circle cx="530" cy="220" r="2" /><circle cx="545" cy="235" r="2" /><circle cx="560" cy="250" r="2" />
+          <circle cx="575" cy="265" r="2" /><circle cx="590" cy="280" r="2" /><circle cx="605" cy="295" r="2" />
+          <circle cx="620" cy="310" r="2" /><circle cx="635" cy="325" r="2" /><circle cx="650" cy="340" r="2" />
+        </svg>
+      </div>
+
+      {/* Header Bar */}
+      <header className="w-full max-w-6xl flex items-center justify-between pb-6">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-pink-500 to-purple-600 flex items-center justify-center shadow-lg shadow-pink-500/20">
-            <Sparkles size={20} className="text-white" />
+          {/* Cyan 4-point sparkle icon matching reference */}
+          <div className="w-9 h-9 flex items-center justify-center text-cyan-400 drop-shadow-[0_0_12px_rgba(0,229,255,0.8)]">
+            <Sparkles size={32} className="fill-cyan-400" />
           </div>
           <div>
-            <h1 className="text-xl md:text-2xl font-bold tracking-tight bg-gradient-to-r from-white via-white/90 to-white/60 bg-clip-text text-transparent">
-              Multilingual Portrait Studio
+            <h1 className="text-xl md:text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+              <span>Multilingual</span>
+              <span className="bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-500 bg-clip-text text-transparent font-extrabold">
+                Portrait Studio
+              </span>
             </h1>
-            <p className="text-xs text-white/50">
+            <p className="text-xs text-slate-400 font-normal">
               Transform photos into glowing art written in 100 languages
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs text-white/70">
-          <Globe size={14} className="text-pink-400" />
-          <span>{items.length} Languages Active</span>
+        {/* 99 Languages Active badge */}
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-emerald-500/30 bg-emerald-950/20 text-emerald-400 text-xs font-medium">
+          <Globe size={13} className="text-emerald-400" />
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span>99 Languages Active</span>
         </div>
       </header>
 
       {/* Main Workspace Layout */}
-      <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-12 gap-8 my-8 items-start">
-        {/* Controls Column (Left) */}
-        <div className="lg:col-span-5 flex flex-col gap-6 bg-white/[0.02] border border-white/10 rounded-3xl p-6 backdrop-blur-xl">
-          {/* Step 1: Upload Photo */}
-          <div>
-            <label className="text-xs font-semibold text-white/60 uppercase tracking-wider mb-2 block">
-              1. Upload Photo
-            </label>
-            <PhotoUploader
-              onImageLoaded={(img) => setPhotoImage(img)}
-            />
+      <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-12 gap-6 my-2 items-start">
+        {/* Left Column: Form Controls */}
+        <div className="lg:col-span-6 flex flex-col gap-4">
+          {/* Card 1: Upload Photo */}
+          <div className="bg-[#0b1226]/90 border border-[#1e2a4a] rounded-3xl p-5 shadow-lg shadow-black/20 backdrop-blur-md">
+            <div className="flex items-center gap-2.5 mb-3">
+              <span className="w-5 h-5 rounded-full bg-[#1b64f2] text-white text-[11px] font-bold flex items-center justify-center shadow-[0_0_8px_rgba(27,100,242,0.5)]">
+                1
+              </span>
+              <h2 className="text-sm font-semibold text-white">Upload Photo</h2>
+            </div>
+            <PhotoUploader onImageLoaded={(img) => setPhotoImage(img)} />
           </div>
 
-          {/* Step 2: Name & Phrase */}
-          <div>
-            <label className="text-xs font-semibold text-white/60 uppercase tracking-wider mb-2 block">
-              2. Name & Message
-            </label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Enter name (e.g. Sophia, Alex)..."
-              className="w-full px-4 py-3 rounded-2xl bg-white/5 border border-white/10 focus:border-pink-500 focus:outline-none text-white font-medium text-sm transition placeholder:text-white/30"
-            />
+          {/* Card 2: Name & Message */}
+          <div className="bg-[#0b1226]/90 border border-[#1e2a4a] rounded-3xl p-5 shadow-lg shadow-black/20 backdrop-blur-md">
+            <div className="flex items-center gap-2.5 mb-3">
+              <span className="w-5 h-5 rounded-full bg-[#1b64f2] text-white text-[11px] font-bold flex items-center justify-center shadow-[0_0_8px_rgba(27,100,242,0.5)]">
+                2
+              </span>
+              <h2 className="text-sm font-semibold text-white">Name & Message</h2>
+            </div>
 
-            {/* Mode selection buttons */}
-            <div className="grid grid-cols-3 gap-2 mt-3">
-              <button
-                type="button"
-                onClick={() => setMode('love')}
-                className={`py-2 px-3 rounded-xl text-xs font-medium transition flex items-center justify-center gap-1.5 ${
-                  mode === 'love'
-                    ? 'bg-pink-500/20 text-pink-300 border border-pink-500/40 shadow-sm shadow-pink-500/20'
-                    : 'bg-white/5 text-white/60 hover:bg-white/10 border border-white/5'
-                }`}
-              >
-                <Heart size={13} />
-                I Love You
-              </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="e.g. Sophia"
+                className="flex-1 min-w-[120px] px-3.5 py-2 rounded-xl bg-[#080d1e] border border-[#243356] focus:border-[#3b82f6] focus:outline-none text-white text-xs font-normal placeholder:text-slate-500 transition"
+              />
 
-              <button
-                type="button"
-                onClick={() => setMode('sorry')}
-                className={`py-2 px-3 rounded-xl text-xs font-medium transition flex items-center justify-center gap-1.5 ${
-                  mode === 'sorry'
-                    ? 'bg-purple-500/20 text-purple-300 border border-purple-500/40 shadow-sm shadow-purple-500/20'
-                    : 'bg-white/5 text-white/60 hover:bg-white/10 border border-white/5'
-                }`}
-              >
-                <span>🙏</span>
-                100 Sorries
-              </button>
+              <input
+                type="text"
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder="e.g. Love You"
+                className="flex-1 min-w-[120px] px-3.5 py-2 rounded-xl bg-[#080d1e] border border-[#243356] focus:border-[#3b82f6] focus:outline-none text-white text-xs font-normal placeholder:text-slate-500 transition"
+              />
 
-              <button
-                type="button"
-                onClick={() => setMode('name')}
-                className={`py-2 px-3 rounded-xl text-xs font-medium transition flex items-center justify-center gap-1.5 ${
-                  mode === 'name'
-                    ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm shadow-cyan-500/20'
-                    : 'bg-white/5 text-white/60 hover:bg-white/10 border border-white/5'
-                }`}
-              >
-                <User size={13} />
-                Pure Name
-              </button>
+              {/* Mode pills matching reference */}
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => handleModeChange('love')}
+                  className={`px-3 py-2 rounded-xl text-xs font-medium transition flex items-center gap-1.5 ${
+                    mode === 'love'
+                      ? 'bg-[#1a68f7] text-white shadow-[0_0_12px_rgba(26,104,247,0.45)]'
+                      : 'bg-[#080d1e] border border-[#243356] text-slate-300 hover:bg-[#121c38]'
+                  }`}
+                >
+                  <Heart size={12} className={mode === 'love' ? 'fill-white' : ''} />
+                  <span>Love You</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleModeChange('sorry')}
+                  className={`px-3 py-2 rounded-xl text-xs font-medium transition flex items-center gap-1.5 ${
+                    mode === 'sorry'
+                      ? 'bg-[#1a68f7] text-white shadow-[0_0_12px_rgba(26,104,247,0.45)]'
+                      : 'bg-[#080d1e] border border-[#243356] text-slate-300 hover:bg-[#121c38]'
+                  }`}
+                >
+                  <Smile size={12} />
+                  <span>100 Sorries</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleModeChange('name')}
+                  className={`px-3 py-2 rounded-xl text-xs font-medium transition flex items-center gap-1.5 ${
+                    mode === 'name'
+                      ? 'bg-[#1a68f7] text-white shadow-[0_0_12px_rgba(26,104,247,0.45)]'
+                      : 'bg-[#080d1e] border border-[#243356] text-slate-300 hover:bg-[#121c38]'
+                  }`}
+                >
+                  <User size={12} />
+                  <span>Pure Name</span>
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* Step 3: Visual Effect Style */}
-          <div>
-            <label className="text-xs font-semibold text-white/60 uppercase tracking-wider mb-2 block">
-              3. Visual Art Style
-            </label>
-            <div className="grid grid-cols-3 gap-2">
+          {/* Card 3: Visual Style & Sliders */}
+          <div className="bg-[#0b1226]/90 border border-[#1e2a4a] rounded-3xl p-5 shadow-lg shadow-black/20 backdrop-blur-md flex flex-col gap-5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <span className="w-5 h-5 rounded-full bg-[#1b64f2] text-white text-[11px] font-bold flex items-center justify-center shadow-[0_0_8px_rgba(27,100,242,0.5)]">
+                  3
+                </span>
+                <h2 className="text-sm font-semibold text-white">Visual Style</h2>
+              </div>
+
+              {/* Glow Color Swatches */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-slate-300 font-medium mr-1">Glow Color</span>
+                <div className="flex items-center gap-1.5">
+                  {PRESET_COLORS.map((c) => (
+                    <button
+                      key={c.name}
+                      type="button"
+                      onClick={() => setPrimaryColor(c.value)}
+                      style={
+                        c.isRainbow
+                          ? { background: 'conic-gradient(from 0deg, #ff0055, #ffaa00, #00ff66, #00ffff, #0066ff, #ff00ea, #ff0055)' }
+                          : { backgroundColor: c.value }
+                      }
+                      className={`w-5 h-5 rounded-full transition transform hover:scale-110 ${
+                        primaryColor === c.value
+                          ? 'ring-2 ring-white ring-offset-2 ring-offset-[#0b1226] scale-110'
+                          : 'opacity-80 hover:opacity-100'
+                      }`}
+                      title={c.name}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* 3 Visual Style Cards */}
+            <div className="grid grid-cols-3 gap-3">
+              {/* Heart Pulse */}
               <button
                 type="button"
                 onClick={() => setStyle('heart')}
-                className={`p-3 rounded-2xl flex flex-col items-center gap-2 text-center transition border ${
+                className={`relative p-3.5 rounded-2xl flex flex-col items-center justify-center gap-2 transition border ${
                   style === 'heart'
-                    ? 'bg-pink-500/10 border-pink-500 text-pink-300 shadow-md shadow-pink-500/20'
-                    : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10'
+                    ? 'border-[#1a68f7] bg-[#101b38] shadow-[0_0_15px_rgba(26,104,247,0.3)]'
+                    : 'border-[#243356] bg-[#080d1e] hover:bg-[#0e162f]'
                 }`}
               >
-                <Heart size={20} className={style === 'heart' ? 'text-pink-400' : 'text-white/40'} />
-                <span className="text-xs font-medium">Heart Pulse</span>
+                {style === 'heart' && (
+                  <span className="absolute top-2 right-2 w-4 h-4 rounded-full bg-[#1a68f7] text-white flex items-center justify-center text-[10px]">
+                    <Check size={10} strokeWidth={3} />
+                  </span>
+                )}
+                <Heart size={24} className="text-pink-400 drop-shadow-[0_0_8px_rgba(244,114,182,0.8)]" />
+                <span className="text-xs font-semibold text-white">Heart Pulse</span>
               </button>
 
+              {/* Mandala Wheel */}
               <button
                 type="button"
                 onClick={() => setStyle('wheel')}
-                className={`p-3 rounded-2xl flex flex-col items-center gap-2 text-center transition border ${
+                className={`relative p-3.5 rounded-2xl flex flex-col items-center justify-center gap-2 transition border ${
                   style === 'wheel'
-                    ? 'bg-cyan-500/10 border-cyan-500 text-cyan-300 shadow-md shadow-cyan-500/20'
-                    : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10'
+                    ? 'border-[#1a68f7] bg-[#101b38] shadow-[0_0_15px_rgba(26,104,247,0.3)]'
+                    : 'border-[#243356] bg-[#080d1e] hover:bg-[#0e162f]'
                 }`}
               >
-                <CircleDot size={20} className={style === 'wheel' ? 'text-cyan-400' : 'text-white/40'} />
-                <span className="text-xs font-medium">Mandala Wheel</span>
+                {style === 'wheel' && (
+                  <span className="absolute top-2 right-2 w-4 h-4 rounded-full bg-[#1a68f7] text-white flex items-center justify-center text-[10px]">
+                    <Check size={10} strokeWidth={3} />
+                  </span>
+                )}
+                <Flower2 size={24} className="text-purple-400 drop-shadow-[0_0_8px_rgba(192,132,252,0.8)]" />
+                <span className="text-xs font-semibold text-white">Mandala Wheel</span>
               </button>
 
+              {/* Micrography */}
               <button
                 type="button"
                 onClick={() => setStyle('typographic')}
-                className={`p-3 rounded-2xl flex flex-col items-center gap-2 text-center transition border ${
+                className={`relative p-3.5 rounded-2xl flex flex-col items-center justify-center gap-2 transition border ${
                   style === 'typographic'
-                    ? 'bg-purple-500/10 border-purple-500 text-purple-300 shadow-md shadow-purple-500/20'
-                    : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10'
+                    ? 'border-[#1a68f7] bg-[#101b38] shadow-[0_0_15px_rgba(26,104,247,0.3)]'
+                    : 'border-[#243356] bg-[#080d1e] hover:bg-[#0e162f]'
                 }`}
               >
-                <User size={20} className={style === 'typographic' ? 'text-purple-400' : 'text-white/40'} />
-                <span className="text-xs font-medium">Micrography</span>
+                {style === 'typographic' && (
+                  <span className="absolute top-2 right-2 w-4 h-4 rounded-full bg-[#1a68f7] text-white flex items-center justify-center text-[10px]">
+                    <Check size={10} strokeWidth={3} />
+                  </span>
+                )}
+                <User size={24} className="text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]" />
+                <span className="text-xs font-semibold text-white">Micrography</span>
               </button>
             </div>
-          </div>
 
-          {/* Step 4: Fine-Tuning Controls */}
-          <div className="pt-2 border-t border-white/10 space-y-4">
-            {/* Color Palette */}
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <Palette size={14} className="text-white/60" />
-                <span className="text-xs font-medium text-white/70">Neon Glow Color</span>
-              </div>
-              <div className="flex items-center gap-2 flex-wrap">
-                {PRESET_COLORS.map((c) => (
-                  <button
-                    key={c.value}
-                    type="button"
-                    onClick={() => setPrimaryColor(c.value)}
-                    style={{ backgroundColor: c.value }}
-                    className={`w-7 h-7 rounded-full transition transform hover:scale-110 ${
-                      primaryColor === c.value
-                        ? 'ring-2 ring-white ring-offset-2 ring-offset-[#030712] scale-110'
-                        : 'opacity-70 hover:opacity-100'
-                    }`}
-                    title={c.name}
-                  />
-                ))}
-              </div>
-            </div>
-
-            {/* Sliders */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <span className="text-xs text-white/50 block mb-1">Glow: {glowIntensity}px</span>
+            {/* Sliders matching reference */}
+            <div className="flex flex-col gap-3 pt-1">
+              {/* Glow Slider */}
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5 w-24 text-xs text-slate-300 font-medium">
+                  <Sun size={15} className="text-slate-400" />
+                  <span>Glow: {glowIntensity}px</span>
+                </div>
                 <input
                   type="range"
                   min="5"
                   max="35"
                   value={glowIntensity}
                   onChange={(e) => setGlowIntensity(Number(e.target.value))}
-                  className="w-full accent-pink-500 cursor-pointer"
+                  className="flex-1 h-1.5 bg-[#172545] rounded-lg appearance-none cursor-pointer accent-[#1a68f7]"
                 />
+                <span className="text-xs px-2.5 py-0.5 rounded-lg bg-[#080d1e] border border-[#243356] text-slate-300">
+                  {glowIntensity}px
+                </span>
               </div>
 
-              <div>
-                <span className="text-xs text-white/50 block mb-1">Speed: {rotationSpeed}x</span>
+              {/* Speed Slider */}
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5 w-24 text-xs text-slate-300 font-medium">
+                  <Zap size={15} className="text-slate-400" />
+                  <span>Speed: {rotationSpeed}x</span>
+                </div>
                 <input
                   type="range"
                   min="0.2"
@@ -225,15 +324,44 @@ export default function Home() {
                   step="0.1"
                   value={rotationSpeed}
                   onChange={(e) => setRotationSpeed(Number(e.target.value))}
-                  className="w-full accent-pink-500 cursor-pointer"
+                  className="flex-1 h-1.5 bg-[#172545] rounded-lg appearance-none cursor-pointer accent-[#1a68f7]"
                 />
+                <span className="text-xs px-2.5 py-0.5 rounded-lg bg-[#080d1e] border border-[#243356] text-slate-300">
+                  {rotationSpeed}x
+                </span>
               </div>
             </div>
           </div>
+
+          {/* Big Action Button: Generate Portrait > */}
+          <button
+            type="button"
+            onClick={handleGenerateClick}
+            className="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-[#00c6ff] via-[#0084ff] to-[#0051ff] hover:brightness-110 text-white font-semibold text-sm flex items-center justify-center gap-2 shadow-[0_0_25px_rgba(0,132,255,0.45)] transition transform active:scale-[0.99]"
+          >
+            <Wand2 size={17} />
+            <span>Generate Portrait &gt;</span>
+          </button>
         </div>
 
-        {/* Live Canvas Column (Right) */}
-        <div className="lg:col-span-7 flex flex-col items-center">
+        {/* Right Column: Preview Canvas Card (matches reference) */}
+        <div className="lg:col-span-6 bg-[#0b1226]/90 border border-[#1e2a4a] rounded-3xl p-5 shadow-xl shadow-black/30 backdrop-blur-md flex flex-col items-center">
+          {/* Preview Header Bar */}
+          <div className="w-full flex items-center justify-between pb-3 mb-2 border-b border-[#182442]">
+            <div className="flex items-center gap-2 text-white">
+              <Eye size={16} className="text-cyan-400" />
+              <span className="text-sm font-semibold">Preview</span>
+            </div>
+            <button
+              type="button"
+              className="text-slate-400 hover:text-white transition p-1"
+              title="Expand View"
+            >
+              <Maximize2 size={16} />
+            </button>
+          </div>
+
+          {/* Canvas Component */}
           <CanvasRenderer
             photoImage={photoImage}
             items={items}
@@ -242,35 +370,11 @@ export default function Home() {
             glowIntensity={glowIntensity}
             rotationSpeed={rotationSpeed}
             fontSize={fontSize}
-            centerText={name}
+            name={name}
+            message={message}
           />
-
-          {/* Multilingual script ticker chips */}
-          <div className="w-full max-w-[560px] mt-6 bg-white/[0.02] border border-white/10 rounded-2xl p-4">
-            <p className="text-xs font-semibold text-white/60 mb-2 flex items-center justify-between">
-              <span>Preview of 100 Languages</span>
-              <span className="text-[11px] font-normal text-white/40">Includes Arabic, Devanagari, Japanese, Russian, etc.</span>
-            </p>
-            <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto pr-1">
-              {items.slice(0, 36).map((item, idx) => (
-                <span
-                  key={idx}
-                  className="text-[11px] px-2 py-0.5 rounded-lg bg-white/5 border border-white/5 text-white/80 whitespace-nowrap"
-                >
-                  <span className="text-pink-400 font-medium mr-1">{item.language}:</span>
-                  {item.text}
-                </span>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
-
-      {/* Footer */}
-      <footer className="w-full max-w-6xl pt-6 border-t border-white/10 text-center text-xs text-white/40 flex flex-col sm:flex-row items-center justify-between gap-2">
-        <p>Built with Next.js, HTML5 Canvas & WebGL</p>
-        <p>Ready for 100% Free Hosting on Vercel</p>
-      </footer>
     </main>
   );
 }

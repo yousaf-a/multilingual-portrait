@@ -1,18 +1,33 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
-import { Upload, Image as ImageIcon, X } from 'lucide-react';
+import React, { useRef, useState, useEffect } from 'react';
+import { Upload, X } from 'lucide-react';
 
 interface PhotoUploaderProps {
   onImageLoaded: (img: HTMLImageElement | null, dataUrl: string | null) => void;
 }
 
 export default function PhotoUploader({ onImageLoaded }: PhotoUploaderProps) {
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>('/person-preview.jpg');
+  const [fileName, setFileName] = useState<string>('No file chosen');
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Load default sample portrait on mount so the UI matches the reference screenshot
+  useEffect(() => {
+    const defaultSrc = '/person-preview.jpg';
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      onImageLoaded(img, defaultSrc);
+      setPreviewUrl(defaultSrc);
+      setFileName('No file chosen');
+    };
+    img.src = defaultSrc;
+  }, [onImageLoaded]);
 
   const processFile = (file: File) => {
     if (!file.type.startsWith('image/')) return;
+    setFileName(file.name);
 
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -36,24 +51,8 @@ export default function PhotoUploader({ onImageLoaded }: PhotoUploaderProps) {
     }
   };
 
-  const handleClear = () => {
-    setPreviewUrl(null);
-    onImageLoaded(null, null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  };
-
-  const loadSample = (sampleUrl: string) => {
-    setPreviewUrl(sampleUrl);
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      onImageLoaded(img, sampleUrl);
-    };
-    img.src = sampleUrl;
-  };
-
   return (
-    <div className="w-full">
+    <div className="grid grid-cols-2 gap-4 w-full items-center">
       <input
         ref={fileInputRef}
         type="file"
@@ -64,65 +63,48 @@ export default function PhotoUploader({ onImageLoaded }: PhotoUploaderProps) {
         }}
       />
 
-      {previewUrl ? (
-        <div className="relative rounded-2xl overflow-hidden border border-white/20 bg-black/40 p-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+      {/* Left Box: Upload Cloud & Choose File Button */}
+      <div
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={handleDrop}
+        onClick={() => fileInputRef.current?.click()}
+        className="border-2 border-dashed border-[#243356] hover:border-[#3b82f6] rounded-2xl p-4 flex flex-col items-center justify-center cursor-pointer transition bg-[#091024]/60 hover:bg-[#0c1630] group aspect-[4/3]"
+      >
+        <Upload size={22} className="text-white/80 group-hover:scale-110 group-hover:text-cyan-400 transition mb-2" />
+        
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            fileInputRef.current?.click();
+          }}
+          className="bg-[#1a68f7] hover:bg-[#2575fc] text-white text-xs font-semibold px-4 py-1.5 rounded-full shadow-[0_0_15px_rgba(26,104,247,0.45)] transition transform group-hover:scale-105"
+        >
+          Choose File
+        </button>
+
+        <p className="text-[11px] text-slate-400 mt-2">or drag & drop photo</p>
+      </div>
+
+      {/* Right Box: Thumbnail & Label */}
+      <div className="flex flex-col items-center justify-center p-2">
+        <div className="relative w-20 h-20 rounded-2xl overflow-hidden border border-[#2b3a63] bg-[#0c1429] shadow-md shadow-black/40">
+          {previewUrl ? (
             <img
               src={previewUrl}
-              alt="Uploaded Preview"
-              className="w-14 h-14 rounded-xl object-cover border border-white/20"
+              alt="Portrait Preview"
+              className="w-full h-full object-cover"
             />
-            <div>
-              <p className="text-sm font-medium text-white">Photo loaded</p>
-              <p className="text-xs text-white/50">Ready for portrait effect</p>
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-slate-500 text-xs">
+              No Image
             </div>
-          </div>
-          <button
-            onClick={handleClear}
-            className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white/70 hover:text-white transition"
-            title="Remove photo"
-          >
-            <X size={18} />
-          </button>
+          )}
         </div>
-      ) : (
-        <div
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={handleDrop}
-          onClick={() => fileInputRef.current?.click()}
-          className="border-2 border-dashed border-white/20 hover:border-pink-500/60 rounded-2xl p-6 flex flex-col items-center justify-center cursor-pointer transition bg-white/[0.02] hover:bg-white/[0.05] group"
-        >
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-pink-500/20 to-purple-500/20 flex items-center justify-center text-pink-400 group-hover:scale-110 transition mb-3">
-            <Upload size={22} />
-          </div>
-          <p className="text-sm font-medium text-white">Click or drag & drop photo</p>
-          <p className="text-xs text-white/50 mt-1">Supports PNG, JPG, WebP</p>
-
-          <div className="mt-4 flex items-center gap-2">
-            <span className="text-xs text-white/40">Or test sample:</span>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                loadSample('https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&auto=format&fit=crop');
-              }}
-              className="text-xs px-2.5 py-1 rounded-md bg-white/10 hover:bg-white/20 text-white/80 transition"
-            >
-              Portrait 1
-            </button>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                loadSample('https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500&auto=format&fit=crop');
-              }}
-              className="text-xs px-2.5 py-1 rounded-md bg-white/10 hover:bg-white/20 text-white/80 transition"
-            >
-              Portrait 2
-            </button>
-          </div>
-        </div>
-      )}
+        <p className="text-[11px] text-slate-400 mt-2 text-center truncate max-w-[120px]">
+          {fileName}
+        </p>
+      </div>
     </div>
   );
 }

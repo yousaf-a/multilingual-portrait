@@ -326,3 +326,4 @@ export function getMultilingualList(
 
   return list;
 }
+

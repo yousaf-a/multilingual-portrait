@@ -22,3 +22,4 @@ sketch = np.clip(sketch, 0, 255).astype(np.uint8)
 
 cv2.imwrite('C:/Users/yousa/.gemini/antigravity/scratch/multilingual-portrait/public/test-accurate-sketch.png', sketch)
 print("Accurate sketch generated!")
+

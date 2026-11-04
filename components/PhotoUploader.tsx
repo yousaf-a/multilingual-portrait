@@ -8,18 +8,18 @@ interface PhotoUploaderProps {
 }
 
 export default function PhotoUploader({ onImageLoaded }: PhotoUploaderProps) {
-  const [previewUrl, setPreviewUrl] = useState<string | null>('/sample-teacup.jpg');
-  const [fileName, setFileName] = useState<string>('sample-teacup.jpg');
+  const [previewUrl, setPreviewUrl] = useState<string | null>('/sample-target-art.png');
+  const [fileName, setFileName] = useState<string>('sample-target-art.png');
 
-  // Load default sample teacup on initial mount (matching reference image)
+  // Load default target reference art on initial mount
   useEffect(() => {
-    const defaultSrc = '/sample-teacup.jpg';
+    const defaultSrc = '/sample-target-art.png';
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => {
       onImageLoaded(img, defaultSrc);
       setPreviewUrl(defaultSrc);
-      setFileName('sample-teacup.jpg');
+      setFileName('sample-target-art.png');
     };
     img.src = defaultSrc;
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -128,27 +128,20 @@ export default function PhotoUploader({ onImageLoaded }: PhotoUploaderProps) {
 
       {/* Preset sample buttons */}
       <div className="flex items-center gap-2 pt-1 border-t border-[#182442] flex-wrap">
-        <span className="text-[11px] text-slate-400">Sample templates:</span>
+        <span className="text-[11px] text-slate-400">Sample art:</span>
+        <button
+          type="button"
+          onClick={() => loadSample('/sample-target-art.png', 'Goddess Target Sketch')}
+          className="text-[11px] px-2.5 py-1 rounded-lg bg-[#0e172e] hover:bg-[#152347] text-rose-300 border border-[#243356] transition"
+        >
+          👑 Target Art Reference
+        </button>
         <button
           type="button"
           onClick={() => loadSample('/sample-scribble.jpg', 'Sudhin Scribble Reference')}
           className="text-[11px] px-2.5 py-1 rounded-lg bg-[#0e172e] hover:bg-[#152347] text-amber-300 border border-[#243356] transition"
         >
-          ✍️ Sudhin Art Reference
-        </button>
-        <button
-          type="button"
-          onClick={() => loadSample('/person-preview.jpg', 'Portrait')}
-          className="text-[11px] px-2.5 py-1 rounded-lg bg-[#0e172e] hover:bg-[#152347] text-slate-300 border border-[#243356] transition"
-        >
-          👤 Portrait
-        </button>
-        <button
-          type="button"
-          onClick={() => loadSample('/sample-teacup.jpg', 'Teacup')}
-          className="text-[11px] px-2.5 py-1 rounded-lg bg-[#0e172e] hover:bg-[#152347] text-cyan-300 border border-[#243356] transition"
-        >
-          ☕ Teacup
+          ✍️ Scribble Art Reference
         </button>
       </div>
     </div>

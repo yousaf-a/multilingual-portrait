@@ -5,12 +5,23 @@ import { TranslatedItem } from '@/lib/languages';
 import { Play, Pause, RotateCcw, Volume2, VolumeX, Download, ArrowLeft, Video } from 'lucide-react';
 import { audioController } from '@/lib/audio';
 
-interface MicroScribble {
-  cx: number;
-  cy: number;
-  radius: number;
-  steps: number;
-  angleStart: number;
+interface HatchStroke {
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+  width: number;
+  opacity: number;
+  progressY: number;
+}
+
+interface GesturalStroke {
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+  width: number;
+  opacity: number;
   progressY: number;
 }
 
@@ -27,7 +38,7 @@ interface ScribbleVideoRendererProps {
   photoImage: HTMLImageElement | null;
   items: TranslatedItem[];
   primaryColor: string;
-  themeStyle: 'emerald' | 'gold' | 'neon' | 'monochrome' | 'rain_storm';
+  themeStyle: string;
   titleText: string;
   musicTrack: string;
   customMusicUrl: string | null;
@@ -59,64 +70,89 @@ export default function ScribbleVideoRenderer({
 
   // High-resolution sketch canvas & data
   const sketchCanvasRef = useRef<HTMLCanvasElement | null>(null);
-  const microScribblesRef = useRef<MicroScribble[]>([]);
+  const hatchStrokesRef = useRef<HatchStroke[]>([]);
+  const gesturalStrokesRef = useRef<GesturalStroke[]>([]);
   const backgroundTextsRef = useRef<BackgroundText[]>([]);
   const imageBoundsRef = useRef<{ x: number; y: number; w: number; h: number }>({ x: 0, y: 0, w: 0, h: 0 });
 
-  // Theme palettes
+  // Theme palettes matching Museum-Grade Hand-Drawn Fine-Art Paper Styles
   const getThemePalette = useCallback(() => {
     switch (themeStyle) {
       case 'emerald':
+      case 'gold_rose':
+        // 1. Antique Gold & Rose Accents on Ivory Cold-Press Paper (Target Reference Art)
         return {
-          bg: '#fbfaf8',
+          bg: '#fcfbf8',
           darkBg: false,
-          ink: '#112918',
-          bgText: 'rgba(29, 74, 42, 0.35)',
-          paperVignette: '#f2ece4',
-          penGlow: '#1d4a2a'
+          ink: '#1c1b1f',
+          bgText: 'rgba(75, 65, 55, 0.42)',
+          paperVignette: '#f3ebd9',
+          penGlow: '#d4af37',
+          hatchColor: 'rgba(28, 27, 31, '
         };
+      case 'sepia_gold':
       case 'gold':
+        // 2. Vintage Sepia & 24K Gold on Aged Italian Parchment
         return {
-          bg: '#08080a',
-          darkBg: true,
-          ink: '#e6c364',
-          bgText: 'rgba(230, 195, 100, 0.32)',
-          paperVignette: '#000000',
-          penGlow: '#e6c364'
+          bg: '#fbf5e8',
+          darkBg: false,
+          ink: '#2d1b10',
+          bgText: 'rgba(80, 50, 30, 0.44)',
+          paperVignette: '#f0e2ca',
+          penGlow: '#d4a017',
+          hatchColor: 'rgba(45, 27, 16, '
         };
-      case 'rain_storm':
-        return {
-          bg: '#080d1a',
-          darkBg: true,
-          ink: '#e2e8f0',
-          bgText: 'rgba(56, 189, 248, 0.30)',
-          paperVignette: '#040710',
-          penGlow: '#38bdf8'
-        };
+      case 'sanguine':
       case 'neon':
+        // 3. Renaissance Sanguine & Terracotta Chalk on Cream Fabriano Paper
         return {
-          bg: '#060a17',
-          darkBg: true,
-          ink: '#00e5ff',
-          bgText: 'rgba(0, 229, 255, 0.30)',
-          paperVignette: '#03050c',
-          penGlow: '#00e5ff'
+          bg: '#fcf7f2',
+          darkBg: false,
+          ink: '#7c261e',
+          bgText: 'rgba(124, 38, 30, 0.42)',
+          paperVignette: '#f3e4d6',
+          penGlow: '#c2410c',
+          hatchColor: 'rgba(124, 38, 30, '
+        };
+      case 'prussian_blue':
+      case 'rain_storm':
+        // 4. Prussian Blue & Cerulean on Heavy Arches Watercolor Paper
+        return {
+          bg: '#f5f9fc',
+          darkBg: false,
+          ink: '#10243d',
+          bgText: 'rgba(16, 36, 61, 0.42)',
+          paperVignette: '#e3edf5',
+          penGlow: '#0284c7',
+          hatchColor: 'rgba(16, 36, 61, '
+        };
+      case 'emerald_gold':
+        // 5. Royal Pine & Champagne Gold on Botanical Rag Paper
+        return {
+          bg: '#f7faf7',
+          darkBg: false,
+          ink: '#122b1c',
+          bgText: 'rgba(18, 43, 28, 0.42)',
+          paperVignette: '#e4ede4',
+          penGlow: '#c5a059',
+          hatchColor: 'rgba(18, 43, 28, '
         };
       case 'monochrome':
       default:
-        // Authentic sudhin__art black fine pen on textured paper
+        // 6. Pure Charcoal & Graphite Pencil Sketch on Cold-Press Paper
         return {
-          bg: '#fbf9f5',
+          bg: '#faf8f5',
           darkBg: false,
-          ink: '#16161a', // Rich black ink
-          bgText: 'rgba(113, 113, 122, 0.38)',
-          paperVignette: '#ece7de',
-          penGlow: '#18181b'
+          ink: '#18181b',
+          bgText: 'rgba(90, 90, 95, 0.40)',
+          paperVignette: '#ebe4d8',
+          penGlow: '#27272a',
+          hatchColor: 'rgba(24, 24, 27, '
         };
     }
   }, [themeStyle]);
 
-  // Pre-process image: high-accuracy line sketch + micro-scribbles for dark hair/fabrics only
+  // Pre-process image: Masterpiece Graphite Line-Art + Volumetric Shading + Selective Gold/Rose Watercolor
   useEffect(() => {
     const width = 800;
     const height = 1000;
@@ -131,7 +167,7 @@ export default function ScribbleVideoRenderer({
       { text: "愛してる", language: "Japanese" },
       { text: "أحبك", language: "Arabic" },
       { text: "मैं तुमसे प्यार करता हूँ", language: "Hindi" },
-      { text: "Чашка для чая", language: "Russian" },
+      { text: "Я тебя люблю", language: "Russian" },
       { text: "Ti amo", language: "Italian" },
       { text: "Eu te amo", language: "Portuguese" },
       { text: "사랑해", language: "Korean" },
@@ -155,13 +191,14 @@ export default function ScribbleVideoRenderer({
     const targetY = (height - targetH) / 2;
     imageBoundsRef.current = { x: targetX, y: targetY, w: targetW, h: targetH };
 
-    // High-resolution processing canvas (2x scale for sharp line accuracy)
+    // High-resolution processing canvas (1.5x scale for razor-sharp pencil lines)
     const procCanvas = document.createElement('canvas');
     procCanvas.width = Math.round(targetW * 1.5);
     procCanvas.height = Math.round(targetH * 1.5);
     const pCtx = procCanvas.getContext('2d');
 
-    const microScribbles: MicroScribble[] = [];
+    const hatchStrokes: HatchStroke[] = [];
+    const gesturalStrokes: GesturalStroke[] = [];
 
     if (pCtx) {
       pCtx.drawImage(photoImage, 0, 0, procCanvas.width, procCanvas.height);
@@ -170,15 +207,15 @@ export default function ScribbleVideoRenderer({
       const pw = procCanvas.width;
       const ph = procCanvas.height;
 
-      // Grayscale calculation
+      // 1. Grayscale & Luminance
       const gray = new Uint8Array(pw * ph);
       for (let i = 0; i < data.length; i += 4) {
         gray[i / 4] = Math.round(data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114);
       }
 
-      // Edge-preserving blur (radius 3)
+      // 2. Edge-preserving blur for Color Dodge Pencil Line Extraction
       const blurred = new Uint8Array(pw * ph);
-      const br = 3;
+      const br = 4;
       for (let y = 0; y < ph; y++) {
         for (let x = 0; x < pw; x++) {
           let sum = 0, count = 0;
@@ -187,7 +224,7 @@ export default function ScribbleVideoRenderer({
               const ny = y + dy;
               const nx = x + dx;
               if (ny >= 0 && ny < ph && nx >= 0 && nx < pw) {
-                sum += (255 - gray[ny * pw + nx]); // Invert
+                sum += (255 - gray[ny * pw + nx]); // Inverted
                 count++;
               }
             }
@@ -196,104 +233,298 @@ export default function ScribbleVideoRenderer({
         }
       }
 
-      // High-precision sketch generation
+      // 3. Composite Masterpiece Sketch Data
       const sketchData = pCtx.createImageData(pw, ph);
       const sData = sketchData.data;
 
       for (let i = 0; i < gray.length; i++) {
+        const xCoord = i % pw;
+        const yCoord = Math.floor(i / pw);
+
+        // Smooth edge feathering: any pixels within 8% of the canvas border softly fade to 0 alpha
+        // This completely eliminates any rectangular cut-off box or vertical side stripes!
+        const edgeDistX = Math.min(xCoord, pw - 1 - xCoord) / (pw * 0.08);
+        const edgeDistY = Math.min(yCoord, ph - 1 - yCoord) / (ph * 0.08);
+        const edgeFade = Math.min(1.0, Math.max(0.0, Math.min(edgeDistX, edgeDistY)));
+
         const g = gray[i];
         const b = blurred[i];
 
-        // Color dodge pencil line calculation
-        let val = Math.min(255, Math.floor((g * 256) / Math.max(1, 255 - b)));
-        const norm = val / 255;
-        // Non-linear curve: keeps fine details, eyelashes, smiles, stethoscopes razor-sharp
-        const contrastVal = Math.pow(norm, 1.8) * 255;
+        // A. Color Dodge Pencil Line Extraction
+        const dodgeVal = Math.min(255, Math.floor((g * 256) / Math.max(1, 255 - b)));
+        const lineNorm = dodgeVal / 255;
+        // Non-linear power curve for razor-sharp contours, eyelashes, lips, crown, and hair strands
+        const lineVal = Math.pow(lineNorm, 1.75) * 255;
+
+        // B. Volumetric Graphite Tonal Shading (Restores 3D facial depth, cheeks, neck, fabric)
+        const shadeNorm = g / 255;
+        const shadeVal = Math.pow(shadeNorm, 0.8) * 255;
+
+        // Combined graphite tone (0 = rich black pencil, 255 = paper white)
+        const combined = (lineVal * shadeVal) / 255;
 
         const pIdx = i * 4;
-        const isDarkLine = contrastVal < 235;
+        const rOrig = data[pIdx];
+        const gOrig = data[pIdx + 1];
+        const bOrig = data[pIdx + 2];
 
-        if (palette.darkBg) {
-          const inkBright = Math.round(255 - contrastVal);
-          sData[pIdx] = 226;
-          sData[pIdx + 1] = 195;
-          sData[pIdx + 2] = 100;
-          sData[pIdx + 3] = isDarkLine ? Math.min(255, Math.round(inkBright * 1.8)) : 0;
-        } else {
-          // Sharp black/charcoal pencil lines
-          sData[pIdx] = 20;
-          sData[pIdx + 1] = 20;
-          sData[pIdx + 2] = 24;
-          sData[pIdx + 3] = isDarkLine ? Math.min(255, Math.round((255 - contrastVal) * 1.85)) : 0;
+        // Chromatic saturation for selective watercolor tint (Gold jewelry, rose petals, lips)
+        const maxC = Math.max(rOrig, gOrig, bOrig);
+        const minC = Math.min(rOrig, gOrig, bOrig);
+        const sat = maxC > 0 ? (maxC - minC) / maxC : 0;
+
+        const inkDarkness = 255 - combined;
+        const pencilFactor = combined / 255;
+
+        // Base pencil inking RGB per theme
+        let baseR = 22, baseG = 22, baseB = 26; // Default rich charcoal
+
+        if (themeStyle === 'sepia_gold' || themeStyle === 'gold') {
+          baseR = 45; baseG = 27; baseB = 16; // Warm Italian burnt umber / sepia
+        } else if (themeStyle === 'sanguine' || themeStyle === 'neon') {
+          baseR = 124; baseG = 38; baseB = 30; // Renaissance Sanguine / terracotta red chalk
+        } else if (themeStyle === 'prussian_blue' || themeStyle === 'rain_storm') {
+          baseR = 16; baseG = 36; baseB = 61; // Prussian blue / deep indigo
+        } else if (themeStyle === 'emerald_gold') {
+          baseR = 18; baseG = 43; baseB = 28; // Deep forest pine
         }
 
-        // Micro-scribbles: ONLY for dense dark shadows / dark hair / dark scrubs (G < 75)
-        // NEVER on faces or skin highlights (G >= 75)
-        const yCoord = Math.floor(i / pw);
-        const xCoord = i % pw;
-
-        if (g < 75 && yCoord % 12 === 0 && xCoord % 12 === 0) {
-          const darkness = (75 - g) / 75;
-          const canvasX = targetX + (xCoord / pw) * targetW;
-          const canvasY = targetY + (yCoord / ph) * targetH;
-
-          // Tiny fine micro-loops (radius 2.5px to 4.5px) that weave into realistic fabric/hair texture
-          microScribbles.push({
-            cx: canvasX + ((xCoord % 5) - 2) * 1.2,
-            cy: canvasY + ((yCoord % 5) - 2) * 1.2,
-            radius: Math.max(2.2, Math.min(4.8, 3.8 * (1 - darkness * 0.3))),
-            steps: Math.round(10 + darkness * 12),
-            angleStart: (xCoord * 1.4 + yCoord * 2.1) % (Math.PI * 2),
-            progressY: canvasY / height
-          });
+        if ((themeStyle === 'emerald' || themeStyle === 'gold_rose') && sat > 0.14) {
+          // 1. Antique Gold & Rose Accents (Reference Art)
+          const colorFactor = Math.min(0.85, (sat - 0.12) * 2.2);
+          sData[pIdx] = Math.round(rOrig * 1.15 * pencilFactor);
+          sData[pIdx + 1] = Math.round(gOrig * 1.12 * pencilFactor);
+          sData[pIdx + 2] = Math.round(bOrig * 1.08 * pencilFactor);
+          sData[pIdx + 3] = Math.min(255, Math.round((inkDarkness * 1.4 + colorFactor * 210) * edgeFade));
+        } else if ((themeStyle === 'sepia_gold' || themeStyle === 'gold') && sat > 0.14) {
+          // 2. Vintage Sepia with Gilded Gold Leaf glaze
+          sData[pIdx] = Math.round(Math.min(255, rOrig * 1.25) * pencilFactor);
+          sData[pIdx + 1] = Math.round(Math.min(255, gOrig * 1.12) * pencilFactor);
+          sData[pIdx + 2] = Math.round(bOrig * 0.8 * pencilFactor);
+          sData[pIdx + 3] = Math.min(255, Math.round((inkDarkness * 1.35 + 175) * edgeFade));
+        } else if (themeStyle === 'sanguine' || themeStyle === 'neon') {
+          // 3. Renaissance Sanguine & Terracotta Chalk
+          if (sat > 0.16) {
+            sData[pIdx] = Math.round(Math.min(255, rOrig * 1.2) * pencilFactor);
+            sData[pIdx + 1] = Math.round(gOrig * 0.9 * pencilFactor);
+            sData[pIdx + 2] = Math.round(bOrig * 0.85 * pencilFactor);
+            sData[pIdx + 3] = Math.min(255, Math.round((inkDarkness * 1.35 + 155) * edgeFade));
+          } else {
+            sData[pIdx] = baseR;
+            sData[pIdx + 1] = baseG;
+            sData[pIdx + 2] = baseB;
+            sData[pIdx + 3] = combined < 244 ? Math.min(255, Math.round((255 - combined) * 1.68 * edgeFade)) : 0;
+          }
+        } else if ((themeStyle === 'prussian_blue' || themeStyle === 'rain_storm') && sat > 0.14) {
+          // 4. Prussian Blue with Cerulean Watercolor Wash
+          sData[pIdx] = Math.round(rOrig * 0.8 * pencilFactor);
+          sData[pIdx + 1] = Math.round(Math.min(255, gOrig * 1.1) * pencilFactor);
+          sData[pIdx + 2] = Math.round(Math.min(255, bOrig * 1.35) * pencilFactor);
+          sData[pIdx + 3] = Math.min(255, Math.round((inkDarkness * 1.35 + 175) * edgeFade));
+        } else if (themeStyle === 'emerald_gold' && sat > 0.14) {
+          // 5. Royal Pine with Champagne Gold
+          sData[pIdx] = Math.round(Math.min(255, rOrig * 1.2) * pencilFactor);
+          sData[pIdx + 1] = Math.round(Math.min(255, gOrig * 1.15) * pencilFactor);
+          sData[pIdx + 2] = Math.round(bOrig * 0.8 * pencilFactor);
+          sData[pIdx + 3] = Math.min(255, Math.round((inkDarkness * 1.35 + 175) * edgeFade));
+        } else {
+          // 6. Monochrome Graphite & Charcoal
+          sData[pIdx] = baseR;
+          sData[pIdx + 1] = baseG;
+          sData[pIdx + 2] = baseB;
+          sData[pIdx + 3] = combined < 242 ? Math.min(255, Math.round((255 - combined) * 1.75 * edgeFade)) : 0;
         }
       }
 
       pCtx.putImageData(sketchData, 0, 0);
       sketchCanvasRef.current = procCanvas;
-    }
 
-    microScribbles.sort((a, b) => a.progressY - b.progressY);
-    microScribblesRef.current = microScribbles;
+      // 4. GENERATE AUTHENTIC DIAGONAL CROSS-HATCHING STROKES (NO ROBOTIC CIRCLES!)
+      const stepGap = 7; // Fine artist hatch resolution
 
-    // 2. BACKGROUND MULTILINGUAL TYPOGRAPHY (OUTSIDE SUBJECT WITH GENEROUS BREATHING ROOM)
-    const bgTexts: BackgroundText[] = [];
-    let wordIdx = 0;
-    const rowGap = 44; // Generous line height so text never clashes
-    const colGap = 120; // Wide word spacing
+      for (let y = 6; y < ph - 6; y += stepGap) {
+        for (let x = 6; x < pw - 6; x += stepGap) {
+          const idx = y * pw + x;
+          const g = gray[idx];
 
-    for (let y = 35; y < height - 35; y += rowGap) {
-      const progressY = y / height;
-      const stagger = (Math.floor(y / rowGap) % 2) * 45;
+          // Apply natural pencil hatching in shadow zones (under chin, neck, hair, clothes)
+          if (g < 135) {
+            const darkness = (135 - g) / 135;
+            const canvasX = targetX + (x / pw) * targetW;
+            const canvasY = targetY + (y / ph) * targetH;
 
-      for (let x = 20 + stagger; x < width - 60; x += colGap) {
-        // Safe buffer zone around image bounds so text never touches the subject
-        const isNearPortrait = (
-          x > targetX - 25 &&
-          x < targetX + targetW + 25 &&
-          y > targetY - 20 &&
-          y < targetY + targetH + 20
-        );
+            // Primary diagonal hatch strokes (~42° angle with subtle organic hand jitter)
+            const angle = (Math.PI / 4) + ((x * 0.13 + y * 0.27) % 0.3) - 0.15;
+            const len = 6 + darkness * 11;
+            const cosA = Math.cos(angle) * len;
+            const sinA = Math.sin(angle) * len;
 
-        if (!isNearPortrait) {
-          const phrase = phrases[wordIdx % phrases.length];
-          wordIdx++;
+            const primaryOpacity = palette.darkBg
+              ? Math.min(0.38, 0.12 + darkness * 0.26)
+              : Math.min(0.75, 0.22 + darkness * 0.48);
 
-          bgTexts.push({
-            x,
-            y,
-            text: phrase.text,
-            fontSize: 12.5,
-            progressY,
-            color: palette.bgText
-          });
+            hatchStrokes.push({
+              x1: canvasX - cosA * 0.5,
+              y1: canvasY - sinA * 0.5,
+              x2: canvasX + cosA * 0.5,
+              y2: canvasY + sinA * 0.5,
+              width: 0.65 + darkness * 0.45,
+              opacity: primaryOpacity,
+              progressY: canvasY / height
+            });
+
+            // Perpendicular cross-hatching in deeper shadows (g < 80)
+            if (g < 80) {
+              const crossAngle = - (Math.PI / 4) + ((x * 0.19 + y * 0.31) % 0.26) - 0.13;
+              const crossLen = 5 + darkness * 8;
+              const cCos = Math.cos(crossAngle) * crossLen;
+              const cSin = Math.sin(crossAngle) * crossLen;
+
+              const crossOpacity = palette.darkBg
+                ? Math.min(0.32, 0.1 + darkness * 0.22)
+                : Math.min(0.65, 0.18 + darkness * 0.38);
+
+              hatchStrokes.push({
+                x1: canvasX - cCos * 0.5,
+                y1: canvasY - cSin * 0.5,
+                x2: canvasX + cCos * 0.5,
+                y2: canvasY + cSin * 0.5,
+                width: 0.55 + darkness * 0.35,
+                opacity: crossOpacity,
+                progressY: canvasY / height
+              });
+            }
+          }
         }
+      }
+
+      // 5. GENERATE LOOSE RADIATING GESTURAL SKETCH STROKES (Artist's Construction Lines)
+      const numFlicks = 36;
+      for (let f = 0; f < numFlicks; f++) {
+        const t = f / numFlicks;
+        const rad = t * Math.PI * 2;
+        const anchorX = targetX + targetW * 0.5 + Math.cos(rad) * targetW * 0.44;
+        const anchorY = targetY + targetH * 0.48 + Math.sin(rad) * targetH * 0.44;
+
+        const outAngle = rad + ((f * 1.618) % 0.6) - 0.3;
+        const flickLen = 22 + ((f * 37) % 55);
+
+        const endX = anchorX + Math.cos(outAngle) * flickLen;
+        const endY = anchorY + Math.sin(outAngle) * flickLen;
+
+        gesturalStrokes.push({
+          x1: anchorX,
+          y1: anchorY,
+          x2: endX,
+          y2: endY,
+          width: 0.75 + (f % 3) * 0.25,
+          opacity: palette.darkBg ? 0.18 + (f % 4) * 0.04 : 0.22 + (f % 4) * 0.05,
+          progressY: Math.min(anchorY, endY) / height
+        });
       }
     }
 
+    hatchStrokes.sort((a, b) => a.progressY - b.progressY);
+    hatchStrokesRef.current = hatchStrokes;
+
+    gesturalStrokes.sort((a, b) => a.progressY - b.progressY);
+    gesturalStrokesRef.current = gesturalStrokes;
+
+    // 6. BACKGROUND MULTILINGUAL TYPOGRAPHY (Generously Spaced - Zero Collisions)
+    const bgTexts: BackgroundText[] = [];
+    let wordIdx = 0;
+
+    // A. Left Gutter Column (Never touches portrait)
+    if (targetX > 90) {
+      const leftColX = Math.max(20, (targetX - 150) / 2);
+      for (let y = 55; y < height - 60; y += 46) {
+        const phrase = phrases[wordIdx % phrases.length];
+        wordIdx++;
+        bgTexts.push({
+          x: leftColX,
+          y,
+          text: phrase.text,
+          fontSize: 12.5,
+          progressY: y / height,
+          color: palette.bgText
+        });
+      }
+    }
+
+    // B. Right Gutter Column
+    const rightStart = targetX + targetW + 28;
+    if (width - rightStart > 90) {
+      for (let y = 55; y < height - 60; y += 46) {
+        const phrase = phrases[wordIdx % phrases.length];
+        wordIdx++;
+        bgTexts.push({
+          x: rightStart,
+          y,
+          text: phrase.text,
+          fontSize: 12.5,
+          progressY: y / height,
+          color: palette.bgText
+        });
+      }
+    }
+
+    // C. Top Header (Spaced evenly across top margin)
+    const topY = Math.max(30, targetY - 35);
+    const topSlots = [45, 290, 535];
+    topSlots.forEach((tx) => {
+      if (tx < width - 130) {
+        const phrase = phrases[wordIdx % phrases.length];
+        wordIdx++;
+        bgTexts.push({
+          x: tx,
+          y: topY,
+          text: phrase.text,
+          fontSize: 12.5,
+          progressY: topY / height,
+          color: palette.bgText
+        });
+      }
+    });
+
+    // D. Bottom Footer (Spaced cleanly with generous breathing room, avoiding all text collision)
+    const bottomY1 = Math.min(height - 58, targetY + targetH + 34);
+    const bottomY2 = Math.min(height - 24, bottomY1 + 28);
+
+    const bottomSlots1 = [45, 290, 535];
+    bottomSlots1.forEach((bx) => {
+      if (bx < width - 130) {
+        const phrase = phrases[wordIdx % phrases.length];
+        wordIdx++;
+        bgTexts.push({
+          x: bx,
+          y: bottomY1,
+          text: phrase.text,
+          fontSize: 12,
+          progressY: bottomY1 / height,
+          color: palette.bgText
+        });
+      }
+    });
+
+    const bottomSlots2 = [165, 415];
+    bottomSlots2.forEach((bx) => {
+      if (bx < width - 130) {
+        const phrase = phrases[wordIdx % phrases.length];
+        wordIdx++;
+        bgTexts.push({
+          x: bx,
+          y: bottomY2,
+          text: phrase.text,
+          fontSize: 12,
+          progressY: bottomY2 / height,
+          color: palette.bgText
+        });
+      }
+    });
+
     bgTexts.sort((a, b) => a.progressY - b.progressY);
     backgroundTextsRef.current = bgTexts;
-  }, [photoImage, items, titleText, getThemePalette]);
+  }, [photoImage, items, titleText, getThemePalette, themeStyle]);
 
   // Audio start/stop
   useEffect(() => {
@@ -303,51 +534,69 @@ export default function ScribbleVideoRenderer({
     };
   }, [musicTrack, customMusicUrl]);
 
-  // Draw frame
-  const drawFrame = useCallback((ctx: CanvasRenderingContext2D, width: number, height: number, progressRatio: number) => {
+  // Frame Draw Function
+  const drawFrame = useCallback((
+    ctx: CanvasRenderingContext2D,
+    width: number,
+    height: number,
+    progressRatio: number
+  ) => {
     const palette = getThemePalette();
+    const currentY = height * progressRatio;
     const centerX = width / 2;
-    const centerY = height / 2;
-    const currentY = progressRatio * height;
 
-    // 1. Paper Background
-    ctx.save();
+    // 1. PAPER BACKGROUND WITH FINE ART TEXTURE & VIGNETTE
     ctx.fillStyle = palette.bg;
     ctx.fillRect(0, 0, width, height);
 
-    if (!palette.darkBg) {
-      // Warm textured paper vignette
-      const paperGrad = ctx.createRadialGradient(centerX, centerY, width * 0.25, centerX, centerY, width * 0.72);
-      paperGrad.addColorStop(0, '#ffffff');
-      paperGrad.addColorStop(1, palette.paperVignette);
-      ctx.fillStyle = paperGrad;
-      ctx.fillRect(0, 0, width, height);
-    } else {
-      const darkGrad = ctx.createRadialGradient(centerX, centerY, width * 0.2, centerX, centerY, width * 0.7);
-      darkGrad.addColorStop(0, 'rgba(255, 255, 255, 0.03)');
-      darkGrad.addColorStop(1, 'rgba(0, 0, 0, 0.6)');
-      ctx.fillStyle = darkGrad;
-      ctx.fillRect(0, 0, width, height);
-    }
+    ctx.save();
+    const vigGrad = ctx.createRadialGradient(
+      centerX,
+      height * 0.48,
+      width * 0.35,
+      centerX,
+      height * 0.48,
+      width * 0.8
+    );
+    vigGrad.addColorStop(0, 'rgba(0,0,0,0)');
+    vigGrad.addColorStop(1, palette.paperVignette);
+    ctx.fillStyle = vigGrad;
+    ctx.fillRect(0, 0, width, height);
+    ctx.restore();
 
-    // Rain streaks if rain_storm
-    if (themeStyle === 'rain_storm') {
-      const now = Date.now() * 0.001;
-      ctx.strokeStyle = 'rgba(148, 163, 184, 0.2)';
-      ctx.lineWidth = 1;
-      for (let r = 0; r < 35; r++) {
-        const rx = (r * 37 + (r % 7) * 11) % width;
-        const ry = (now * 650 + r * 53) % (height + 60) - 30;
+    // Soft atmospheric mist for Prussian Blue watercolor paper
+    if (themeStyle === 'prussian_blue' || themeStyle === 'rain_storm') {
+      ctx.strokeStyle = 'rgba(2, 132, 199, 0.12)';
+      ctx.lineWidth = 0.8;
+      const now = (Date.now() / 1000) % 100;
+      for (let r = 0; r < 24; r++) {
+        const rx = (r * 37) % width;
+        const ry = (now * 500 + r * 53) % (height + 60) - 30;
         ctx.beginPath();
         ctx.moveTo(rx, ry);
-        ctx.lineTo(rx - 2, ry + 18);
+        ctx.lineTo(rx - 1.5, ry + 14);
         ctx.stroke();
       }
     }
 
-    // 2. DRAW BACKGROUND MULTILINGUAL TEXT (OUTSIDE SUBJECT ONLY)
+    // 2. DRAW LOOSE GESTURAL SKETCH STROKES (Radiating construction marks like master sketchbook)
+    const gesturalStrokes = gesturalStrokesRef.current;
+    for (let i = 0; i < gesturalStrokes.length; i++) {
+      const gs = gesturalStrokes[i];
+      if (gs.progressY <= progressRatio) {
+        ctx.strokeStyle = `${palette.hatchColor}${gs.opacity})`;
+        ctx.lineWidth = gs.width;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(gs.x1, gs.y1);
+        ctx.lineTo(gs.x2, gs.y2);
+        ctx.stroke();
+      }
+    }
+
+    // 3. DRAW BACKGROUND MULTILINGUAL CALLIGRAPHY
     const bgTexts = backgroundTextsRef.current;
-    ctx.font = `500 12.5px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+    ctx.font = `italic 400 12.5px Georgia, "Times New Roman", serif`;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
 
@@ -359,13 +608,12 @@ export default function ScribbleVideoRenderer({
       }
     }
 
-    // 3. DRAW HIGH-RESOLUTION SKETCH LINE-ART (Revealed Top-to-Bottom)
+    // 4. DRAW MASTERPIECE GRAPHITE SKETCH & VOLUMETRIC SHADING (Revealed Top-to-Bottom)
     const sketchCanvas = sketchCanvasRef.current;
     const bounds = imageBoundsRef.current;
 
     if (sketchCanvas && bounds.w > 0) {
       ctx.save();
-      // Smooth clip to the current pen sweep line Y
       ctx.beginPath();
       ctx.rect(bounds.x, bounds.y, bounds.w, Math.max(0, currentY - bounds.y));
       ctx.clip();
@@ -374,34 +622,28 @@ export default function ScribbleVideoRenderer({
       ctx.restore();
     }
 
-    // 4. DRAW DELICATE MICRO-SCRIBBLE SHADING FOR DARK FABRIC & HAIR ONLY
-    const scribbles = microScribblesRef.current;
+    // 5. DRAW AUTHENTIC DIAGONAL CROSS-HATCHING FOR SHADOWS & FABRIC
+    const hatchStrokes = hatchStrokesRef.current;
     let penX = centerX;
 
-    ctx.strokeStyle = palette.ink;
-    ctx.lineWidth = 0.85; // Fine pen stroke
     ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
 
-    for (let i = 0; i < scribbles.length; i++) {
-      const s = scribbles[i];
-      if (s.progressY <= progressRatio) {
+    for (let i = 0; i < hatchStrokes.length; i++) {
+      const hs = hatchStrokes[i];
+      if (hs.progressY <= progressRatio) {
+        ctx.strokeStyle = `${palette.hatchColor}${hs.opacity})`;
+        ctx.lineWidth = hs.width;
         ctx.beginPath();
-        for (let step = 0; step < s.steps; step++) {
-          const th = s.angleStart + step * 0.58;
-          const cx = s.cx + Math.cos(th) * s.radius;
-          const cy = s.cy + Math.sin(th) * s.radius;
-          if (step === 0) ctx.moveTo(cx, cy);
-          else ctx.lineTo(cx, cy);
-        }
+        ctx.moveTo(hs.x1, hs.y1);
+        ctx.lineTo(hs.x2, hs.y2);
         ctx.stroke();
-        penX = s.cx;
+        penX = hs.x2;
       } else {
         break;
       }
     }
 
-    // 5. ACTIVE PEN NIB & SKETCHING SPARKLE (Sweeping down)
+    // 6. ACTIVE SKETCHING PEN NIB & GRAPHITE SPARKLE (Sweeping down)
     if (progressRatio < 1.0) {
       ctx.save();
       // Shimmer sweep line
@@ -431,18 +673,15 @@ export default function ScribbleVideoRenderer({
       ctx.beginPath();
       ctx.arc(penX, currentY, 2.5, 0, Math.PI * 2);
       ctx.fill();
-
       ctx.restore();
     }
 
-    // 6. Watermark at Bottom Right
+    // 7. ELEGANT WATERMARK
     ctx.save();
-    ctx.font = `italic 11px sans-serif`;
+    ctx.font = `italic 11.5px Georgia, "Times New Roman", serif`;
     ctx.fillStyle = palette.bgText;
     ctx.textAlign = 'right';
-    ctx.fillText(`${titleText || 'Scribble Portrait'} • sudhin_art style`, width - 24, height - 20);
-    ctx.restore();
-
+    ctx.fillText(`${titleText || 'I Love You'} • Masterpiece Sketch Studio`, width - 24, height - 20);
     ctx.restore();
   }, [getThemePalette, themeStyle, titleText]);
 
@@ -499,7 +738,7 @@ export default function ScribbleVideoRenderer({
     if (exportCtx) {
       drawFrame(exportCtx, 1600, 2000, 1.0);
       const link = document.createElement('a');
-      link.download = `${titleText || 'scribble-portrait'}-sudhin-art.png`;
+      link.download = `${titleText || 'masterpiece-sketch'}-studio-art.png`;
       link.href = exportCanvas.toDataURL('image/png', 1.0);
       link.click();
     }
@@ -530,7 +769,7 @@ export default function ScribbleVideoRenderer({
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `${titleText || 'scribble-art'}-video.webm`;
+        a.download = `${titleText || 'masterpiece-art'}-video.webm`;
         a.click();
         URL.revokeObjectURL(url);
         setIsRecording(false);
@@ -564,17 +803,16 @@ export default function ScribbleVideoRenderer({
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#0c1429] border border-[#243356] text-xs text-slate-300">
             <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
-            <span>Scribble Progress: {currentProgress}%</span>
+            <span>Master Sketch Progress: {currentProgress}%</span>
           </div>
 
           <button
             type="button"
             onClick={toggleMute}
-            className={`p-2 rounded-xl border transition ${
-              !isMuted
+            className={`p-2 rounded-xl border transition ${!isMuted
                 ? 'bg-cyan-500/20 border-cyan-500/40 text-cyan-300'
                 : 'bg-[#0c1429] border-[#243356] text-slate-400'
-            }`}
+              }`}
             title={isMuted ? 'Unmute Background Music' : 'Mute Music'}
           >
             {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
@@ -629,7 +867,7 @@ export default function ScribbleVideoRenderer({
             className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#0c1429] hover:bg-[#162347] text-slate-300 hover:text-white text-xs font-medium border border-[#243356] transition"
           >
             <Download size={14} />
-            <span>Download 4K Scribble Art</span>
+            <span>Download 4K Masterpiece</span>
           </button>
 
           <button

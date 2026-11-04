@@ -3,7 +3,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import PhotoUploader from '@/components/PhotoUploader';
 import ScribbleVideoRenderer from '@/components/ScribbleVideoRenderer';
+import InstagramMusicPicker from '@/components/InstagramMusicPicker';
 import { getMultilingualList, TranslatedItem } from '@/lib/languages';
+import { MusicTrackItem } from '@/lib/musicTracks';
 import {
   Sparkles,
   Music,
@@ -15,49 +17,51 @@ import {
   Palette
 } from 'lucide-react';
 
-const MUSIC_PRESETS = [
-  { id: 'piano_rain', name: '🌧️ Piano & Raindrops', desc: 'Soothing rain + warm acoustic chords' },
-  { id: 'piano', name: '🎹 Romantic Piano', desc: 'Warm acoustic piano chords' },
-  { id: 'lofi', name: '☕ Lo-Fi Cafe', desc: 'Chill ambient coffee vibes' },
-  { id: 'strings', name: '🎻 Cinematic Ambient', desc: 'Dreamy orchestral texture' },
-  { id: 'none', name: '🔇 No Audio', desc: 'Muted video loop' }
-];
+// Legacy fallback export to avoid any stale HMR cache runtime errors
+export const MUSIC_PRESETS: { id: string; name: string; desc: string }[] = [];
 
 const THEME_OPTIONS = [
   {
     id: 'emerald',
-    name: 'Tea Cup Emerald & Gold',
-    desc: 'Matches reference teacup art',
-    color: '#1d4a2a',
-    accent: '#8a7138'
-  },
-  {
-    id: 'rain_storm',
-    name: 'Rain & Storm Haven',
-    desc: 'Falling rain with sky-blue calligraphy',
-    color: '#38bdf8',
-    accent: '#94a3b8'
-  },
-  {
-    id: 'gold',
-    name: 'Imperial Gold & Noir',
-    desc: 'Luxury dark gold calligraphy',
-    color: '#e6c364',
-    accent: '#b89130'
-  },
-  {
-    id: 'neon',
-    name: 'Cyberpunk Dual Glow',
-    desc: 'Electric cyan & vivid magenta',
-    color: '#00e5ff',
-    accent: '#e024c3'
+    name: 'Antique Gold & Rose Accents',
+    desc: 'Charcoal pencil with selective 24K gold & rose petal tint (Reference Art)',
+    color: '#d4af37',
+    accent: '#be185d'
   },
   {
     id: 'monochrome',
-    name: 'Classic Sumi Ink',
-    desc: 'Pure calligraphic sketch',
-    color: '#111827',
-    accent: '#374151'
+    name: 'Pure Graphite & Charcoal',
+    desc: 'Classic master pencil sketch on fine cold-press art paper',
+    color: '#18181b',
+    accent: '#52525b'
+  },
+  {
+    id: 'sepia_gold',
+    name: 'Vintage Sepia & 24K Gold',
+    desc: 'Warm Italian parchment with burnt umber ink & gold leaf glaze',
+    color: '#92400e',
+    accent: '#d4a017'
+  },
+  {
+    id: 'sanguine',
+    name: 'Renaissance Sanguine Chalk',
+    desc: 'Classic terracotta red chalk sketch on cream Fabriano paper',
+    color: '#991b1b',
+    accent: '#c2410c'
+  },
+  {
+    id: 'prussian_blue',
+    name: 'Prussian Blue & Cerulean',
+    desc: 'Deep indigo pencil with misty cerulean watercolor wash',
+    color: '#0369a1',
+    accent: '#38bdf8'
+  },
+  {
+    id: 'emerald_gold',
+    name: 'Royal Pine & Champagne Gold',
+    desc: 'Deep pine inking with luminous champagne gold accents',
+    color: '#15803d',
+    accent: '#c5a059'
   }
 ];
 
@@ -66,9 +70,10 @@ export default function Home() {
   const [currentView, setCurrentView] = useState<'form' | 'video'>('form');
 
   const [photoImage, setPhotoImage] = useState<HTMLImageElement | null>(null);
-  const [titleText, setTitleText] = useState<string>('AC Tea Cup');
-  const [selectedTheme, setSelectedTheme] = useState<'emerald' | 'gold' | 'neon' | 'monochrome' | 'rain_storm'>('emerald');
-  const [musicTrack, setMusicTrack] = useState<string>('piano');
+  const [titleText, setTitleText] = useState<string>('I Love You');
+  const [selectedTheme, setSelectedTheme] = useState<string>('emerald');
+  const [selectedTrackId, setSelectedTrackId] = useState<string>('until_i_found_you');
+  const [musicTrack, setMusicTrack] = useState<string>('romantic_piano');
   const [customAudioUrl, setCustomAudioUrl] = useState<string | null>(null);
   const [customAudioName, setCustomAudioName] = useState<string | null>(null);
 
@@ -80,7 +85,7 @@ export default function Home() {
 
   // Update multilingual dictionary
   useEffect(() => {
-    const list = getMultilingualList(titleText || 'Tea Cup', 'love');
+    const list = getMultilingualList(titleText || 'I Love You', 'love');
     setItems(list);
   }, [titleText]);
 
@@ -151,7 +156,7 @@ export default function Home() {
               <h2 className="text-sm font-semibold text-white">Upload Subject / Photo</h2>
             </div>
             <p className="text-xs text-slate-400 mb-4">
-              Upload any image (portrait, tea cup, pet, emblem). The engine will reconstruct its shapes purely out of handwritten multilingual words.
+              Upload any image (portrait, person, couple, pet). The engine will reconstruct its shapes purely out of handwritten multilingual &ldquo;I Love You&rdquo; calligraphy.
             </p>
             <PhotoUploader onImageLoaded={handleImageLoaded} />
           </div>
@@ -164,14 +169,23 @@ export default function Home() {
               </span>
               <h2 className="text-sm font-semibold text-white">Main Calligraphy Inscription</h2>
             </div>
-            <p className="text-xs text-slate-400 mb-3">
-              The prominent central script written across the artwork (e.g. &ldquo;AC Tea Cup&rdquo;, person&apos;s name, or message):
+
+            <p className="text-xs text-slate-300 mb-2.5">
+              The prominent central script and dedicated message written across the artwork:
             </p>
+
+            <div className="flex items-start gap-2.5 px-3.5 py-2.5 rounded-2xl bg-[#09152e] border border-[#1e3a6a] text-xs text-sky-200 mb-3 shadow-inner">
+              <Sparkles size={16} className="text-cyan-400 shrink-0 mt-0.5" />
+              <div className="leading-relaxed text-[11px] text-slate-300">
+                <span className="font-semibold text-cyan-300">Default: &ldquo;I Love You&rdquo;</span> in 100 languages. Keep it as <strong>I Love You</strong>, or enter a name (e.g. <em>Sophia</em>) or custom dedication to personalize the calligraphy.
+              </div>
+            </div>
+
             <input
               type="text"
               value={titleText}
               onChange={(e) => setTitleText(e.target.value)}
-              placeholder="e.g. AC Tea Cup, Sophia, Love You..."
+              placeholder="e.g. I Love You, Sophia, Forever With You..."
               className="w-full px-4 py-3 rounded-2xl bg-[#080d1e] border border-[#243356] focus:border-[#3b82f6] focus:outline-none text-white text-sm font-medium placeholder:text-slate-500 transition shadow-inner"
             />
           </div>
@@ -191,11 +205,10 @@ export default function Home() {
                   key={th.id}
                   type="button"
                   onClick={() => setSelectedTheme(th.id as any)}
-                  className={`p-3.5 rounded-2xl text-left border transition flex items-start justify-between ${
-                    selectedTheme === th.id
+                  className={`p-3.5 rounded-2xl text-left border transition flex items-start justify-between ${selectedTheme === th.id
                       ? 'border-[#1a68f7] bg-[#101b38] shadow-[0_0_15px_rgba(26,104,247,0.3)]'
                       : 'border-[#243356] bg-[#080d1e] hover:bg-[#0e162f]'
-                  }`}
+                    }`}
                 >
                   <div>
                     <div className="flex items-center gap-2">
@@ -217,7 +230,7 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Card 4: Background Music Selection */}
+          {/* Card 4: Background Music Selection (Instagram Story Style) */}
           <div className="bg-[#0b1226]/90 border border-[#1e2a4a] rounded-3xl p-6 shadow-xl shadow-black/25 backdrop-blur-md">
             <div className="flex items-center gap-2.5 mb-3">
               <span className="w-6 h-6 rounded-full bg-[#1b64f2] text-white text-xs font-bold flex items-center justify-center shadow-[0_0_8px_rgba(27,100,242,0.5)]">
@@ -225,67 +238,37 @@ export default function Home() {
               </span>
               <div className="flex items-center gap-2">
                 <Music size={16} className="text-cyan-400" />
-                <h2 className="text-sm font-semibold text-white">Background Music</h2>
+                <h2 className="text-sm font-semibold text-white">Instagram Story Music Library</h2>
               </div>
             </div>
             <p className="text-xs text-slate-400 mb-3">
-              Choose an ambient musical track that plays in a loop while your artwork is written out:
+              Choose from trending romance and aesthetic songs, preview any track live, or upload your own song:
             </p>
 
-            {/* Music Presets */}
-            <div className="grid grid-cols-2 gap-2 mb-3">
-              {MUSIC_PRESETS.map((m) => (
-                <button
-                  key={m.id}
-                  type="button"
-                  onClick={() => {
-                    setMusicTrack(m.id);
-                    setCustomAudioUrl(null);
-                    setCustomAudioName(null);
-                  }}
-                  className={`p-3 rounded-2xl text-left border transition flex items-center justify-between ${
-                    musicTrack === m.id && !customAudioUrl
-                      ? 'border-[#1a68f7] bg-[#101b38] shadow-[0_0_12px_rgba(26,104,247,0.3)]'
-                      : 'border-[#243356] bg-[#080d1e] hover:bg-[#0e162f]'
-                  }`}
-                >
-                  <div>
-                    <span className="text-xs font-semibold text-white block">{m.name}</span>
-                    <span className="text-[11px] text-slate-400">{m.desc}</span>
-                  </div>
-                  {musicTrack === m.id && !customAudioUrl && (
-                    <span className="w-4 h-4 rounded-full bg-[#1a68f7] text-white flex items-center justify-center text-[10px]">
-                      <Check size={10} strokeWidth={3} />
-                    </span>
-                  )}
-                </button>
-              ))}
-            </div>
-
-            {/* Custom MP3 Upload */}
-            <div className="pt-3 border-t border-[#182442] flex items-center justify-between">
-              <label
-                htmlFor="custom-audio-input"
-                className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#080d1e] hover:bg-[#121c38] border border-[#243356] text-slate-300 hover:text-white text-xs font-medium cursor-pointer transition"
-              >
-                <FileAudio size={14} className="text-cyan-400" />
-                <span>Upload Custom Song (MP3 / WAV)</span>
-              </label>
-              <input
-                id="custom-audio-input"
-                type="file"
-                accept="audio/*"
-                onChange={handleAudioUpload}
-                style={{ display: 'none' }}
-              />
-
-              {customAudioName && (
-                <span className="text-xs text-cyan-300 truncate max-w-[200px] flex items-center gap-1">
-                  <Check size={12} className="text-emerald-400" />
-                  {customAudioName}
-                </span>
-              )}
-            </div>
+            <InstagramMusicPicker
+              selectedTrackId={selectedTrackId}
+              customAudioUrl={customAudioUrl}
+              customAudioName={customAudioName}
+              onSelectTrack={(track: MusicTrackItem) => {
+                setSelectedTrackId(track.id);
+                setMusicTrack(track.style);
+                setCustomAudioUrl(null);
+                setCustomAudioName(null);
+              }}
+              onSelectNone={() => {
+                setSelectedTrackId('none');
+                setMusicTrack('none');
+                setCustomAudioUrl(null);
+                setCustomAudioName(null);
+              }}
+              onUploadCustom={(file: File) => {
+                const url = URL.createObjectURL(file);
+                setCustomAudioUrl(url);
+                setCustomAudioName(file.name);
+                setMusicTrack('custom');
+                setSelectedTrackId('custom');
+              }}
+            />
           </div>
 
           {/* Big Action Button */}

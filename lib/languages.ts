@@ -269,13 +269,17 @@ export function getMultilingualList(
   name: string,
   mode: 'name' | 'love' | 'sorry' | 'custom'
 ): TranslatedItem[] {
-  const trimmedName = name.trim() || 'You';
+  const trimmedName = name.trim();
+  const isDefaultLove =
+    !trimmedName ||
+    trimmedName.toLowerCase() === 'i love you' ||
+    trimmedName.toLowerCase() === 'love you';
 
   if (mode === 'love') {
     return Object.entries(LOVE_TRANSLATIONS).map(([language, phrase]) => ({
       language,
       nativeLanguage: language,
-      text: `${phrase}, ${trimmedName}`,
+      text: isDefaultLove ? phrase : `${phrase}, ${trimmedName}`,
       script: 'native'
     }));
   }

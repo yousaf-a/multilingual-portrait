@@ -1,13 +1,26 @@
 // Web Audio API procedural music & rain sound generator + custom audio handler
-// Provides beautiful, royalty-free ambient piano/lofi chord progressions + soothing rain!
+// Provides beautiful, royalty-free ambient piano/guitar/strings/lofi chord progressions + soothing rain!
+
+export type SoundStyle =
+  | 'romantic_piano'
+  | 'acoustic_guitar'
+  | 'lofi_cafe'
+  | 'rain_ambient'
+  | 'cinematic_strings'
+  | 'dreamy_synth'
+  | 'none'
+  | 'custom'
+  | string;
 
 class AudioController {
   private ctx: AudioContext | null = null;
   private isPlaying: boolean = false;
   private intervalId: any = null;
+  private previewTimeoutId: any = null;
   private rainNode: AudioNode | null = null;
   private customAudio: HTMLAudioElement | null = null;
-  private currentTrack: string = 'piano';
+  private currentTrack: string = 'romantic_piano';
+  private previewingTrackId: string | null = null;
 
   public init() {
     if (!this.ctx && typeof window !== 'undefined') {
@@ -54,8 +67,8 @@ class AudioController {
     this.rainNode = whiteNoise;
   }
 
-  // Play gentle piano/rhodes chords
-  private playChord(frequencies: number[], duration: number) {
+  // Play chords according to musical instrument style
+  private playChordForStyle(style: string, frequencies: number[], duration: number) {
     if (!this.ctx) return;
     const now = this.ctx.currentTime;
 
@@ -63,17 +76,79 @@ class AudioController {
       if (!this.ctx) return;
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
+      const filter = this.ctx.createBiquadFilter();
 
-      osc.type = idx === 0 ? 'sine' : 'triangle';
-      osc.frequency.setValueAtTime(freq, now);
+      if (style.includes('guitar')) {
+        // Acoustic guitar pluck
+        osc.type = idx === 0 ? 'triangle' : 'sawtooth';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.035);
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(1400, now);
+        filter.frequency.exponentialRampToValueAtTime(300, now + duration);
 
-      gain.gain.setValueAtTime(0.001, now);
-      gain.gain.linearRampToValueAtTime(0.05 / (idx + 1), now + 0.18);
-      gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.linearRampToValueAtTime(0.06 / (idx + 1), now + idx * 0.035 + 0.015);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
 
-      osc.connect(gain);
+        osc.connect(filter);
+        filter.connect(gain);
+      } else if (style.includes('lofi')) {
+        // Rhodes electric piano with warm vibrato
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, now);
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(900, now);
+
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.linearRampToValueAtTime(0.05 / (idx + 1), now + 0.08);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+        osc.connect(filter);
+        filter.connect(gain);
+      } else if (style.includes('strings')) {
+        // Rich cinematic orchestra strings with slow attack
+        osc.type = idx % 2 === 0 ? 'sawtooth' : 'triangle';
+        osc.frequency.setValueAtTime(freq * (1 + (idx - 1) * 0.002), now);
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(1100, now);
+
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.linearRampToValueAtTime(0.035 / (idx + 1), now + 0.7);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+        osc.connect(filter);
+        filter.connect(gain);
+      } else if (style.includes('synth')) {
+        // Dreamy 80s synth pad
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(freq, now);
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(800, now);
+        filter.frequency.linearRampToValueAtTime(1500, now + duration * 0.4);
+
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.linearRampToValueAtTime(0.04 / (idx + 1), now + 0.35);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+        osc.connect(filter);
+        filter.connect(gain);
+      } else {
+        // Default warm grand piano
+        osc.type = idx === 0 ? 'sine' : 'triangle';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.02);
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(2000, now);
+        filter.frequency.exponentialRampToValueAtTime(450, now + duration);
+
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.linearRampToValueAtTime(0.05 / (idx + 1), now + idx * 0.02 + 0.04);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+        osc.connect(filter);
+        filter.connect(gain);
+      }
+
       gain.connect(this.ctx.destination);
-
       osc.start(now);
       osc.stop(now + duration + 0.1);
     });
@@ -90,7 +165,7 @@ class AudioController {
     }
   }
 
-  public start(track: string = 'piano', customUrl?: string | null) {
+  public start(track: string = 'romantic_piano', customUrl?: string | null) {
     this.init();
     if (this.ctx && this.ctx.state === 'suspended') {
       this.ctx.resume();
@@ -110,27 +185,103 @@ class AudioController {
       return;
     }
 
-    // Rain & Storm audio (Adri reel reference)
-    if (track === 'rain' || track === 'piano_rain') {
+    // Rain sound for rain tracks
+    if (track.includes('rain')) {
       this.startRainNoise();
     }
 
-    // Ambient chords
-    const chords: number[][] = [
-      [261.63, 329.63, 392.00, 493.88], // Cmaj7
-      [220.00, 261.63, 329.63, 392.00], // Am9
-      [174.61, 261.63, 329.63, 349.23], // Fmaj7
-      [196.00, 261.63, 293.66, 392.00]  // Gsus4
-    ];
+    // Distinct harmonic chord progressions
+    let chords: number[][];
+
+    if (track.includes('guitar')) {
+      // Dmaj7 -> Gmaj7 -> Bm7 -> Asus4
+      chords = [
+        [146.83, 220.00, 277.18, 369.99], // Dmaj7
+        [196.00, 246.94, 293.66, 392.00], // Gmaj7
+        [123.47, 185.00, 220.00, 293.66], // Bm7
+        [220.00, 293.66, 329.63, 440.00]  // Asus4
+      ];
+    } else if (track.includes('lofi')) {
+      // Ebmaj9 -> Cm9 -> Fm9 -> Bb13
+      chords = [
+        [155.56, 233.08, 293.66, 349.23], // Ebmaj9
+        [130.81, 196.00, 233.08, 311.13], // Cm9
+        [174.61, 261.63, 311.13, 392.00], // Fm9
+        [233.08, 293.66, 349.23, 440.00]  // Bb13
+      ];
+    } else if (track.includes('strings') || track.includes('cinematic')) {
+      // Fmaj7 -> C/E -> Dm7 -> Bbmaj7
+      chords = [
+        [174.61, 261.63, 329.63, 349.23], // Fmaj7
+        [164.81, 246.94, 329.63, 392.00], // C/E
+        [146.83, 220.00, 261.63, 349.23], // Dm7
+        [116.54, 174.61, 233.08, 293.66]  // Bbmaj7
+      ];
+    } else if (track.includes('rain')) {
+      // Dm -> Bb -> F -> C
+      chords = [
+        [146.83, 220.00, 261.63, 349.23],
+        [116.54, 174.61, 233.08, 293.66],
+        [174.61, 220.00, 261.63, 349.23],
+        [130.81, 196.00, 261.63, 329.63]
+      ];
+    } else {
+      // Romantic Piano: Cmaj7 -> Am9 -> Fmaj7 -> Gsus4
+      chords = [
+        [261.63, 329.63, 392.00, 493.88], // Cmaj7
+        [220.00, 261.63, 329.63, 392.00], // Am9
+        [174.61, 261.63, 329.63, 349.23], // Fmaj7
+        [196.00, 261.63, 293.66, 392.00]  // Gsus4
+      ];
+    }
 
     let chordIdx = 0;
-    this.playChord(chords[0], 2.8);
+    this.playChordForStyle(track, chords[0], 2.8);
 
     this.intervalId = setInterval(() => {
       if (!this.isPlaying) return;
       chordIdx = (chordIdx + 1) % chords.length;
-      this.playChord(chords[chordIdx], 2.8);
+      this.playChordForStyle(track, chords[chordIdx], 2.8);
     }, 2800);
+  }
+
+  public preview(track: string, onStop?: () => void) {
+    this.init();
+    if (this.ctx && this.ctx.state === 'suspended') {
+      this.ctx.resume();
+    }
+
+    if (this.previewingTrackId === track) {
+      // Toggle off if currently previewing the same track
+      this.stopPreview();
+      onStop?.();
+      return false;
+    }
+
+    this.stopPreview();
+    this.previewingTrackId = track;
+    this.start(track);
+
+    // Auto-stop preview after 15 seconds
+    this.previewTimeoutId = setTimeout(() => {
+      this.stopPreview();
+      onStop?.();
+    }, 15000);
+
+    return true;
+  }
+
+  public stopPreview() {
+    if (this.previewTimeoutId) {
+      clearTimeout(this.previewTimeoutId);
+      this.previewTimeoutId = null;
+    }
+    this.previewingTrackId = null;
+    this.stop();
+  }
+
+  public getPreviewingTrackId(): string | null {
+    return this.previewingTrackId;
   }
 
   public stop() {
@@ -150,7 +301,7 @@ class AudioController {
     }
   }
 
-  public toggle(track: string = 'piano', customUrl?: string | null): boolean {
+  public toggle(track: string = 'romantic_piano', customUrl?: string | null): boolean {
     if (this.isPlaying) {
       this.stop();
       return false;

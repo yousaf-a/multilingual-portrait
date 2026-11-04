@@ -54,8 +54,8 @@ function GiftExperience() {
     };
     img.src = imageSrc;
 
-    // Multilingual list
-    const list = getMultilingualList(toName, 'love');
+    // Multilingual list strictly using custom message / recipient dedication
+    const list = getMultilingualList(customMsg || toName, 'name');
     setItems(list);
   }, [imgParam, toName]);
 
@@ -183,3 +183,4 @@ export default function GiftPage() {
     </Suspense>
   );
 }
+

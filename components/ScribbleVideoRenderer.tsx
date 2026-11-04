@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { TranslatedItem } from '@/lib/languages';
+import { TranslatedItem, getMultilingualList } from '@/lib/languages';
 import { Play, Pause, RotateCcw, Volume2, VolumeX, Download, ArrowLeft, Video, Gift } from 'lucide-react';
 import { audioController } from '@/lib/audio';
 import ShareGiftModal from '@/components/ShareGiftModal';
@@ -160,24 +160,9 @@ export default function ScribbleVideoRenderer({
     const height = 1000;
     const palette = getThemePalette();
 
-    const phrases = items.length >= 8 ? items : [
-      { text: titleText || "Love You", language: "English" },
-      { text: "Je t'aime", language: "French" },
-      { text: "Ich liebe dich", language: "German" },
-      { text: "Te amo", language: "Spanish" },
-      { text: "我爱你", language: "Chinese" },
-      { text: "愛してる", language: "Japanese" },
-      { text: "أحبك", language: "Arabic" },
-      { text: "मैं तुमसे प्यार करता हूँ", language: "Hindi" },
-      { text: "Я тебя люблю", language: "Russian" },
-      { text: "Ti amo", language: "Italian" },
-      { text: "Eu te amo", language: "Portuguese" },
-      { text: "사랑해", language: "Korean" },
-      { text: "Nakupenda", language: "Swahili" },
-      { text: "Seni seviyorum", language: "Turkish" },
-      { text: "Kocham cię", language: "Polish" },
-      { text: "Σ' αγαπώ", language: "Greek" }
-    ];
+    const phrases = items.length > 0
+      ? items
+      : (titleText ? getMultilingualList(titleText, 'name') : []);
 
     if (!photoImage) return;
 
@@ -683,7 +668,11 @@ export default function ScribbleVideoRenderer({
     ctx.font = `italic 11.5px Georgia, "Times New Roman", serif`;
     ctx.fillStyle = palette.bgText;
     ctx.textAlign = 'right';
-    ctx.fillText(`${titleText || 'I Love You'} • Masterpiece Sketch Studio`, width - 24, height - 20);
+    ctx.fillText(
+      titleText ? `${titleText} • Masterpiece Sketch Studio` : 'Masterpiece Sketch Studio',
+      width - 24,
+      height - 20
+    );
     ctx.restore();
   }, [getThemePalette, themeStyle, titleText]);
 

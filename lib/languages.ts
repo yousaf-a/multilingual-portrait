@@ -264,36 +264,40 @@ function transliterateWithMap(text: string, map: Record<string, string>): string
   return result;
 }
 
-// Generates 100 entries for any name or preset phrase
+// Generates 100 entries strictly using what the user fills
 export function getMultilingualList(
   name: string,
-  mode: 'name' | 'love' | 'sorry' | 'custom'
+  mode: 'name' | 'love' | 'sorry' | 'custom' = 'name'
 ): TranslatedItem[] {
   const trimmedName = name.trim();
-  const isDefaultLove =
-    !trimmedName ||
+  if (!trimmedName) {
+    return [];
+  }
+
+  // If user explicitly entered "I Love You" or "Love You", provide world translations of that phrase
+  const isExplicitLove =
     trimmedName.toLowerCase() === 'i love you' ||
     trimmedName.toLowerCase() === 'love you';
 
-  if (mode === 'love') {
+  if (isExplicitLove) {
     return Object.entries(LOVE_TRANSLATIONS).map(([language, phrase]) => ({
       language,
       nativeLanguage: language,
-      text: isDefaultLove ? phrase : `${phrase}, ${trimmedName}`,
+      text: phrase,
       script: 'native'
     }));
   }
 
-  if (mode === 'sorry') {
+  if (mode === 'sorry' && trimmedName.toLowerCase().includes('sorry')) {
     return Object.entries(SORRY_TRANSLATIONS).map(([language, phrase]) => ({
       language,
       nativeLanguage: language,
-      text: `${phrase}, ${trimmedName}`,
+      text: phrase,
       script: 'native'
     }));
   }
 
-  // Pure name in 100 languages/scripts
+  // Pure user input in 100 languages/scripts: NO forced "I Love You" prefix or suffix!
   const list: TranslatedItem[] = [];
   const baseLanguages = Object.keys(LOVE_TRANSLATIONS);
 
@@ -316,7 +320,7 @@ export function getMultilingualList(
     } else if (lang === 'Korean') {
       scriptText = transliterateWithMap(trimmedName, HANGUL_MAP);
     } else {
-      // Latin variations with language prefix/suffix
+      // Latin variations: exact user text
       scriptText = trimmedName;
     }
 

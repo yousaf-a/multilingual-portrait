@@ -14,11 +14,12 @@ import {
   FileAudio,
   Check,
   Wand2,
-  Palette
+  Palette,
+  AlertCircle
 } from 'lucide-react';
 
-// Legacy fallback export to avoid any stale HMR cache runtime errors
-export const MUSIC_PRESETS: { id: string; name: string; desc: string }[] = [];
+// Legacy fallback to avoid any stale HMR cache runtime errors
+const MUSIC_PRESETS: { id: string; name: string; desc: string }[] = [];
 
 const THEME_OPTIONS = [
   {
@@ -70,7 +71,7 @@ export default function Home() {
   const [currentView, setCurrentView] = useState<'form' | 'video'>('form');
 
   const [photoImage, setPhotoImage] = useState<HTMLImageElement | null>(null);
-  const [titleText, setTitleText] = useState<string>('I Love You');
+  const [titleText, setTitleText] = useState<string>('');
   const [selectedTheme, setSelectedTheme] = useState<string>('emerald');
   const [selectedTrackId, setSelectedTrackId] = useState<string>('until_i_found_you');
   const [musicTrack, setMusicTrack] = useState<string>('romantic_piano');
@@ -78,14 +79,22 @@ export default function Home() {
   const [customAudioName, setCustomAudioName] = useState<string | null>(null);
 
   const [items, setItems] = useState<TranslatedItem[]>([]);
+  const [formErrors, setFormErrors] = useState<{ photo?: string; title?: string; theme?: string }>({});
 
   const handleImageLoaded = useCallback((img: HTMLImageElement | null) => {
     setPhotoImage(img);
+    if (img) {
+      setFormErrors((prev) => ({ ...prev, photo: undefined }));
+    }
   }, []);
 
-  // Update multilingual dictionary
+  // Update multilingual dictionary strictly using what the user fills
   useEffect(() => {
-    const list = getMultilingualList(titleText || 'I Love You', 'love');
+    if (!titleText.trim()) {
+      setItems([]);
+      return;
+    }
+    const list = getMultilingualList(titleText, 'name');
     setItems(list);
   }, [titleText]);
 
@@ -101,6 +110,29 @@ export default function Home() {
   };
 
   const handleGenerate = () => {
+    const errors: { photo?: string; title?: string; theme?: string } = {};
+
+    if (!photoImage) {
+      errors.photo = 'Image is required. Please upload a photo or choose a sample.';
+    }
+    if (!titleText.trim()) {
+      errors.title = 'Inscription is required. Please enter a name or dedication.';
+    }
+    if (!selectedTheme) {
+      errors.theme = 'Theme is required. Please choose a color palette.';
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      const firstKey = Object.keys(errors)[0];
+      const el = document.getElementById(`card-${firstKey}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      return;
+    }
+
+    setFormErrors({});
     setCurrentView('video');
   };
 
@@ -147,68 +179,135 @@ export default function Home() {
       {/* VIEW 1: CREATION FORM (NO PREVIEW ON PAGE) */}
       {currentView === 'form' && (
         <div className="w-full max-w-2xl flex flex-col gap-5 my-8">
-          {/* Card 1: Upload Photo / Subject */}
-          <div className="bg-[#0b1226]/90 border border-[#1e2a4a] rounded-3xl p-6 shadow-xl shadow-black/25 backdrop-blur-md">
-            <div className="flex items-center gap-2.5 mb-3">
-              <span className="w-6 h-6 rounded-full bg-[#1b64f2] text-white text-xs font-bold flex items-center justify-center shadow-[0_0_8px_rgba(27,100,242,0.5)]">
-                1
+          {/* Card 1: Upload Photo / Subject (Required) */}
+          <div
+            id="card-photo"
+            className={`bg-[#0b1226]/90 border rounded-3xl p-6 shadow-xl shadow-black/25 backdrop-blur-md transition ${
+              formErrors.photo
+                ? 'border-rose-500 ring-2 ring-rose-500/30'
+                : 'border-[#1e2a4a]'
+            }`}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2.5">
+                <span className="w-6 h-6 rounded-full bg-[#1b64f2] text-white text-xs font-bold flex items-center justify-center shadow-[0_0_8px_rgba(27,100,242,0.5)]">
+                  1
+                </span>
+                <h2 className="text-sm font-semibold text-white">Upload Subject / Photo</h2>
+              </div>
+              <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-400">
+                * Required
               </span>
-              <h2 className="text-sm font-semibold text-white">Upload Subject / Photo</h2>
             </div>
+
+            {formErrors.photo && (
+              <div className="flex items-center gap-2 p-3 mb-3.5 rounded-2xl bg-rose-950/40 border border-rose-500/40 text-xs text-rose-300 animate-in fade-in">
+                <AlertCircle size={16} className="shrink-0 text-rose-400" />
+                <span>{formErrors.photo}</span>
+              </div>
+            )}
+
             <p className="text-xs text-slate-400 mb-4">
-              Upload any image (portrait, person, couple, pet). The engine will reconstruct its shapes purely out of handwritten multilingual &ldquo;I Love You&rdquo; calligraphy.
+              Upload any image (portrait, person, couple, pet). The engine will reconstruct its shapes into a fine-art sketch framed with your custom inscription.
             </p>
             <PhotoUploader onImageLoaded={handleImageLoaded} />
           </div>
 
-          {/* Card 2: Main Calligraphy Title & Inscription */}
-          <div className="bg-[#0b1226]/90 border border-[#1e2a4a] rounded-3xl p-6 shadow-xl shadow-black/25 backdrop-blur-md">
-            <div className="flex items-center gap-2.5 mb-3">
-              <span className="w-6 h-6 rounded-full bg-[#1b64f2] text-white text-xs font-bold flex items-center justify-center shadow-[0_0_8px_rgba(27,100,242,0.5)]">
-                2
+          {/* Card 2: Main Calligraphy Title & Inscription (Required) */}
+          <div
+            id="card-title"
+            className={`bg-[#0b1226]/90 border rounded-3xl p-6 shadow-xl shadow-black/25 backdrop-blur-md transition ${
+              formErrors.title
+                ? 'border-rose-500 ring-2 ring-rose-500/30'
+                : 'border-[#1e2a4a]'
+            }`}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2.5">
+                <span className="w-6 h-6 rounded-full bg-[#1b64f2] text-white text-xs font-bold flex items-center justify-center shadow-[0_0_8px_rgba(27,100,242,0.5)]">
+                  2
+                </span>
+                <h2 className="text-sm font-semibold text-white">Main Calligraphy Inscription</h2>
+              </div>
+              <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-400">
+                * Required
               </span>
-              <h2 className="text-sm font-semibold text-white">Main Calligraphy Inscription</h2>
             </div>
 
+            {formErrors.title && (
+              <div className="flex items-center gap-2 p-3 mb-3.5 rounded-2xl bg-rose-950/40 border border-rose-500/40 text-xs text-rose-300 animate-in fade-in">
+                <AlertCircle size={16} className="shrink-0 text-rose-400" />
+                <span>{formErrors.title}</span>
+              </div>
+            )}
+
             <p className="text-xs text-slate-300 mb-2.5">
-              The prominent central script and dedicated message written across the artwork:
+              Type the exact name, dedication, or phrase to be written across the artwork:
             </p>
 
             <div className="flex items-start gap-2.5 px-3.5 py-2.5 rounded-2xl bg-[#09152e] border border-[#1e3a6a] text-xs text-sky-200 mb-3 shadow-inner">
               <Sparkles size={16} className="text-cyan-400 shrink-0 mt-0.5" />
               <div className="leading-relaxed text-[11px] text-slate-300">
-                <span className="font-semibold text-cyan-300">Default: &ldquo;I Love You&rdquo;</span> in 100 languages. Keep it as <strong>I Love You</strong>, or enter a name (e.g. <em>Sophia</em>) or custom dedication to personalize the calligraphy.
+                <span className="font-semibold text-cyan-300">Custom Text Only:</span> Enter any dedication (e.g. <em>Sophia</em>, <em>Happy Birthday</em>). The engine renders <strong>strictly what you type</strong> across world languages without forcing any default phrase.
               </div>
             </div>
 
             <input
               type="text"
               value={titleText}
-              onChange={(e) => setTitleText(e.target.value)}
-              placeholder="e.g. I Love You, Sophia, Forever With You..."
+              onChange={(e) => {
+                setTitleText(e.target.value);
+                if (e.target.value.trim()) {
+                  setFormErrors((prev) => ({ ...prev, title: undefined }));
+                }
+              }}
+              placeholder="Enter custom dedication or text (e.g. Sophia, Happy Birthday)..."
               className="w-full px-4 py-3 rounded-2xl bg-[#080d1e] border border-[#243356] focus:border-[#3b82f6] focus:outline-none text-white text-sm font-medium placeholder:text-slate-500 transition shadow-inner"
             />
           </div>
 
-          {/* Card 3: Calligraphy Color Theme */}
-          <div className="bg-[#0b1226]/90 border border-[#1e2a4a] rounded-3xl p-6 shadow-xl shadow-black/25 backdrop-blur-md">
-            <div className="flex items-center gap-2.5 mb-3">
-              <span className="w-6 h-6 rounded-full bg-[#1b64f2] text-white text-xs font-bold flex items-center justify-center shadow-[0_0_8px_rgba(27,100,242,0.5)]">
-                3
+          {/* Card 3: Calligraphy Color Theme (Required) */}
+          <div
+            id="card-theme"
+            className={`bg-[#0b1226]/90 border rounded-3xl p-6 shadow-xl shadow-black/25 backdrop-blur-md transition ${
+              formErrors.theme
+                ? 'border-rose-500 ring-2 ring-rose-500/30'
+                : 'border-[#1e2a4a]'
+            }`}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2.5">
+                <span className="w-6 h-6 rounded-full bg-[#1b64f2] text-white text-xs font-bold flex items-center justify-center shadow-[0_0_8px_rgba(27,100,242,0.5)]">
+                  3
+                </span>
+                <h2 className="text-sm font-semibold text-white">Color Palette &amp; Inking Style</h2>
+              </div>
+              <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-400">
+                * Required
               </span>
-              <h2 className="text-sm font-semibold text-white">Color Palette & Inking Style</h2>
             </div>
+
+            {formErrors.theme && (
+              <div className="flex items-center gap-2 p-3 mb-3.5 rounded-2xl bg-rose-950/40 border border-rose-500/40 text-xs text-rose-300 animate-in fade-in">
+                <AlertCircle size={16} className="shrink-0 text-rose-400" />
+                <span>{formErrors.theme}</span>
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-3 mt-2">
               {THEME_OPTIONS.map((th) => (
                 <button
                   key={th.id}
                   type="button"
-                  onClick={() => setSelectedTheme(th.id as any)}
-                  className={`p-3.5 rounded-2xl text-left border transition flex items-start justify-between ${selectedTheme === th.id
+                  onClick={() => {
+                    setSelectedTheme(th.id as any);
+                    setFormErrors((prev) => ({ ...prev, theme: undefined }));
+                  }}
+                  className={`p-3.5 rounded-2xl text-left border transition flex items-start justify-between cursor-pointer ${
+                    selectedTheme === th.id
                       ? 'border-[#1a68f7] bg-[#101b38] shadow-[0_0_15px_rgba(26,104,247,0.3)]'
                       : 'border-[#243356] bg-[#080d1e] hover:bg-[#0e162f]'
-                    }`}
+                  }`}
                 >
                   <div>
                     <div className="flex items-center gap-2">
@@ -230,19 +329,24 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Card 4: Background Music Selection (Instagram Story Style) */}
+          {/* Card 4: Background Music Selection (Optional) */}
           <div className="bg-[#0b1226]/90 border border-[#1e2a4a] rounded-3xl p-6 shadow-xl shadow-black/25 backdrop-blur-md">
-            <div className="flex items-center gap-2.5 mb-3">
-              <span className="w-6 h-6 rounded-full bg-[#1b64f2] text-white text-xs font-bold flex items-center justify-center shadow-[0_0_8px_rgba(27,100,242,0.5)]">
-                4
-              </span>
-              <div className="flex items-center gap-2">
-                <Music size={16} className="text-cyan-400" />
-                <h2 className="text-sm font-semibold text-white">Instagram Story Music Library</h2>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2.5">
+                <span className="w-6 h-6 rounded-full bg-[#1b64f2] text-white text-xs font-bold flex items-center justify-center shadow-[0_0_8px_rgba(27,100,242,0.5)]">
+                  4
+                </span>
+                <div className="flex items-center gap-2">
+                  <Music size={16} className="text-cyan-400" />
+                  <h2 className="text-sm font-semibold text-white">Instagram Story Music Library</h2>
+                </div>
               </div>
+              <span className="text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-slate-400">
+                Optional
+              </span>
             </div>
             <p className="text-xs text-slate-400 mb-3">
-              Choose from trending romance and aesthetic songs, preview any track live, or upload your own song:
+              Choose an aesthetic soundtrack, upload your own MP3, or leave muted (music is completely optional):
             </p>
 
             <InstagramMusicPicker

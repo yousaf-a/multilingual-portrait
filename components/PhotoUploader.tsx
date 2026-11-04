@@ -8,22 +8,8 @@ interface PhotoUploaderProps {
 }
 
 export default function PhotoUploader({ onImageLoaded }: PhotoUploaderProps) {
-  const [previewUrl, setPreviewUrl] = useState<string | null>('/sample-target-art.png');
-  const [fileName, setFileName] = useState<string>('sample-target-art.png');
-
-  // Load default target reference art on initial mount
-  useEffect(() => {
-    const defaultSrc = '/sample-target-art.png';
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      onImageLoaded(img, defaultSrc);
-      setPreviewUrl(defaultSrc);
-      setFileName('sample-target-art.png');
-    };
-    img.src = defaultSrc;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [fileName, setFileName] = useState<string>('');
 
   const loadSample = (src: string, name: string) => {
     setFileName(name);
@@ -112,16 +98,17 @@ export default function PhotoUploader({ onImageLoaded }: PhotoUploaderProps) {
                 style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#0a1022' }}
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-slate-500 text-xs">
-                No Image
+              <div className="w-full h-full flex flex-col items-center justify-center text-slate-500 text-[10px] p-1 text-center">
+                <ImageIcon size={20} className="mb-1 text-slate-600" />
+                <span>No image</span>
               </div>
             )}
             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-[10px] text-white font-medium transition backdrop-blur-[1px]">
-              Change
+              {previewUrl ? 'Change' : 'Select'}
             </div>
           </label>
           <p className="text-[11px] text-slate-400 mt-2 text-center truncate max-w-[120px]">
-            {fileName}
+            {fileName || 'No file selected'}
           </p>
         </div>
       </div>

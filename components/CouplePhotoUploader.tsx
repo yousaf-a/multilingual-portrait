@@ -33,66 +33,99 @@ interface CouplePhotoUploaderProps {
   onPartnerNamesSuggested?: (names: string) => void;
 }
 
+const MASTER_BASE_PROMPT = `Use the two uploaded images as separate identity references.
+
+Transform the two individuals into a single aesthetically composed couple portrait. Bring both people together naturally, positioning their faces close to each other, either side by side or slightly leaning against one another.
+
+**Identity preservation is extremely important:**
+- Person 1 must retain the exact facial features, face shape, hairstyle, skin tone, and recognizable appearance from Image 1.
+- Person 2 must retain the exact facial features, face shape, hairstyle, skin tone, and recognizable appearance from Image 2.
+- Do not blend their faces, swap identities, or change their defining characteristics.
+
+**Composition:**
+- Create an intimate, close-up portrait of both individuals.
+- Their faces should occupy most of the frame.
+- Position them naturally, with their heads close together.
+- Create a balanced composition with both faces clearly visible.
+- Use subtle, natural expressions and aesthetically pleasing poses.
+
+**Artistic direction:**
+Create a visually beautiful, professionally composed couple portrait inspired by the uploaded reference style. Maintain realistic facial proportions, natural details, and beautiful lighting.
+
+The final image should look like a deliberately created couple portrait, NOT two separate images pasted together.
+
+No borders, no collage, no split screen, no extra people, no text, no watermark.
+
+Output: One cohesive portrait featuring both individuals.`;
+
 const PRESETS = [
   {
     id: 'split_face_1',
     name: 'Split Face (Look Ahead)',
-    desc: 'Close-up fused split face (Reference 3)',
+    desc: 'Cinematic realistic portrait (Reference 3)',
+    category: '1. Cinematic realistic portrait',
     layout: 'split_face' as CoupleLayoutMode,
     p1: { zoom: 1.0, panX: 0, panY: 0 },
     p2: { zoom: 1.0, panX: 0, panY: 0 },
-    seam: 26,
+    seam: 12,
     fullUrl: '/couple-presets/preset-split-face-1.jpg',
     leftUrl: '/couple-presets/preset-split-face-1-left.jpg',
     rightUrl: '/couple-presets/preset-split-face-1-right.jpg',
     leftName: 'Her (Gaze)',
     rightName: 'Him (Gaze)',
-    suggestedNames: 'Sophia & Lucas'
+    suggestedNames: 'Sophia & Lucas',
+    styleInstruction: 'Style: Ultra-realistic cinematic couple photography, natural skin texture, detailed eyes, soft dramatic lighting, professional editorial portrait, shallow depth of field, warm earthy tones. Close-up intimate couple looking ahead, faces touching tenderly.'
   },
   {
     id: 'split_face_2',
     name: 'Split Face (Serene Eyes)',
-    desc: 'Intimate serene split face (Reference 4)',
+    desc: 'Cinematic realistic portrait (Reference 4)',
+    category: '1. Cinematic realistic portrait',
     layout: 'split_face' as CoupleLayoutMode,
     p1: { zoom: 1.05, panX: 0, panY: 2 },
     p2: { zoom: 1.05, panX: 0, panY: 2 },
-    seam: 30,
+    seam: 14,
     fullUrl: '/couple-presets/preset-split-face-2.jpg',
     leftUrl: '/couple-presets/preset-split-face-2-left.jpg',
     rightUrl: '/couple-presets/preset-split-face-2-right.jpg',
     leftName: 'Him (Closed)',
     rightName: 'Her (Closed)',
-    suggestedNames: 'Maya & Ethan'
+    suggestedNames: 'Maya & Ethan',
+    styleInstruction: 'Style: Ultra-realistic cinematic couple photography, natural skin texture, detailed eyes, soft dramatic lighting, professional editorial portrait, shallow depth of field, warm earthy tones. Serene, peaceful close-up couple portrait, eyes closed in an intimate loving embrace.'
   },
   {
     id: 'side_by_side_1',
     name: 'Anime Shoulder-to-Shoulder',
-    desc: 'Shoulder-to-shoulder couple portrait (Reference 1)',
+    desc: 'Hand-drawn anime pencil sketch (Reference 1)',
+    category: '2. Hand-drawn anime pencil sketch',
     layout: 'side_by_side' as CoupleLayoutMode,
-    p1: { zoom: 1.05, panX: 2, panY: -2 },
-    p2: { zoom: 1.02, panX: -2, panY: 2 },
-    seam: 130,
+    p1: { zoom: 1.05, panX: 0, panY: -2 },
+    p2: { zoom: 1.02, panX: 0, panY: 2 },
+    seam: 12,
     fullUrl: '/couple-presets/preset-side-by-side-1.jpg',
     leftUrl: '/couple-presets/preset-side-by-side-1-left.jpg',
     rightUrl: '/couple-presets/preset-side-by-side-1-right.jpg',
     leftName: 'Boy (Silver Hair)',
     rightName: 'Girl (Silver Hair)',
-    suggestedNames: 'Ren & Mia'
+    suggestedNames: 'Ren & Mia',
+    styleInstruction: 'Style: Highly detailed hand-drawn graphite pencil illustration, romantic anime-inspired couple portrait, realistic facial resemblance to both references, delicate pencil strokes, intricate hair details, expressive eyes, soft cross-hatching, monochrome shading on textured sketchbook paper. Posed shoulder-to-shoulder, heads leaning gently close.'
   },
   {
     id: 'side_by_side_2',
     name: 'Anime Back-to-Back Duo',
-    desc: 'Back-to-back smiling couple (Reference 2)',
+    desc: 'Hand-drawn anime pencil sketch (Reference 2)',
+    category: '2. Hand-drawn anime pencil sketch',
     layout: 'side_by_side' as CoupleLayoutMode,
-    p1: { zoom: 1.02, panX: -5, panY: 0 },
-    p2: { zoom: 1.02, panX: 5, panY: 0 },
-    seam: 110,
+    p1: { zoom: 1.02, panX: -4, panY: 0 },
+    p2: { zoom: 1.02, panX: 4, panY: 0 },
+    seam: 12,
     fullUrl: '/couple-presets/preset-side-by-side-2.jpg',
     leftUrl: '/couple-presets/preset-side-by-side-2-left.jpg',
     rightUrl: '/couple-presets/preset-side-by-side-2-right.jpg',
     leftName: 'Girl (Long Hair)',
     rightName: 'Boy (Smile)',
-    suggestedNames: 'Kael & Aria'
+    suggestedNames: 'Kael & Aria',
+    styleInstruction: 'Style: Highly detailed hand-drawn graphite pencil illustration, romantic anime-inspired couple portrait, realistic facial resemblance to both references, delicate pencil strokes, intricate hair details, expressive eyes, soft cross-hatching, monochrome shading on textured sketchbook paper. Leaning back-to-back smiling, heads close together.'
   }
 ];
 
@@ -101,7 +134,7 @@ export default function CouplePhotoUploader({
   onPartnerNamesSuggested
 }: CouplePhotoUploaderProps) {
   const [layoutMode, setLayoutMode] = useState<CoupleLayoutMode>('split_face');
-  const [activePresetId, setActivePresetId] = useState<string | null>(null);
+  const [activePresetId, setActivePresetId] = useState<string | null>('split_face_1');
 
   const [partner1Img, setPartner1Img] = useState<HTMLImageElement | null>(null);
   const [partner1Url, setPartner1Url] = useState<string | null>(null);
@@ -114,7 +147,7 @@ export default function CouplePhotoUploader({
   // Face Adaptation Transforms (Position, Scale & Alignment)
   const [p1Transform, setP1Transform] = useState<FaceTransform>({ zoom: 1.0, panX: 0, panY: 0 });
   const [p2Transform, setP2Transform] = useState<FaceTransform>({ zoom: 1.0, panX: 0, panY: 0 });
-  const [seamBlendWidth, setSeamBlendWidth] = useState<number>(26);
+  const [seamBlendWidth, setSeamBlendWidth] = useState<number>(12); // Clean 12px micro-feather (NO double exposure / ghosting!)
 
   const [showAdjustDrawer, setShowAdjustDrawer] = useState<boolean>(false);
   const [showGuideLines, setShowGuideLines] = useState<boolean>(false);
@@ -122,47 +155,20 @@ export default function CouplePhotoUploader({
   const [compositePreviewUrl, setCompositePreviewUrl] = useState<string | null>(null);
 
   // AI Master Prompt state
-  const [copiedStyle, setCopiedStyle] = useState<'cinematic' | 'anime' | null>(null);
-  const [selectedAiStyle, setSelectedAiStyle] = useState<'cinematic' | 'anime'>('anime');
+  const [copiedPrompt, setCopiedPrompt] = useState<boolean>(false);
   const [showAiPromptCard, setShowAiPromptCard] = useState<boolean>(true);
 
-  const getMasterPrompt = (style: 'cinematic' | 'anime') => {
-    const styleInstruction = style === 'cinematic'
-      ? 'Style: Ultra-realistic cinematic couple photography, natural skin texture, detailed eyes, soft dramatic lighting, professional editorial portrait, shallow depth of field, warm earthy tones.'
-      : 'Style: Highly detailed hand-drawn graphite pencil illustration, romantic anime-inspired couple portrait, realistic facial resemblance to both references, delicate pencil strokes, intricate hair details, expressive eyes, soft cross-hatching, monochrome shading on textured sketchbook paper.';
+  // Active preset object
+  const currentPreset = PRESETS.find((p) => p.id === activePresetId) || PRESETS[0];
 
-    return `Transform the two uploaded individual reference images (Image 1 and Image 2) into a single aesthetically composed couple portrait.
-
-Core Instructions:
-- Use the two uploaded images as separate identity references.
-- Bring both people together naturally, positioning their faces close to each other, either side by side or slightly leaning against one another.
-
-Identity Preservation (Strict):
-- Person 1 must retain the exact facial features, face shape, hairstyle, skin tone, and recognizable appearance from Image 1.
-- Person 2 must retain the exact facial features, face shape, hairstyle, skin tone, and recognizable appearance from Image 2.
-- Do not blend their faces together, do not swap identities, and do not change their defining characteristics.
-
-Composition:
-- Create an intimate, close-up portrait of both individuals.
-- Their faces should occupy most of the frame.
-- Position them naturally, with their heads close together.
-- Create a balanced composition with both faces clearly visible.
-- Use subtle, natural expressions and aesthetically pleasing poses.
-
-Artistic Direction:
-- Create a visually beautiful, professionally composed couple portrait inspired by the uploaded reference style. Maintain realistic facial proportions, natural details, and beautiful lighting.
-- The final image should look like a deliberately created couple portrait, NOT two separate images pasted together.
-- No borders, no collage, no split screen, no extra people, no text, no watermark.
-
-${styleInstruction}
-
-Output: One cohesive portrait featuring both individuals.`;
+  const getFullMasterPrompt = (preset: (typeof PRESETS)[0]) => {
+    return `${MASTER_BASE_PROMPT}\n\n${preset.styleInstruction}`;
   };
 
-  const copyMasterPrompt = (style: 'cinematic' | 'anime') => {
-    navigator.clipboard.writeText(getMasterPrompt(style));
-    setCopiedStyle(style);
-    setTimeout(() => setCopiedStyle(null), 2500);
+  const copyCurrentPrompt = () => {
+    navigator.clipboard.writeText(getFullMasterPrompt(currentPreset));
+    setCopiedPrompt(true);
+    setTimeout(() => setCopiedPrompt(false), 2500);
   };
 
   const partner1Ref = useRef<HTMLImageElement | null>(null);
@@ -243,8 +249,7 @@ Output: One cohesive portrait featuring both individuals.`;
           // Both faces are scaled so that each head fills the canvas.
           // Partner 1's nose bridge is centered at X=400, eye level at Y=420.
           // Partner 2's nose bridge is ALSO centered at X=400, eye level at Y=420.
-          // At X=400, Partner 1 (left half) seamlessly fuses into Partner 2 (right half).
-          // NO dividing line! NO white halo! Both faces 100% visible and fused!
+          // Crisp, clean 12px midline contact seam (NO double exposure / ghosting!)
           // =========================================================================
           const baseZoom = 1.35;
           const targetY = 420;
@@ -255,18 +260,15 @@ Output: One cohesive portrait featuring both individuals.`;
           // 1. Draw Partner 1 (Left Half of Face)
           ctx.drawImage(layer1, 0, 0);
 
-          // 2. Feathered Overlay for Partner 2 (Right Half of Face)
-          const seamW = Math.max(8, blend);
+          // 2. Crisp Micro-Seam Overlay for Partner 2 (Right Half of Face)
+          const seamW = Math.max(4, Math.min(24, blend));
           const maskCanvas = document.createElement('canvas');
           maskCanvas.width = w;
           maskCanvas.height = h;
           const mCtx = maskCanvas.getContext('2d');
           if (mCtx) {
-            // Draw full layer 2 (Partner 2)
             mCtx.drawImage(layer2, 0, 0);
 
-            // Single unified horizontal alpha ramp mask across the entire canvas width
-            // (CRITICAL: Must be a single fillRect with destination-in so neither side is erased!)
             mCtx.globalCompositeOperation = 'destination-in';
             const grad = mCtx.createLinearGradient(0, 0, w, 0);
             const x0 = Math.max(0, (midX - seamW / 2) / w);
@@ -280,18 +282,16 @@ Output: One cohesive portrait featuring both individuals.`;
             mCtx.fillStyle = grad;
             mCtx.fillRect(0, 0, w, h);
 
-            // Draw the masked Right Partner seamlessly over the Left Partner
             ctx.drawImage(maskCanvas, 0, 0);
           }
 
         } else {
           // =========================================================================
           // --- STYLE B: DUAL SIDE-BY-SIDE COMPANIONS (References 1 & 2) ---
-          // Both people share the canvas space.
-          // Partner 1 centered around X=285, Partner 2 centered around X=515.
-          // In the center (X=340..460), their bodies/shoulders meet and touch organically
-          // with a smooth 120px blend.
-          // NO rectangular clipping boxes! NO vertical divider bar!
+          // Both people share the canvas space:
+          // Partner 1 on the left (X=285), Partner 2 on the right (X=515).
+          // Crisp 12px contact seam where shoulders/hair touch at X=400.
+          // NO double-exposure ghosting! Both people remain solid and distinct!
           // =========================================================================
           const baseZoom = 1.05;
           const p1CenterX = 285;
@@ -304,8 +304,8 @@ Output: One cohesive portrait featuring both individuals.`;
           // 1. Draw Partner 1 (Left Companion)
           ctx.drawImage(layer1, 0, 0);
 
-          // 2. Soft Organic Shoulder Cross-Fade for Partner 2 (Right Companion)
-          const overlapW = Math.max(60, blend * 2.5); // Wide, gentle body transition
+          // 2. Crisp Micro-Seam Contact for Partner 2 (Right Companion)
+          const seamW = Math.max(4, Math.min(24, blend));
           const maskCanvas = document.createElement('canvas');
           maskCanvas.width = w;
           maskCanvas.height = h;
@@ -315,8 +315,8 @@ Output: One cohesive portrait featuring both individuals.`;
 
             mCtx.globalCompositeOperation = 'destination-in';
             const grad = mCtx.createLinearGradient(0, 0, w, 0);
-            const x0 = Math.max(0, (midX - overlapW / 2) / w);
-            const x1 = Math.min(1, (midX + overlapW / 2) / w);
+            const x0 = Math.max(0, (midX - seamW / 2) / w);
+            const x1 = Math.min(1, (midX + seamW / 2) / w);
 
             grad.addColorStop(0, 'rgba(0,0,0,0)');
             grad.addColorStop(x0, 'rgba(0,0,0,0)');
@@ -329,31 +329,19 @@ Output: One cohesive portrait featuring both individuals.`;
             ctx.drawImage(maskCanvas, 0, 0);
           }
 
-          // 3. Soft Fine-Art Paper Vignette on Outer Borders (Top, Bottom, Left, Right)
+          // 3. Subtle outer paper edge soften
           ctx.save();
-          const lGrad = ctx.createLinearGradient(0, 0, 40, 0);
+          const lGrad = ctx.createLinearGradient(0, 0, 30, 0);
           lGrad.addColorStop(0, '#faf8f5');
           lGrad.addColorStop(1, 'rgba(250, 248, 245, 0)');
           ctx.fillStyle = lGrad;
-          ctx.fillRect(0, 0, 40, h);
+          ctx.fillRect(0, 0, 30, h);
 
-          const rGrad = ctx.createLinearGradient(w - 40, 0, w, 0);
+          const rGrad = ctx.createLinearGradient(w - 30, 0, w, 0);
           rGrad.addColorStop(0, 'rgba(250, 248, 245, 0)');
           rGrad.addColorStop(1, '#faf8f5');
           ctx.fillStyle = rGrad;
-          ctx.fillRect(w - 40, 0, 40, h);
-
-          const tGrad = ctx.createLinearGradient(0, 0, 0, 40);
-          tGrad.addColorStop(0, '#faf8f5');
-          tGrad.addColorStop(1, 'rgba(250, 248, 245, 0)');
-          ctx.fillStyle = tGrad;
-          ctx.fillRect(0, 0, w, 40);
-
-          const bGrad = ctx.createLinearGradient(0, h - 50, 0, h);
-          bGrad.addColorStop(0, 'rgba(250, 248, 245, 0)');
-          bGrad.addColorStop(1, '#faf8f5');
-          ctx.fillStyle = bGrad;
-          ctx.fillRect(0, h - 50, w, 50);
+          ctx.fillRect(w - 30, 0, 30, h);
           ctx.restore();
         }
       } else {
@@ -965,18 +953,18 @@ Output: One cohesive portrait featuring both individuals.`;
               <span>AI Master Generation Prompt</span>
             </span>
             <span className="text-[9px] uppercase px-1.5 py-0.5 rounded bg-cyan-950/80 border border-cyan-500/30 text-cyan-300 font-mono">
-              2 Images $\rightarrow$ 1 Portrait
+              {currentPreset.category}
             </span>
           </div>
 
           <div className="flex items-center gap-1.5">
             <button
               type="button"
-              onClick={() => copyMasterPrompt(selectedAiStyle)}
+              onClick={copyCurrentPrompt}
               className="py-1 px-2.5 rounded-lg bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white text-[11px] font-semibold flex items-center gap-1 cursor-pointer shadow-sm transition"
-              title="Copy the master prompt to clipboard"
+              title="Copy the master prompt for this reference style"
             >
-              {copiedStyle === selectedAiStyle ? (
+              {copiedPrompt ? (
                 <>
                   <Check size={12} className="text-emerald-300" />
                   <span className="text-emerald-200">Copied!</span>
@@ -1001,48 +989,40 @@ Output: One cohesive portrait featuring both individuals.`;
 
         {showAiPromptCard && (
           <div className="flex flex-col gap-2 pt-1 animate-in fade-in duration-150">
-            {/* Style Selector Tabs */}
-            <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[#060a1a] border border-[#1b2b52]">
-              <button
-                type="button"
-                onClick={() => setSelectedAiStyle('anime')}
-                className={`flex-1 py-1 px-2.5 rounded-lg text-[11px] font-semibold transition cursor-pointer flex items-center justify-center gap-1.5 ${
-                  selectedAiStyle === 'anime'
-                    ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-sm'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <span>✏️ Anime Pencil Sketch</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setSelectedAiStyle('cinematic')}
-                className={`flex-1 py-1 px-2.5 rounded-lg text-[11px] font-semibold transition cursor-pointer flex items-center justify-center gap-1.5 ${
-                  selectedAiStyle === 'cinematic'
-                    ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-sm'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <span>📷 Cinematic Realistic</span>
-              </button>
+            {/* Style Selector Tabs (Linked to Reference Presets) */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 p-1 rounded-xl bg-[#060a1a] border border-[#1b2b52]">
+              {PRESETS.map((pr) => (
+                <button
+                  key={pr.id}
+                  type="button"
+                  onClick={() => loadPreset(pr)}
+                  className={`py-1 px-1.5 rounded-lg text-[10px] font-semibold transition cursor-pointer truncate ${
+                    activePresetId === pr.id
+                      ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-sm'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                  title={pr.name}
+                >
+                  {pr.name}
+                </button>
+              ))}
             </div>
 
             {/* Active Style Instruction preview */}
-            <div className="p-2 rounded-xl bg-[#050816] border border-[#182647] font-mono text-[10px] leading-relaxed text-slate-300">
-              <span className="text-cyan-400 font-bold block mb-1">
-                {selectedAiStyle === 'anime'
-                  ? '🎨 Style Option 2 (Hand-drawn Anime Pencil Sketch):'
-                  : '📸 Style Option 1 (Cinematic Realistic Portrait):'}
-              </span>
-              <p className="text-slate-300">
-                {selectedAiStyle === 'anime'
-                  ? 'Style: Highly detailed hand-drawn graphite pencil illustration, romantic anime-inspired couple portrait, realistic facial resemblance to both references, delicate pencil strokes, intricate hair details, expressive eyes, soft cross-hatching, monochrome shading on textured sketchbook paper.'
-                  : 'Style: Ultra-realistic cinematic couple photography, natural skin texture, detailed eyes, soft dramatic lighting, professional editorial portrait, shallow depth of field, warm earthy tones.'}
+            <div className="p-2.5 rounded-xl bg-[#050816] border border-[#182647] font-mono text-[10px] leading-relaxed text-slate-300">
+              <div className="flex items-center justify-between mb-1 pb-1 border-b border-[#14203d]">
+                <span className="text-cyan-400 font-bold">
+                  {currentPreset.category}: {currentPreset.name}
+                </span>
+                <span className="text-[9px] text-slate-500 font-normal">Active Reference Prompt</span>
+              </div>
+              <p className="text-amber-300/90 font-medium mt-1">
+                {currentPreset.styleInstruction}
               </p>
             </div>
 
             <p className="text-[10px] text-slate-400 leading-snug">
-              💡 <span className="text-slate-300 font-semibold">Workflow Tip:</span> Attach your 2 uploaded photos as <span className="text-cyan-300">Image 1</span> and <span className="text-pink-300">Image 2</span> in Midjourney, FLUX, ChatGPT/DALL-E 3, or Gemini, then paste this prompt. It ensures strict identity preservation with your chosen aesthetic.
+              💡 <span className="text-slate-300 font-semibold">Workflow:</span> Attach your 2 uploaded photos as <span className="text-cyan-300">Image 1</span> and <span className="text-pink-300">Image 2</span> in Midjourney, FLUX, ChatGPT, or Gemini, then click <span className="text-cyan-300 font-semibold">Copy Prompt</span>. It strictly preserves both facial identities without blending faces or swapping features.
             </p>
           </div>
         )}

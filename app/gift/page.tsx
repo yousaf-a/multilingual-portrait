@@ -65,24 +65,24 @@ function GiftExperience() {
   };
 
   return (
-    <div className="min-h-screen bg-[#070b16] text-white flex flex-col items-center justify-between p-4 md:p-8 relative overflow-x-hidden selection:bg-pink-500/30">
+    <div className="min-h-screen bg-[#070b16] text-white flex flex-col items-center justify-between p-3 sm:p-6 md:p-8 relative overflow-x-hidden selection:bg-pink-500/30">
       {/* Background starlight dots */}
       <div className="absolute inset-0 pointer-events-none -z-10 bg-[radial-gradient(circle_at_center,_rgba(236,72,153,0.08)_0%,_transparent_70%)]" />
 
       {/* HEADER */}
-      <header className="w-full max-w-4xl flex items-center justify-between pb-4 border-b border-[#182442]">
-        <Link href="/" className="flex items-center gap-2 text-white hover:text-cyan-400 transition">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-pink-500 to-purple-600 flex items-center justify-center shadow-lg shadow-pink-500/20">
+      <header className="w-full max-w-4xl flex items-center justify-between gap-2 pb-4 border-b border-[#182442]">
+        <Link href="/" className="flex items-center gap-2 text-white hover:text-cyan-400 transition min-w-0">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-pink-500 to-purple-600 flex items-center justify-center shadow-lg shadow-pink-500/20 shrink-0">
             <Sparkles size={16} className="text-white" />
           </div>
-          <span className="font-bold text-sm tracking-tight">Multilingual Portrait Studio</span>
+          <span className="font-bold text-xs sm:text-sm tracking-tight truncate">Multilingual Studio</span>
         </Link>
 
         <Link
           href="/"
-          className="text-xs px-3.5 py-1.5 rounded-full bg-[#0c1429] hover:bg-[#152347] border border-[#243356] text-cyan-300 transition"
+          className="text-xs px-3 sm:px-3.5 py-1.5 rounded-full bg-[#0c1429] hover:bg-[#152347] border border-[#243356] text-cyan-300 transition shrink-0"
         >
-          Create Your Own Gift ✨
+          <span>Create Gift ✨</span>
         </Link>
       </header>
 

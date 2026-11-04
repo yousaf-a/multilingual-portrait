@@ -800,32 +800,32 @@ export default function ScribbleVideoRenderer({
   };
 
   return (
-    <div className="flex flex-col items-center w-full max-w-4xl mx-auto py-2">
+    <div className="flex flex-col items-center w-full max-w-4xl mx-auto py-1 sm:py-2 px-1">
       {/* Top Navigation Bar */}
-      <div className="w-full flex items-center justify-between pb-4 mb-3 border-b border-[#1f2d4e]">
-        <div className="flex items-center gap-2">
+      <div className="w-full flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pb-3 sm:pb-4 mb-3 border-b border-[#1f2d4e]">
+        <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
           <button
             type="button"
             onClick={onBackToEdit}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#0c1429] hover:bg-[#162347] text-slate-300 hover:text-white text-xs font-semibold border border-[#243356] transition"
+            className="flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-[#0c1429] hover:bg-[#162347] text-slate-300 hover:text-white text-xs font-semibold border border-[#243356] transition shrink-0"
           >
-            <ArrowLeft size={15} />
-            <span>Edit &amp; Change Image</span>
+            <ArrowLeft size={14} />
+            <span>Edit</span>
           </button>
 
           <button
             type="button"
             onClick={() => setIsShareModalOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-pink-500/20 to-purple-600/20 hover:from-pink-500/30 hover:to-purple-600/30 text-pink-300 font-semibold text-xs border border-pink-500/40 transition shadow-sm"
+            className="flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-gradient-to-r from-pink-500/20 to-purple-600/20 hover:from-pink-500/30 hover:to-purple-600/30 text-pink-300 font-semibold text-xs border border-pink-500/40 transition shadow-sm shrink-0"
           >
             <Gift size={14} className="text-pink-400" />
-            <span>Share Gift Link 🎁</span>
+            <span>Share Gift 🎁</span>
           </button>
 
           <button
             type="button"
             onClick={() => setIsChatOpen(!isChatOpen)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-cyan-500/20 to-blue-600/20 hover:from-cyan-500/30 hover:to-blue-600/30 text-cyan-300 font-semibold text-xs border border-cyan-500/40 transition shadow-sm cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 sm:px-3 sm:py-2 rounded-xl bg-gradient-to-r from-cyan-500/20 to-blue-600/20 hover:from-cyan-500/30 hover:to-blue-600/30 text-cyan-300 font-semibold text-xs border border-cyan-500/40 transition shadow-sm cursor-pointer shrink-0"
             title="Open 2-Person Chat"
           >
             <MessageSquare size={14} className="text-cyan-400" />
@@ -833,10 +833,10 @@ export default function ScribbleVideoRenderer({
           </button>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#0c1429] border border-[#243356] text-xs text-slate-300">
+        <div className="flex items-center justify-between sm:justify-end gap-2.5">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#0c1429] border border-[#243356] text-[11px] sm:text-xs text-slate-300">
             <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
-            <span>Master Sketch Progress: {currentProgress}%</span>
+            <span>Progress: {currentProgress}%</span>
           </div>
 
           <button
@@ -848,13 +848,13 @@ export default function ScribbleVideoRenderer({
               }`}
             title={isMuted ? 'Unmute Background Music' : 'Mute Music'}
           >
-            {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+            {isMuted ? <VolumeX size={15} /> : <Volume2 size={15} />}
           </button>
         </div>
       </div>
 
       {/* Main Video Canvas Player Frame */}
-      <div className="relative rounded-3xl overflow-hidden border border-[#243356] shadow-[0_0_60px_rgba(0,180,255,0.18)] bg-[#050914] aspect-[4/5] w-full max-w-[560px]">
+      <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden border border-[#243356] shadow-[0_0_60px_rgba(0,180,255,0.18)] bg-[#050914] aspect-[4/5] w-full max-w-[560px]">
         <canvas
           ref={canvasRef}
           width={800}
@@ -871,11 +871,11 @@ export default function ScribbleVideoRenderer({
 
         {/* Live Partner Whisper on Canvas */}
         {activeWhisper && (
-          <div className="absolute inset-x-6 top-1/2 -translate-y-1/2 p-5 rounded-3xl bg-black/85 backdrop-blur-md border border-amber-400/60 text-center animate-in fade-in zoom-in-95 duration-300 z-30 shadow-[0_0_40px_rgba(251,191,36,0.4)]">
-            <span className="text-[10px] uppercase font-bold tracking-widest text-amber-300 block mb-1.5">
+          <div className="absolute inset-x-4 sm:inset-x-6 top-1/2 -translate-y-1/2 p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-black/85 backdrop-blur-md border border-amber-400/60 text-center animate-in fade-in zoom-in-95 duration-300 z-30 shadow-[0_0_40px_rgba(251,191,36,0.4)]">
+            <span className="text-[10px] uppercase font-bold tracking-widest text-amber-300 block mb-1">
               ✦ Partner Whisper on Canvas ✦
             </span>
-            <p className="text-base sm:text-xl font-serif italic text-white drop-shadow leading-relaxed">
+            <p className="text-sm sm:text-xl font-serif italic text-white drop-shadow leading-relaxed">
               &ldquo;{activeWhisper}&rdquo;
             </p>
           </div>
@@ -883,33 +883,46 @@ export default function ScribbleVideoRenderer({
       </div>
 
       {/* Video Control Bar */}
-      <div className="flex flex-wrap items-center justify-between w-full max-w-[560px] gap-2 mt-5 px-1">
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setIsPlaying(!isPlaying)}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#0c1429] hover:bg-[#162347] text-slate-300 hover:text-white text-xs font-medium border border-[#243356] transition"
-          >
-            {isPlaying ? <Pause size={14} /> : <Play size={14} />}
-            <span>{isPlaying ? 'Pause' : 'Play'}</span>
-          </button>
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between w-full max-w-[560px] gap-2.5 sm:gap-2 mt-3.5 sm:mt-5 px-1">
+        {/* Playback Controls */}
+        <div className="flex items-center justify-between sm:justify-start gap-2">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setIsPlaying(!isPlaying)}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#0c1429] hover:bg-[#162347] text-slate-300 hover:text-white text-xs font-medium border border-[#243356] transition"
+            >
+              {isPlaying ? <Pause size={13} /> : <Play size={13} />}
+              <span>{isPlaying ? 'Pause' : 'Play'}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleRestart}
+              className="flex items-center gap-1 px-3 py-2 rounded-xl bg-[#0c1429] hover:bg-[#162347] text-slate-300 hover:text-white text-xs font-medium border border-[#243356] transition"
+              title="Replay from top"
+            >
+              <RotateCcw size={13} />
+              <span className="hidden sm:inline">Replay</span>
+            </button>
+          </div>
 
           <button
             type="button"
-            onClick={handleRestart}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#0c1429] hover:bg-[#162347] text-slate-300 hover:text-white text-xs font-medium border border-[#243356] transition"
-            title="Replay from top"
+            onClick={() => setIsShareModalOpen(true)}
+            className="sm:hidden flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#0c1429] hover:bg-[#162347] text-pink-400 text-xs font-semibold border border-pink-500/30 transition"
           >
-            <RotateCcw size={14} />
-            <span>Replay</span>
+            <Gift size={13} />
+            <span>Share</span>
           </button>
         </div>
 
+        {/* Download & Export Group */}
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => setIsShareModalOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#0c1429] hover:bg-[#162347] text-pink-400 hover:text-pink-300 text-xs font-semibold border border-pink-500/30 transition"
+            className="hidden sm:flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#0c1429] hover:bg-[#162347] text-pink-400 hover:text-pink-300 text-xs font-semibold border border-pink-500/30 transition"
           >
             <Gift size={14} />
             <span>Share Gift</span>
@@ -918,20 +931,20 @@ export default function ScribbleVideoRenderer({
           <button
             type="button"
             onClick={downloadHighResImage}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#0c1429] hover:bg-[#162347] text-slate-300 hover:text-white text-xs font-medium border border-[#243356] transition"
+            className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#0c1429] hover:bg-[#162347] text-slate-300 hover:text-white text-xs font-medium border border-[#243356] transition"
           >
-            <Download size={14} />
-            <span>Download 4K Masterpiece</span>
+            <Download size={13} />
+            <span>Save 4K</span>
           </button>
 
           <button
             type="button"
             onClick={recordVideo}
             disabled={isRecording}
-            className="flex items-center gap-1.5 px-5 py-2 rounded-xl bg-gradient-to-r from-[#00c6ff] to-[#0066ff] hover:brightness-110 text-white text-xs font-semibold shadow-md shadow-blue-500/30 transition cursor-pointer"
+            className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-[#00c6ff] to-[#0066ff] hover:brightness-110 text-white text-xs font-semibold shadow-md shadow-blue-500/30 transition cursor-pointer"
           >
-            <Video size={14} />
-            <span>{isRecording ? 'Recording...' : 'Download Video Loop'}</span>
+            <Video size={13} />
+            <span>{isRecording ? 'Recording...' : 'Save Video'}</span>
           </button>
         </div>
       </div>

@@ -137,7 +137,7 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-[#070d1e] text-white flex flex-col items-center justify-start p-4 md:p-8 relative overflow-x-hidden selection:bg-cyan-500/30">
+    <main className="min-h-screen bg-[#070d1e] text-white flex flex-col items-center justify-start p-3 sm:p-6 md:p-8 relative overflow-x-hidden selection:bg-cyan-500/30">
       {/* Background Dotted World Map Graphic */}
       <div className="absolute top-0 right-0 w-[600px] h-[320px] pointer-events-none opacity-20 -z-10 overflow-hidden">
         <svg viewBox="0 0 1000 500" className="w-full h-full fill-cyan-400">
@@ -151,38 +151,38 @@ export default function Home() {
       </div>
 
       {/* Header Bar */}
-      <header className="w-full max-w-4xl flex items-center justify-between pb-6 border-b border-[#182442]">
+      <header className="w-full max-w-4xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3.5 pb-5 border-b border-[#182442]">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 flex items-center justify-center text-cyan-400 drop-shadow-[0_0_12px_rgba(0,229,255,0.8)]">
-            <Sparkles size={32} className="fill-cyan-400" />
+          <div className="w-9 h-9 shrink-0 flex items-center justify-center text-cyan-400 drop-shadow-[0_0_12px_rgba(0,229,255,0.8)]">
+            <Sparkles size={28} className="fill-cyan-400" />
           </div>
           <div>
-            <h1 className="text-xl md:text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+            <h1 className="text-lg sm:text-xl md:text-2xl font-bold tracking-tight text-white flex items-center gap-2">
               <span>Multilingual</span>
               <span className="bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-500 bg-clip-text text-transparent font-extrabold">
                 Calligraphy Studio
               </span>
             </h1>
-            <p className="text-xs text-slate-400 font-normal">
+            <p className="text-[11px] sm:text-xs text-slate-400 font-normal">
               Slowly sketches your image top-to-bottom purely with multilingual calligraphy
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-emerald-500/30 bg-emerald-950/20 text-emerald-400 text-xs font-medium">
-          <Globe size={13} className="text-emerald-400" />
+        <div className="flex items-center gap-2 self-start sm:self-auto px-3 py-1.5 rounded-full border border-emerald-500/30 bg-emerald-950/20 text-emerald-400 text-xs font-medium">
+          <Globe size={13} className="text-emerald-400 shrink-0" />
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-          <span>100 Languages Scribble Engine</span>
+          <span>100 Languages Engine</span>
         </div>
       </header>
 
       {/* VIEW 1: CREATION FORM (NO PREVIEW ON PAGE) */}
       {currentView === 'form' && (
-        <div className="w-full max-w-2xl flex flex-col gap-5 my-8">
+        <div className="w-full max-w-2xl flex flex-col gap-4 sm:gap-5 my-4 sm:my-8">
           {/* Card 1: Upload Photo / Subject (Required) */}
           <div
             id="card-photo"
-            className={`bg-[#0b1226]/90 border rounded-3xl p-6 shadow-xl shadow-black/25 backdrop-blur-md transition ${
+            className={`bg-[#0b1226]/90 border rounded-3xl p-4 sm:p-6 shadow-xl shadow-black/25 backdrop-blur-md transition ${
               formErrors.photo
                 ? 'border-rose-500 ring-2 ring-rose-500/30'
                 : 'border-[#1e2a4a]'
@@ -216,7 +216,7 @@ export default function Home() {
           {/* Card 2: Main Calligraphy Title & Inscription (Required) */}
           <div
             id="card-title"
-            className={`bg-[#0b1226]/90 border rounded-3xl p-6 shadow-xl shadow-black/25 backdrop-blur-md transition ${
+            className={`bg-[#0b1226]/90 border rounded-3xl p-4 sm:p-6 shadow-xl shadow-black/25 backdrop-blur-md transition ${
               formErrors.title
                 ? 'border-rose-500 ring-2 ring-rose-500/30'
                 : 'border-[#1e2a4a]'
@@ -269,7 +269,7 @@ export default function Home() {
           {/* Card 3: Calligraphy Color Theme (Required) */}
           <div
             id="card-theme"
-            className={`bg-[#0b1226]/90 border rounded-3xl p-6 shadow-xl shadow-black/25 backdrop-blur-md transition ${
+            className={`bg-[#0b1226]/90 border rounded-3xl p-4 sm:p-6 shadow-xl shadow-black/25 backdrop-blur-md transition ${
               formErrors.theme
                 ? 'border-rose-500 ring-2 ring-rose-500/30'
                 : 'border-[#1e2a4a]'
@@ -294,7 +294,7 @@ export default function Home() {
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-3 mt-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 mt-2">
               {THEME_OPTIONS.map((th) => (
                 <button
                   key={th.id}
@@ -309,18 +309,18 @@ export default function Home() {
                       : 'border-[#243356] bg-[#080d1e] hover:bg-[#0e162f]'
                   }`}
                 >
-                  <div>
+                  <div className="pr-2">
                     <div className="flex items-center gap-2">
                       <span
-                        className="w-3.5 h-3.5 rounded-full border border-white/20"
+                        className="w-3.5 h-3.5 rounded-full border border-white/20 shrink-0"
                         style={{ backgroundColor: th.color }}
                       />
                       <span className="text-xs font-semibold text-white">{th.name}</span>
                     </div>
-                    <p className="text-[11px] text-slate-400 mt-1">{th.desc}</p>
+                    <p className="text-[11px] text-slate-400 mt-1 leading-snug">{th.desc}</p>
                   </div>
                   {selectedTheme === th.id && (
-                    <span className="w-4 h-4 rounded-full bg-[#1a68f7] text-white flex items-center justify-center text-[10px]">
+                    <span className="w-4 h-4 rounded-full bg-[#1a68f7] text-white flex items-center justify-center text-[10px] shrink-0 mt-0.5">
                       <Check size={10} strokeWidth={3} />
                     </span>
                   )}
@@ -330,7 +330,7 @@ export default function Home() {
           </div>
 
           {/* Card 4: Background Music Selection (Optional) */}
-          <div className="bg-[#0b1226]/90 border border-[#1e2a4a] rounded-3xl p-6 shadow-xl shadow-black/25 backdrop-blur-md">
+          <div className="bg-[#0b1226]/90 border border-[#1e2a4a] rounded-3xl p-4 sm:p-6 shadow-xl shadow-black/25 backdrop-blur-md">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2.5">
                 <span className="w-6 h-6 rounded-full bg-[#1b64f2] text-white text-xs font-bold flex items-center justify-center shadow-[0_0_8px_rgba(27,100,242,0.5)]">
@@ -379,9 +379,9 @@ export default function Home() {
           <button
             type="button"
             onClick={handleGenerate}
-            className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-[#00c6ff] via-[#0084ff] to-[#0051ff] hover:brightness-110 text-white font-bold text-base flex items-center justify-center gap-2 shadow-[0_0_30px_rgba(0,132,255,0.5)] transition transform active:scale-[0.99] cursor-pointer"
+            className="w-full py-3.5 sm:py-4 px-4 sm:px-6 rounded-2xl bg-gradient-to-r from-[#00c6ff] via-[#0084ff] to-[#0051ff] hover:brightness-110 text-white font-bold text-sm sm:text-base flex items-center justify-center gap-2 shadow-[0_0_30px_rgba(0,132,255,0.5)] transition transform active:scale-[0.99] cursor-pointer"
           >
-            <Wand2 size={20} />
+            <Wand2 size={18} />
             <span>Generate &amp; Play Calligraphy Video Loop &gt;</span>
           </button>
         </div>

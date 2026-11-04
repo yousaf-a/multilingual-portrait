@@ -57,7 +57,7 @@ export default function PhotoUploader({ onImageLoaded }: PhotoUploaderProps) {
 
   return (
     <div className="flex flex-col gap-3 w-full">
-      <div className="grid grid-cols-2 gap-4 w-full items-center">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 w-full items-center">
         {/* Hidden file input */}
         <input
           id="photo-file-input"
@@ -72,23 +72,23 @@ export default function PhotoUploader({ onImageLoaded }: PhotoUploaderProps) {
           htmlFor="photo-file-input"
           onDragOver={(e) => e.preventDefault()}
           onDrop={handleDrop}
-          className="border-2 border-dashed border-[#243356] hover:border-[#3b82f6] rounded-2xl p-4 flex flex-col items-center justify-center cursor-pointer transition bg-[#091024]/60 hover:bg-[#0c1630] group aspect-[4/3] select-none"
+          className="border-2 border-dashed border-[#243356] hover:border-[#3b82f6] rounded-2xl p-4 sm:p-5 flex flex-col items-center justify-center cursor-pointer transition bg-[#091024]/60 hover:bg-[#0c1630] group select-none min-h-[110px]"
         >
           <Upload size={22} className="text-white/80 group-hover:scale-110 group-hover:text-cyan-400 transition mb-2 pointer-events-none" />
           
           <span className="bg-[#1a68f7] group-hover:bg-[#2575fc] text-white text-xs font-semibold px-4 py-1.5 rounded-full shadow-[0_0_15px_rgba(26,104,247,0.45)] transition transform group-hover:scale-105 pointer-events-none">
-            Choose File
+            Choose Photo
           </span>
 
-          <p className="text-[11px] text-slate-400 mt-2 pointer-events-none">or drag & drop photo</p>
+          <p className="text-[11px] text-slate-400 mt-2 pointer-events-none">or tap to select / take photo</p>
         </label>
 
-        {/* Right Box: Thumbnail & Label */}
-        <div className="flex flex-col items-center justify-center p-2">
+        {/* Right Box: Thumbnail & Status */}
+        <div className="flex flex-row sm:flex-col items-center justify-center gap-3 p-3 sm:p-2 rounded-2xl bg-[#070d1e] sm:bg-transparent border border-[#1b2746] sm:border-0">
           <label
             htmlFor="photo-file-input"
-            className="relative rounded-2xl overflow-hidden border border-[#2b3a63] bg-[#0c1429] shadow-md shadow-black/40 flex items-center justify-center cursor-pointer hover:border-cyan-400/60 transition group"
-            style={{ width: '80px', height: '80px' }}
+            className="relative rounded-2xl overflow-hidden border border-[#2b3a63] bg-[#0c1429] shadow-md shadow-black/40 flex items-center justify-center cursor-pointer hover:border-cyan-400/60 transition group shrink-0"
+            style={{ width: '74px', height: '74px' }}
             title="Click to change image"
           >
             {previewUrl ? (
@@ -107,15 +107,28 @@ export default function PhotoUploader({ onImageLoaded }: PhotoUploaderProps) {
               {previewUrl ? 'Change' : 'Select'}
             </div>
           </label>
-          <p className="text-[11px] text-slate-400 mt-2 text-center truncate max-w-[120px]">
-            {fileName || 'No file selected'}
-          </p>
+          <div className="flex flex-col items-start sm:items-center text-left sm:text-center min-w-0 flex-1">
+            <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">
+              {previewUrl ? 'Selected Image' : 'Status'}
+            </span>
+            <p className="text-xs text-slate-300 font-medium truncate max-w-full">
+              {fileName || 'No file selected yet'}
+            </p>
+            {previewUrl && (
+              <label
+                htmlFor="photo-file-input"
+                className="text-[11px] text-cyan-400 hover:underline mt-0.5 cursor-pointer"
+              >
+                Tap to change photo
+              </label>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Preset sample buttons */}
-      <div className="flex items-center gap-2 pt-1 border-t border-[#182442] flex-wrap">
-        <span className="text-[11px] text-slate-400">Sample art:</span>
+      <div className="flex items-center gap-1.5 sm:gap-2 pt-2 border-t border-[#182442] flex-wrap">
+        <span className="text-[11px] text-slate-400 w-full sm:w-auto">Sample art:</span>
         <button
           type="button"
           onClick={() => loadSample('/sample-target-art.png', 'Goddess Target Sketch')}

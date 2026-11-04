@@ -246,7 +246,7 @@ export default function LiveDuoChat({
 
       {/* Active Chat Window Drawer */}
       {isOpen && (
-        <div className="fixed bottom-4 right-4 z-50 w-[350px] sm:w-[380px] max-w-[calc(100vw-32px)] h-[520px] max-h-[calc(100vh-40px)] bg-[#0a1226]/95 border border-[#1e3463] rounded-3xl shadow-[0_10px_40px_rgba(0,0,0,0.65)] backdrop-blur-xl flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300">
+        <div className="fixed bottom-3 sm:bottom-4 inset-x-2 sm:inset-x-auto sm:right-4 z-50 sm:w-[380px] h-[480px] sm:h-[520px] max-h-[calc(100dvh-24px)] bg-[#0a1226]/95 border border-[#1e3463] rounded-2xl sm:rounded-3xl shadow-[0_10px_40px_rgba(0,0,0,0.65)] backdrop-blur-xl flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300">
           {/* Header */}
           <div className="p-3.5 px-4 bg-[#070e1f] border-b border-[#18274d] flex items-center justify-between">
             <div className="flex items-center gap-2.5">

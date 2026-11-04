@@ -264,7 +264,7 @@ export default function InstagramMusicPicker({
       </div>
 
       {/* Bottom Bar: Current Selection & Custom Audio / Mute */}
-      <div className="p-3 bg-[#060b1b] border-t border-[#182548] flex flex-wrap items-center justify-between gap-2.5">
+      <div className="p-3 bg-[#060b1b] border-t border-[#182548] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
         {/* Active Selection Indicator */}
         <div className="flex items-center gap-2 min-w-0">
           <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse shrink-0"></div>
@@ -286,11 +286,11 @@ export default function InstagramMusicPicker({
         </div>
 
         {/* Action Buttons: Custom MP3 & Mute */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0 pt-1 sm:pt-0 border-t sm:border-0 border-[#141e3d]">
           {/* Upload Custom MP3 Button */}
           <label
             htmlFor="instagram-audio-upload"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#0f1a3a] hover:bg-[#182855] text-slate-300 hover:text-white text-[11px] font-medium border border-[#233566] transition cursor-pointer"
+            className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#0f1a3a] hover:bg-[#182855] text-slate-300 hover:text-white text-[11px] font-medium border border-[#233566] transition cursor-pointer"
           >
             <Upload size={12} className="text-cyan-400" />
             <span>Upload MP3</span>
@@ -307,14 +307,14 @@ export default function InstagramMusicPicker({
           <button
             type="button"
             onClick={handleSelectNoAudio}
-            className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[11px] font-medium border transition ${
+            className={`flex items-center justify-center gap-1 px-3 py-1.5 rounded-xl text-[11px] font-medium border transition ${
               selectedTrackId === 'none' && !customAudioUrl
                 ? 'bg-rose-950/40 border-rose-500/50 text-rose-300'
                 : 'bg-[#0f1a3a] hover:bg-[#182855] border-[#233566] text-slate-400 hover:text-white'
             }`}
           >
             <VolumeX size={12} />
-            <span>Mute</span>
+            <span>{selectedTrackId === 'none' && !customAudioUrl ? 'Muted' : 'Mute'}</span>
           </button>
         </div>
       </div>

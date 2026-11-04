@@ -91,9 +91,10 @@ export default function CouplePhotoUploader({
         offCanvas.height = h;
         const offCtx = offCanvas.getContext('2d');
         if (offCtx) {
-          // Draw partner 2 on right half
-          const rightW = midX + featherW / 2;
           const rightX = midX - featherW / 2;
+          const rightW = w - rightX;
+
+          // Draw partner 2 on right half
           const imgAspect = img2.width / img2.height;
           const destAspect = rightW / h;
           let sW, sH, sX, sY;
@@ -110,13 +111,19 @@ export default function CouplePhotoUploader({
           }
           offCtx.drawImage(img2, sX, sY, sW, sH, rightX, 0, rightW, h);
 
-          // Apply feather mask on right image's left edge
+          // Apply feather mask: transition smoothly at seam, and keep 100% alpha for all pixels to the right
           offCtx.globalCompositeOperation = 'destination-in';
-          const maskGrad = offCtx.createLinearGradient(midX - featherW / 2, 0, midX + featherW / 2, 0);
+
+          // 1. Feather transition strip at center seam (alpha ramps 0 -> 1)
+          const maskGrad = offCtx.createLinearGradient(rightX, 0, rightX + featherW, 0);
           maskGrad.addColorStop(0, 'rgba(0,0,0,0)');
           maskGrad.addColorStop(1, 'rgba(0,0,0,1)');
           offCtx.fillStyle = maskGrad;
-          offCtx.fillRect(midX - featherW / 2, 0, featherW, h);
+          offCtx.fillRect(rightX, 0, featherW, h);
+
+          // 2. Full opacity for the entire right half
+          offCtx.fillStyle = 'rgba(0,0,0,1)';
+          offCtx.fillRect(rightX + featherW, 0, w - (rightX + featherW), h);
 
           // Stamp feathered right image onto main canvas
           ctx.drawImage(offCanvas, 0, 0);

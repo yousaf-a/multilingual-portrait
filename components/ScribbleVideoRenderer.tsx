@@ -2,8 +2,9 @@
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { TranslatedItem } from '@/lib/languages';
-import { Play, Pause, RotateCcw, Volume2, VolumeX, Download, ArrowLeft, Video } from 'lucide-react';
+import { Play, Pause, RotateCcw, Volume2, VolumeX, Download, ArrowLeft, Video, Gift } from 'lucide-react';
 import { audioController } from '@/lib/audio';
+import ShareGiftModal from '@/components/ShareGiftModal';
 
 interface HatchStroke {
   x1: number;
@@ -62,6 +63,7 @@ export default function ScribbleVideoRenderer({
   const [isMuted, setIsMuted] = useState(false);
   const [currentProgress, setCurrentProgress] = useState(0);
   const [isRecording, setIsRecording] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   const durationMs = 8500; // 8.5 seconds sketch sweep
   const pauseDurationMs = 3500; // 3.5s pause to admire completed artwork
@@ -791,14 +793,25 @@ export default function ScribbleVideoRenderer({
     <div className="flex flex-col items-center w-full max-w-4xl mx-auto py-2">
       {/* Top Navigation Bar */}
       <div className="w-full flex items-center justify-between pb-4 mb-3 border-b border-[#1f2d4e]">
-        <button
-          type="button"
-          onClick={onBackToEdit}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#0c1429] hover:bg-[#162347] text-slate-300 hover:text-white text-xs font-semibold border border-[#243356] transition"
-        >
-          <ArrowLeft size={15} />
-          <span>Edit &amp; Change Image</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onBackToEdit}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#0c1429] hover:bg-[#162347] text-slate-300 hover:text-white text-xs font-semibold border border-[#243356] transition"
+          >
+            <ArrowLeft size={15} />
+            <span>Edit &amp; Change Image</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setIsShareModalOpen(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-pink-500/20 to-purple-600/20 hover:from-pink-500/30 hover:to-purple-600/30 text-pink-300 font-semibold text-xs border border-pink-500/40 transition shadow-sm"
+          >
+            <Gift size={14} className="text-pink-400" />
+            <span>Share Gift Link 🎁</span>
+          </button>
+        </div>
 
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#0c1429] border border-[#243356] text-xs text-slate-300">
@@ -863,6 +876,15 @@ export default function ScribbleVideoRenderer({
         <div className="flex items-center gap-2">
           <button
             type="button"
+            onClick={() => setIsShareModalOpen(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#0c1429] hover:bg-[#162347] text-pink-400 hover:text-pink-300 text-xs font-semibold border border-pink-500/30 transition"
+          >
+            <Gift size={14} />
+            <span>Share Gift</span>
+          </button>
+
+          <button
+            type="button"
             onClick={downloadHighResImage}
             className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#0c1429] hover:bg-[#162347] text-slate-300 hover:text-white text-xs font-medium border border-[#243356] transition"
           >
@@ -881,6 +903,17 @@ export default function ScribbleVideoRenderer({
           </button>
         </div>
       </div>
+
+      {/* Share Gift Modal */}
+      <ShareGiftModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        toName={titleText}
+        message={titleText}
+        themeStyle={themeStyle}
+        musicTrack={musicTrack}
+        photoImage={photoImage}
+      />
     </div>
   );
 }

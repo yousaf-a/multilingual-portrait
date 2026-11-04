@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import PhotoUploader from '@/components/PhotoUploader';
+import CouplePhotoUploader from '@/components/CouplePhotoUploader';
 import ScribbleVideoRenderer from '@/components/ScribbleVideoRenderer';
 import InstagramMusicPicker from '@/components/InstagramMusicPicker';
 import { getMultilingualList, TranslatedItem } from '@/lib/languages';
@@ -15,7 +16,9 @@ import {
   Check,
   Wand2,
   Palette,
-  AlertCircle
+  AlertCircle,
+  Heart,
+  User
 } from 'lucide-react';
 
 // Legacy fallback to avoid any stale HMR cache runtime errors
@@ -71,6 +74,7 @@ export default function Home() {
   const [currentView, setCurrentView] = useState<'form' | 'video'>('form');
 
   const [photoImage, setPhotoImage] = useState<HTMLImageElement | null>(null);
+  const [portraitMode, setPortraitMode] = useState<'single' | 'couple'>('single');
   const [titleText, setTitleText] = useState<string>('');
   const [selectedTheme, setSelectedTheme] = useState<string>('emerald');
   const [selectedTrackId, setSelectedTrackId] = useState<string>('until_i_found_you');
@@ -207,10 +211,54 @@ export default function Home() {
               </div>
             )}
 
+            {/* Mode Switcher Tabs: Single Subject vs Couple / Split Mode */}
+            <div className="flex items-center gap-2 mb-4 p-1 rounded-2xl bg-[#080d1e] border border-[#1e2f54] w-full">
+              <button
+                type="button"
+                onClick={() => setPortraitMode('single')}
+                className={`flex-1 py-2 sm:py-2.5 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer ${
+                  portraitMode === 'single'
+                    ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-md shadow-blue-500/20'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <User size={14} />
+                <span>Single Portrait</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setPortraitMode('couple')}
+                className={`flex-1 py-2 sm:py-2.5 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer ${
+                  portraitMode === 'couple'
+                    ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow-md shadow-pink-500/20'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <Heart size={14} className={portraitMode === 'couple' ? 'fill-white' : ''} />
+                <span>Couple / Split Mode 💕</span>
+              </button>
+            </div>
+
             <p className="text-xs text-slate-400 mb-4">
-              Upload any image (portrait, person, couple, pet). The engine will reconstruct its shapes into a fine-art sketch framed with your custom inscription.
+              {portraitMode === 'single'
+                ? 'Upload any image (portrait, person, pet). The engine will reconstruct its shapes into a fine-art sketch framed with your custom inscription.'
+                : 'Upload 2 photos (Partner 1 & Partner 2). The engine fuses them seamlessly down the center into a unified romantic masterpiece.'}
             </p>
-            <PhotoUploader onImageLoaded={handleImageLoaded} />
+
+            {portraitMode === 'single' ? (
+              <PhotoUploader onImageLoaded={handleImageLoaded} />
+            ) : (
+              <CouplePhotoUploader
+                onImageLoaded={handleImageLoaded}
+                onPartnerNamesSuggested={(suggested) => {
+                  if (!titleText.trim()) {
+                    setTitleText(suggested);
+                    setFormErrors((prev) => ({ ...prev, title: undefined }));
+                  }
+                }}
+              />
+            )}
           </div>
 
           {/* Card 2: Main Calligraphy Title & Inscription (Required) */}
@@ -242,13 +290,26 @@ export default function Home() {
             )}
 
             <p className="text-xs text-slate-300 mb-2.5">
-              Type the exact name, dedication, or phrase to be written across the artwork:
+              {portraitMode === 'couple'
+                ? 'Type both partner names or dedicated romantic message to be written across the seam:'
+                : 'Type the exact name, dedication, or phrase to be written across the artwork:'}
             </p>
 
             <div className="flex items-start gap-2.5 px-3.5 py-2.5 rounded-2xl bg-[#09152e] border border-[#1e3a6a] text-xs text-sky-200 mb-3 shadow-inner">
               <Sparkles size={16} className="text-cyan-400 shrink-0 mt-0.5" />
               <div className="leading-relaxed text-[11px] text-slate-300">
-                <span className="font-semibold text-cyan-300">Custom Text Only:</span> Enter any dedication (e.g. <em>Sophia</em>, <em>Happy Birthday</em>). The engine renders <strong>strictly what you type</strong> across world languages without forcing any default phrase.
+                <span className="font-semibold text-cyan-300">
+                  {portraitMode === 'couple' ? 'Couple Inscription:' : 'Custom Text Only:'}
+                </span>{' '}
+                {portraitMode === 'couple' ? (
+                  <>
+                    Enter both names (e.g. <em>Sophia &amp; Lucas</em>) or dedication. The calligraphy will connect both halves across the portrait.
+                  </>
+                ) : (
+                  <>
+                    Enter any dedication (e.g. <em>Sophia</em>, <em>Happy Birthday</em>). The engine renders <strong>strictly what you type</strong> across world languages without forcing any default phrase.
+                  </>
+                )}
               </div>
             </div>
 
@@ -261,7 +322,11 @@ export default function Home() {
                   setFormErrors((prev) => ({ ...prev, title: undefined }));
                 }
               }}
-              placeholder="Enter custom dedication or text (e.g. Sophia, Happy Birthday)..."
+              placeholder={
+                portraitMode === 'couple'
+                  ? 'Enter couple names (e.g. Sophia & Lucas)...'
+                  : 'Enter custom dedication or text (e.g. Sophia, Happy Birthday)...'
+              }
               className="w-full px-4 py-3 rounded-2xl bg-[#080d1e] border border-[#243356] focus:border-[#3b82f6] focus:outline-none text-white text-sm font-medium placeholder:text-slate-500 transition shadow-inner"
             />
           </div>

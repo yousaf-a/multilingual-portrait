@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import PhotoUploader from '@/components/PhotoUploader';
 import CanvasRenderer, { VisualStyle } from '@/components/CanvasRenderer';
 import { getMultilingualList, TranslatedItem } from '@/lib/languages';
@@ -40,6 +40,10 @@ export default function Home() {
   const [fontSize, setFontSize] = useState<number>(14);
   const [items, setItems] = useState<TranslatedItem[]>([]);
   const [triggerPulse, setTriggerPulse] = useState<number>(0);
+
+  const handleImageLoaded = useCallback((img: HTMLImageElement | null) => {
+    setPhotoImage(img);
+  }, []);
 
   // Sync mode with message
   const handleModeChange = (newMode: 'love' | 'sorry' | 'name') => {
@@ -121,7 +125,7 @@ export default function Home() {
               </span>
               <h2 className="text-sm font-semibold text-white">Upload Photo</h2>
             </div>
-            <PhotoUploader onImageLoaded={(img) => setPhotoImage(img)} />
+            <PhotoUploader onImageLoaded={handleImageLoaded} />
           </div>
 
           {/* Card 2: Name & Message */}

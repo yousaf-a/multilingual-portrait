@@ -5,15 +5,14 @@ import { TranslatedItem } from '@/lib/languages';
 import { Play, Pause, RotateCcw, Volume2, VolumeX, Download, ArrowLeft, Video } from 'lucide-react';
 import { audioController } from '@/lib/audio';
 
-interface TextScribbleNode {
+interface CalligraphyStroke {
   x: number;
   y: number;
   text: string;
   angle: number;
   fontSize: number;
   color: string;
-  alpha: number;
-  progressThreshold: number; // 0 to 1 based on vertical Y position
+  progressY: number; // 0 to 1
   isMainScript?: boolean;
 }
 
@@ -46,51 +45,55 @@ export default function ScribbleVideoRenderer({
   const [currentProgress, setCurrentProgress] = useState(0);
   const [isRecording, setIsRecording] = useState(false);
 
-  // Pre-computed scribble nodes sampled from the image
-  const nodesRef = useRef<TextScribbleNode[]>([]);
-  const durationMs = 8500; // 8.5 seconds writing duration
-  const pauseDurationMs = 2500; // 2.5s pause when completed
+  const durationMs = 8500; // 8.5 seconds drawing duration
+  const pauseDurationMs = 3000; // 3 seconds pause on full reveal
   const totalCycleMs = durationMs + pauseDurationMs;
   const startTimeRef = useRef<number>(Date.now());
 
-  // Palette color schemes
+  const strokesRef = useRef<CalligraphyStroke[]>([]);
+
+  // Theme palettes
   const getThemePalette = useCallback(() => {
     switch (themeStyle) {
-      case 'emerald': // Like the tea cup reference image (rich tea leaves green & gold)
+      case 'emerald': // Tea cup green & gold (matching reference)
         return {
-          bg: '#fcfbfa',
+          bg: '#fbfaf8',
           darkBg: false,
-          primary: '#1d4a2a', // Forest tea green
-          secondary: '#8a7138', // Golden olive
+          primary: '#1d4a2a',
+          secondary: '#8a7138',
           accent: '#14381e',
-          glow: 'rgba(29, 74, 42, 0.25)'
+          textGlow: 'rgba(29, 74, 42, 0.3)',
+          photoOverlay: 'rgba(29, 74, 42, 0.08)'
         };
       case 'gold':
         return {
-          bg: '#0a0907',
+          bg: '#08080a',
           darkBg: true,
           primary: '#e6c364',
           secondary: '#b89130',
           accent: '#ffffff',
-          glow: 'rgba(230, 195, 100, 0.4)'
+          textGlow: 'rgba(230, 195, 100, 0.45)',
+          photoOverlay: 'rgba(230, 195, 100, 0.1)'
+        };
+      case 'rain_storm': // Adri reel storm & rain
+        return {
+          bg: '#070b16',
+          darkBg: true,
+          primary: '#38bdf8',
+          secondary: '#94a3b8',
+          accent: '#ffffff',
+          textGlow: 'rgba(56, 189, 248, 0.4)',
+          photoOverlay: 'rgba(56, 189, 248, 0.08)'
         };
       case 'monochrome':
         return {
           bg: '#ffffff',
           darkBg: false,
           primary: '#111827',
-          secondary: '#374151',
+          secondary: '#4b5563',
           accent: '#000000',
-          glow: 'rgba(0, 0, 0, 0.15)'
-        };
-      case 'rain_storm': // Inspired by AdriPan reel (rain, storm, safe haven)
-        return {
-          bg: '#080d1a',
-          darkBg: true,
-          primary: '#38bdf8', // Rain sky blue
-          secondary: '#94a3b8', // Storm cloud gray
-          accent: '#f8fafc', // Warm bright white
-          glow: 'rgba(56, 189, 248, 0.4)'
+          textGlow: 'rgba(0, 0, 0, 0.15)',
+          photoOverlay: 'rgba(0, 0, 0, 0.05)'
         };
       case 'neon':
       default:
@@ -100,156 +103,113 @@ export default function ScribbleVideoRenderer({
           primary: primaryColor || '#00e5ff',
           secondary: '#e024c3',
           accent: '#ffffff',
-          glow: `${primaryColor}66`
+          textGlow: `${primaryColor}66`,
+          photoOverlay: 'rgba(0, 229, 255, 0.1)'
         };
     }
   }, [themeStyle, primaryColor]);
 
-  // Sample the image into calligraphic scribble curves and multilingual nodes
+  // Generate artistic calligraphy strokes along the subject
   useEffect(() => {
-    const canvas = document.createElement('canvas');
     const width = 800;
-    const height = 900;
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const nodes: TextScribbleNode[] = [];
+    const height = 960;
     const palette = getThemePalette();
 
-    // If an image is provided, sample its contours & luminance
-    if (photoImage) {
-      const sampleCanvas = document.createElement('canvas');
-      const sampleW = 60;
-      const sampleH = 70;
-      sampleCanvas.width = sampleW;
-      sampleCanvas.height = sampleH;
-      const sCtx = sampleCanvas.getContext('2d');
+    const phrases = items.length >= 8 ? items : [
+      { text: titleText || "Love You", language: "English" },
+      { text: "Je t'aime", language: "French" },
+      { text: "Ich liebe dich", language: "German" },
+      { text: "Te amo", language: "Spanish" },
+      { text: "我爱你", language: "Chinese" },
+      { text: "愛してる", language: "Japanese" },
+      { text: "أحبك", language: "Arabic" },
+      { text: "मैं तुमसे प्यार करता हूँ", language: "Hindi" },
+      { text: "Чашка для чая", language: "Russian" },
+      { text: "Ti amo", language: "Italian" },
+      { text: "Eu te amo", language: "Portuguese" },
+      { text: "사랑해", language: "Korean" }
+    ];
 
-      if (sCtx) {
-        sCtx.drawImage(photoImage, 0, 0, sampleW, sampleH);
-        const imgData = sCtx.getImageData(0, 0, sampleW, sampleH).data;
+    const strokes: CalligraphyStroke[] = [];
+    const centerX = width / 2;
 
-        let wordIdx = 0;
-        const availableItems = items.length > 0 ? items : [
-          { text: titleText || "Love You", language: "English" },
-          { text: "Je t'aime", language: "French" },
-          { text: "Ich liebe dich", language: "German" },
-          { text: "Te amo", language: "Spanish" },
-          { text: "我爱你", language: "Chinese" },
-          { text: "愛してる", language: "Japanese" },
-          { text: "أحبك", language: "Arabic" },
-          { text: "मैं तुमसे प्यार करता हूँ", language: "Hindi" },
-          { text: "Чашка для чая", language: "Russian" }
-        ];
+    // 1. Top Steam / Calligraphy Swirls (Y: 5% to 26%)
+    for (let i = 0; i < 8; i++) {
+      const t = i / 8;
+      const py = height * (0.06 + t * 0.20);
+      const px = centerX + Math.sin(t * Math.PI * 3.5) * (width * 0.16 * (1 - t * 0.2));
+      const phrase = phrases[i % phrases.length];
 
-        // 1. Steam / Top Swirl Calligraphy (Top 25% of height, exactly like reference)
-        for (let i = 0; i < 18; i++) {
-          const t = i / 18;
-          const sx = width * 0.5 + Math.sin(t * Math.PI * 3) * (width * 0.12 * (1 - t * 0.3));
-          const sy = height * 0.08 + t * (height * 0.22);
-          const item = availableItems[wordIdx % availableItems.length];
-          wordIdx++;
-
-          nodes.push({
-            x: sx,
-            y: sy,
-            text: item.text,
-            angle: Math.sin(t * Math.PI * 2) * 0.25,
-            fontSize: 16 + (1 - t) * 6,
-            color: i % 2 === 0 ? palette.secondary : palette.primary,
-            alpha: 0.9,
-            progressThreshold: sy / height
-          });
-        }
-
-        // 2. Main Body Scribbles & Contours sampled from photo
-        for (let y = 0; y < sampleH; y += 2) {
-          for (let x = 0; x < sampleW; x += 2) {
-            const idx = (y * sampleW + x) * 4;
-            const r = imgData[idx];
-            const g = imgData[idx + 1];
-            const b = imgData[idx + 2];
-            const a = imgData[idx + 3];
-
-            if (a > 60) {
-              const luminance = (r * 0.299 + g * 0.587 + b * 0.114) / 255;
-              // Detect contrast / edges / density
-              if (luminance < 0.85) {
-                const px = width * 0.15 + (x / sampleW) * (width * 0.7);
-                const py = height * 0.32 + (y / sampleH) * (height * 0.55);
-
-                const item = availableItems[wordIdx % availableItems.length];
-                wordIdx++;
-
-                // Scribble calligraphy curvature
-                const angle = (Math.sin(x * 0.2) + Math.cos(y * 0.2)) * 0.15;
-                const weight = (1 - luminance);
-
-                nodes.push({
-                  x: px,
-                  y: py,
-                  text: item.text,
-                  angle,
-                  fontSize: Math.max(10, Math.min(22, 11 + weight * 9)),
-                  color: weight > 0.6 ? palette.primary : palette.secondary,
-                  alpha: Math.min(1, 0.4 + weight * 0.6),
-                  progressThreshold: py / height
-                });
-              }
-            }
-          }
-        }
-
-        // 3. Main Center Title Script (Large prominent calligraphy in center)
-        nodes.push({
-          x: width * 0.5,
-          y: height * 0.58,
-          text: titleText || "Calligraphy Portrait",
-          angle: 0,
-          fontSize: 38,
-          color: palette.accent || palette.primary,
-          alpha: 1,
-          progressThreshold: 0.58,
-          isMainScript: true
-        });
-
-      }
-    } else {
-      // Default artistic teacup / swirl template (matching reference image)
-      const samplePhrases = [
-        "فنجان شاي", "Tasse à thé", "空調茶杯", "AC Teetasse",
-        "Taza de té AC", "Чашка для чая AC", "AC 티컵", "Xícara de chá AC",
-        titleText || "AC Tea Cup", "AC चाय कप", "AC Çay Fincanı",
-        "AC Chày Kap", "Φλιτζάνι τσαγιού AC", "Filizanka do herbaty AC"
-      ];
-
-      samplePhrases.forEach((phrase, idx) => {
-        const threshold = (idx + 1) / (samplePhrases.length + 1);
-        const sy = height * 0.1 + threshold * (height * 0.78);
-        const sx = width * 0.5 + Math.sin(threshold * Math.PI * 4) * (width * 0.2);
-
-        nodes.push({
-          x: sx,
-          y: sy,
-          text: phrase,
-          angle: Math.sin(threshold * Math.PI) * 0.2,
-          fontSize: idx === 8 ? 36 : 18,
-          color: idx % 2 === 0 ? palette.primary : palette.secondary,
-          alpha: 0.95,
-          progressThreshold: threshold,
-          isMainScript: idx === 8
-        });
+      strokes.push({
+        x: px,
+        y: py,
+        text: phrase.text,
+        angle: Math.sin(t * Math.PI * 2) * 0.2,
+        fontSize: 17 + (1 - t) * 4,
+        color: i % 2 === 0 ? palette.secondary : palette.primary,
+        progressY: py / height
       });
     }
 
-    // Sort nodes vertically from top to bottom
-    nodes.sort((a, b) => a.progressThreshold - b.progressThreshold);
-    nodesRef.current = nodes;
-  }, [photoImage, items, titleText, getThemePalette]);
+    // 2. Middle Perimeter & Silhouette Inscriptions (Y: 28% to 75%)
+    // Contouring gracefully around the subject instead of a solid blob
+    const perimeterCount = 18;
+    for (let i = 0; i < perimeterCount; i++) {
+      const t = i / perimeterCount;
+      const angle = t * Math.PI * 2;
+      const rx = width * 0.36;
+      const ry = height * 0.28;
+      const py = height * 0.52 + Math.sin(angle) * ry;
+      const px = centerX + Math.cos(angle) * rx;
+      const phrase = phrases[(i + 4) % phrases.length];
 
-  // Start music on mount
+      strokes.push({
+        x: px,
+        y: py,
+        text: phrase.text,
+        angle: angle + Math.PI / 2,
+        fontSize: 14,
+        color: i % 2 === 0 ? palette.primary : palette.secondary,
+        progressY: py / height
+      });
+    }
+
+    // 3. Main Center Signature Script (Y: ~76%)
+    strokes.push({
+      x: centerX,
+      y: height * 0.76,
+      text: titleText || "Love You",
+      angle: 0,
+      fontSize: 42,
+      color: palette.accent || palette.primary,
+      progressY: 0.76,
+      isMainScript: true
+    });
+
+    // 4. Bottom Saucer / Base Calligraphy (Y: 82% to 92%)
+    for (let i = 0; i < 6; i++) {
+      const t = i / 6;
+      const px = width * (0.2 + t * 0.6);
+      const py = height * (0.86 + Math.sin(t * Math.PI) * 0.05);
+      const phrase = phrases[(i + 8) % phrases.length];
+
+      strokes.push({
+        x: px,
+        y: py,
+        text: phrase.text,
+        angle: (t - 0.5) * 0.25,
+        fontSize: 15,
+        color: palette.primary,
+        progressY: py / height
+      });
+    }
+
+    // Sort top to bottom
+    strokes.sort((a, b) => a.progressY - b.progressY);
+    strokesRef.current = strokes;
+  }, [items, titleText, getThemePalette]);
+
+  // Audio start/stop
   useEffect(() => {
     audioController.start(musicTrack, customMusicUrl);
     return () => {
@@ -257,28 +217,39 @@ export default function ScribbleVideoRenderer({
     };
   }, [musicTrack, customMusicUrl]);
 
-  // Render loop
+  // Draw each frame
   const drawFrame = useCallback((ctx: CanvasRenderingContext2D, width: number, height: number, progressRatio: number) => {
     const palette = getThemePalette();
+    const centerX = width / 2;
+    const centerY = height / 2;
 
-    // 1. Background Fill
+    // 1. Background
     ctx.save();
     ctx.fillStyle = palette.bg;
     ctx.fillRect(0, 0, width, height);
 
-    // Subtle paper grain / vignette
     if (!palette.darkBg) {
-      const grad = ctx.createRadialGradient(width / 2, height / 2, width * 0.2, width / 2, height / 2, width * 0.65);
-      grad.addColorStop(0, '#ffffff');
-      grad.addColorStop(1, '#f3ece3');
-      ctx.fillStyle = grad;
+      // Warm porcelain / parchment vignette
+      const bgGrad = ctx.createRadialGradient(centerX, centerY, width * 0.2, centerX, centerY, width * 0.7);
+      bgGrad.addColorStop(0, '#ffffff');
+      bgGrad.addColorStop(1, '#f3ece3');
+      ctx.fillStyle = bgGrad;
       ctx.fillRect(0, 0, width, height);
-    } else if (themeStyle === 'rain_storm') {
-      // Gentle animated falling rain streaks (Adri reel reference)
+    } else {
+      // Dark atmospheric aura
+      const darkGrad = ctx.createRadialGradient(centerX, centerY, width * 0.15, centerX, centerY, width * 0.65);
+      darkGrad.addColorStop(0, 'rgba(30, 41, 59, 0.4)');
+      darkGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = darkGrad;
+      ctx.fillRect(0, 0, width, height);
+    }
+
+    // Rain streaks if rain_storm
+    if (themeStyle === 'rain_storm') {
       const now = Date.now() * 0.001;
-      ctx.strokeStyle = 'rgba(148, 163, 184, 0.22)';
+      ctx.strokeStyle = 'rgba(148, 163, 184, 0.2)';
       ctx.lineWidth = 1;
-      for (let r = 0; r < 40; r++) {
+      for (let r = 0; r < 35; r++) {
         const rx = (r * 37 + (r % 7) * 11) % width;
         const ry = (now * 650 + r * 53) % (height + 60) - 30;
         ctx.beginPath();
@@ -288,95 +259,157 @@ export default function ScribbleVideoRenderer({
       }
     }
 
-    const nodes = nodesRef.current;
-    let lastPenX = width * 0.5;
-    let lastPenY = height * 0.05;
+    const currentY = progressRatio * height;
 
-    // 2. Draw nodes that are at or above current progress line
-    for (let i = 0; i < nodes.length; i++) {
-      const node = nodes[i];
+    // 2. THE IMAGE / SUBJECT DRAWING (Progressively Revealed Top-to-Bottom)
+    // The photo is framed cleanly in the center, and wiped down with the pen!
+    if (photoImage) {
+      const imgAspect = photoImage.width / photoImage.height;
+      const targetW = width * 0.72;
+      const targetH = targetW / imgAspect;
+      const imgX = centerX - targetW / 2;
+      const imgY = height * 0.24;
 
-      // Draw only if progress has reached this node's vertical position
-      if (node.progressThreshold <= progressRatio) {
+      ctx.save();
+      // Clip to the progressive top-to-bottom pen wipe line
+      ctx.beginPath();
+      ctx.rect(0, 0, width, currentY);
+      ctx.clip();
+
+      // Rounded mask for portrait/subject
+      ctx.save();
+      ctx.beginPath();
+      ctx.roundRect(imgX, imgY, targetW, targetH, 28);
+      ctx.clip();
+
+      // Draw the actual image clearly!
+      ctx.drawImage(photoImage, imgX, imgY, targetW, targetH);
+
+      // Subtle artistic duotone tint overlay matching theme
+      ctx.fillStyle = palette.photoOverlay;
+      ctx.fillRect(imgX, imgY, targetW, targetH);
+
+      // Soft vignette border around the image
+      const edgeVignette = ctx.createRadialGradient(
+        imgX + targetW / 2,
+        imgY + targetH / 2,
+        targetW * 0.35,
+        imgX + targetW / 2,
+        imgY + targetH / 2,
+        targetW * 0.55
+      );
+      edgeVignette.addColorStop(0, 'rgba(0, 0, 0, 0)');
+      edgeVignette.addColorStop(1, palette.darkBg ? 'rgba(6, 10, 23, 0.55)' : 'rgba(251, 250, 248, 0.45)');
+      ctx.fillStyle = edgeVignette;
+      ctx.fillRect(imgX, imgY, targetW, targetH);
+
+      ctx.restore();
+
+      // Delicate outer contour border around the image
+      ctx.strokeStyle = palette.primary;
+      ctx.lineWidth = 2;
+      ctx.shadowColor = palette.textGlow;
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      ctx.roundRect(imgX, imgY, targetW, targetH, 28);
+      ctx.stroke();
+
+      ctx.restore();
+    }
+
+    // 3. MULTILINGUAL CALLIGRAPHY STROKES (Revealed Top-to-Bottom)
+    const strokes = strokesRef.current;
+    let penX = centerX;
+    let penY = currentY;
+
+    for (let i = 0; i < strokes.length; i++) {
+      const s = strokes[i];
+      if (s.progressY <= progressRatio) {
         ctx.save();
-        ctx.translate(node.x, node.y);
-        ctx.rotate(node.angle);
+        ctx.translate(s.x, s.y);
+        ctx.rotate(s.angle);
 
-        if (node.isMainScript) {
-          // Main prominent calligraphy script
-          ctx.font = `italic bold ${node.fontSize}px "Brush Script MT", "Dancing Script", "Caveat", "Segoe Script", cursive`;
-          ctx.shadowColor = palette.glow;
-          ctx.shadowBlur = 12;
-          ctx.fillStyle = node.color;
+        if (s.isMainScript) {
+          // Large main center script with flourish
+          ctx.font = `italic bold ${s.fontSize}px "Brush Script MT", "Dancing Script", "Caveat", "Segoe Script", cursive`;
+          ctx.shadowColor = palette.textGlow;
+          ctx.shadowBlur = 14;
+          ctx.fillStyle = s.color;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
-          ctx.fillText(node.text, 0, 0);
+          ctx.fillText(s.text, 0, 0);
 
-          // Underline flourish
-          ctx.strokeStyle = node.color;
+          // Underline calligraphy arc
+          ctx.strokeStyle = s.color;
           ctx.lineWidth = 2.5;
           ctx.beginPath();
-          ctx.arc(0, node.fontSize * 0.55, node.fontSize * 1.2, 0.2, Math.PI - 0.2);
+          ctx.arc(0, s.fontSize * 0.55, s.fontSize * 1.3, 0.2, Math.PI - 0.2);
           ctx.stroke();
         } else {
-          // Multilingual Scribble Text
-          ctx.font = `600 ${node.fontSize}px "Segoe UI", system-ui, -apple-system, sans-serif`;
-          ctx.shadowColor = palette.glow;
+          // Clean multilingual script
+          ctx.font = `600 ${s.fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+          ctx.shadowColor = palette.textGlow;
           ctx.shadowBlur = 6;
-          ctx.fillStyle = node.color;
-          ctx.globalAlpha = node.alpha;
+          ctx.fillStyle = s.color;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
-          ctx.fillText(node.text, 0, 0);
+          ctx.fillText(s.text, 0, 0);
 
-          // Connecting scribbly vine/leaf line (like reference image)
-          if (i % 3 === 0) {
+          // Curving flourish leaves/connectors (like the reference teacup)
+          if (i % 2 === 0) {
             ctx.strokeStyle = palette.secondary;
-            ctx.lineWidth = 1;
-            ctx.globalAlpha = 0.45;
+            ctx.lineWidth = 1.2;
             ctx.beginPath();
-            ctx.moveTo(-node.fontSize * 1.5, 0);
-            ctx.bezierCurveTo(-node.fontSize * 0.8, -8, node.fontSize * 0.8, 8, node.fontSize * 1.5, 0);
+            ctx.moveTo(-s.fontSize * 1.2, 0);
+            ctx.bezierCurveTo(-s.fontSize * 0.6, -6, s.fontSize * 0.6, 6, s.fontSize * 1.2, 0);
             ctx.stroke();
           }
         }
 
         ctx.restore();
-        lastPenX = node.x;
-        lastPenY = node.y;
+        penX = s.x;
+        penY = s.y;
       }
     }
 
-    // 3. Glowing Pen Tip (Writing cursor sweeping down)
+    // 4. Glowing Pen Tip & Sweep Line (Active writing cursor)
     if (progressRatio < 1.0) {
-      const penY = progressRatio * height;
-      const penX = lastPenX + Math.sin(progressRatio * 40) * 15;
-
       ctx.save();
-      // Glowing ink nib aura
-      const penGrad = ctx.createRadialGradient(penX, penY, 2, penX, penY, 20);
+      // Horizontal laser / sweep shimmer
+      const sweepGrad = ctx.createLinearGradient(0, currentY, width, currentY);
+      sweepGrad.addColorStop(0, 'rgba(255,255,255,0)');
+      sweepGrad.addColorStop(0.5, palette.primary);
+      sweepGrad.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.strokeStyle = sweepGrad;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(0, currentY);
+      ctx.lineTo(width, currentY);
+      ctx.stroke();
+
+      // Glowing ink nib / stylus
+      const penGrad = ctx.createRadialGradient(penX, currentY, 2, penX, currentY, 22);
       penGrad.addColorStop(0, '#ffffff');
       penGrad.addColorStop(0.4, palette.primary);
       penGrad.addColorStop(1, 'rgba(0,0,0,0)');
-
       ctx.fillStyle = penGrad;
       ctx.beginPath();
-      ctx.arc(penX, penY, 20, 0, Math.PI * 2);
+      ctx.arc(penX, currentY, 22, 0, Math.PI * 2);
       ctx.fill();
 
-      // Pen sparkle
+      // Center spark
       ctx.fillStyle = '#ffffff';
       ctx.beginPath();
-      ctx.arc(penX, penY, 3, 0, Math.PI * 2);
+      ctx.arc(penX, currentY, 3.5, 0, Math.PI * 2);
       ctx.fill();
 
       ctx.restore();
     }
 
     ctx.restore();
-  }, [getThemePalette]);
+  }, [photoImage, getThemePalette, themeStyle]);
 
-  // Main animation frame loop (progressive top-to-bottom writing)
+  // Main animation frame loop
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -390,12 +423,11 @@ export default function ScribbleVideoRenderer({
 
       if (isPlaying) {
         const elapsed = (Date.now() - startTimeRef.current) % totalCycleMs;
-        // Progress runs from 0 to 1 over durationMs, then stays at 1 during pauseDurationMs
         let progress = 0;
         if (elapsed < durationMs) {
           progress = elapsed / durationMs;
         } else {
-          progress = 1.0; // Artwork fully revealed
+          progress = 1.0; // Artwork fully revealed and visible
         }
 
         setCurrentProgress(Math.round(progress * 100));
@@ -425,25 +457,24 @@ export default function ScribbleVideoRenderer({
   const downloadHighResImage = () => {
     const exportCanvas = document.createElement('canvas');
     exportCanvas.width = 1600;
-    exportCanvas.height = 1800;
+    exportCanvas.height = 1920;
     const exportCtx = exportCanvas.getContext('2d');
     if (exportCtx) {
-      drawFrame(exportCtx, 1600, 1800, 1.0);
+      drawFrame(exportCtx, 1600, 1920, 1.0);
       const link = document.createElement('a');
-      link.download = `${titleText || 'scribble-portrait'}-artwork.png`;
+      link.download = `${titleText || 'calligraphy-portrait'}-artwork.png`;
       link.href = exportCanvas.toDataURL('image/png', 1.0);
       link.click();
     }
   };
 
-  // Record 8.5s Video loop with audio directly in browser
   const recordVideo = async () => {
     const canvas = canvasRef.current;
     if (!canvas || isRecording) return;
 
     try {
       setIsRecording(true);
-      startTimeRef.current = Date.now(); // Restart from 0 for clean recording
+      startTimeRef.current = Date.now();
 
       const stream = canvas.captureStream(30);
       const recorder = new MediaRecorder(stream, {
@@ -490,17 +521,15 @@ export default function ScribbleVideoRenderer({
           className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#0c1429] hover:bg-[#162347] text-slate-300 hover:text-white text-xs font-semibold border border-[#243356] transition"
         >
           <ArrowLeft size={15} />
-          <span>Edit & Change Image</span>
+          <span>Edit &amp; Change Image</span>
         </button>
 
         <div className="flex items-center gap-3">
-          {/* Progress bar pill */}
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#0c1429] border border-[#243356] text-xs text-slate-300">
+          <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#0c1429] border border-[#243356] text-xs text-slate-300">
             <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
             <span>Writing Animation: {currentProgress}%</span>
           </div>
 
-          {/* Sound Toggle */}
           <button
             type="button"
             onClick={toggleMute}
@@ -517,15 +546,14 @@ export default function ScribbleVideoRenderer({
       </div>
 
       {/* Main Video Canvas Player Frame */}
-      <div className="relative rounded-3xl overflow-hidden border border-[#243356] shadow-[0_0_60px_rgba(0,180,255,0.18)] bg-[#050914] aspect-[4/4.5] w-full max-w-[560px]">
+      <div className="relative rounded-3xl overflow-hidden border border-[#243356] shadow-[0_0_60px_rgba(0,180,255,0.18)] bg-[#050914] aspect-[4/4.8] w-full max-w-[560px]">
         <canvas
           ref={canvasRef}
           width={800}
-          height={900}
+          height={960}
           className="w-full h-full object-contain block"
         />
 
-        {/* Live Recording Badge */}
         {isRecording && (
           <div className="absolute top-4 right-4 bg-red-600/90 text-white text-xs font-semibold px-3 py-1.5 rounded-full flex items-center gap-2 backdrop-blur-md animate-pulse">
             <span className="w-2 h-2 rounded-full bg-white"></span>
@@ -571,7 +599,7 @@ export default function ScribbleVideoRenderer({
             type="button"
             onClick={recordVideo}
             disabled={isRecording}
-            className="flex items-center gap-1.5 px-5 py-2 rounded-xl bg-gradient-to-r from-[#00c6ff] to-[#0066ff] hover:brightness-110 text-white text-xs font-semibold shadow-md shadow-blue-500/30 transition"
+            className="flex items-center gap-1.5 px-5 py-2 rounded-xl bg-gradient-to-r from-[#00c6ff] to-[#0066ff] hover:brightness-110 text-white text-xs font-semibold shadow-md shadow-blue-500/30 transition cursor-pointer"
           >
             <Video size={14} />
             <span>{isRecording ? 'Recording...' : 'Download Video Loop'}</span>
@@ -581,4 +609,3 @@ export default function ScribbleVideoRenderer({
     </div>
   );
 }
-

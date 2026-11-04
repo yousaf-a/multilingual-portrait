@@ -187,12 +187,12 @@ export default function ScribbleVideoRenderer({
 
     if (!photoImage) return;
 
-    // Calculate image placement centered on canvas
+    // Calculate image placement centered on canvas with generous calligraphy framing margins
     const imgAspect = photoImage.width / photoImage.height;
-    let targetW = width * 0.78;
+    let targetW = Math.min(width * 0.62, 480);
     let targetH = targetW / imgAspect;
-    if (targetH > height * 0.82) {
-      targetH = height * 0.82;
+    if (targetH > height * 0.72) {
+      targetH = height * 0.72;
       targetW = targetH * imgAspect;
     }
     const targetX = (width - targetW) / 2;
@@ -438,94 +438,96 @@ export default function ScribbleVideoRenderer({
     gesturalStrokes.sort((a, b) => a.progressY - b.progressY);
     gesturalStrokesRef.current = gesturalStrokes;
 
-    // 6. BACKGROUND MULTILINGUAL TYPOGRAPHY (Generously Spaced - Zero Collisions)
+    // 6. BACKGROUND MULTILINGUAL TYPOGRAPHY (Dense, Balanced Framing Across 100 Languages)
     const bgTexts: BackgroundText[] = [];
     let wordIdx = 0;
 
-    // A. Left Gutter Column (Never touches portrait)
-    if (targetX > 90) {
-      const leftColX = Math.max(20, (targetX - 150) / 2);
-      for (let y = 55; y < height - 60; y += 46) {
-        const phrase = phrases[wordIdx % phrases.length];
-        wordIdx++;
-        bgTexts.push({
-          x: leftColX,
-          y,
-          text: phrase.text,
-          fontSize: 12.5,
-          progressY: y / height,
-          color: palette.bgText
-        });
-      }
-    }
-
-    // B. Right Gutter Column
-    const rightStart = targetX + targetW + 28;
-    if (width - rightStart > 90) {
-      for (let y = 55; y < height - 60; y += 46) {
-        const phrase = phrases[wordIdx % phrases.length];
-        wordIdx++;
-        bgTexts.push({
-          x: rightStart,
-          y,
-          text: phrase.text,
-          fontSize: 12.5,
-          progressY: y / height,
-          color: palette.bgText
-        });
-      }
-    }
-
-    // C. Top Header (Spaced evenly across top margin)
-    const topY = Math.max(30, targetY - 35);
-    const topSlots = [45, 290, 535];
-    topSlots.forEach((tx) => {
-      if (tx < width - 130) {
-        const phrase = phrases[wordIdx % phrases.length];
-        wordIdx++;
-        bgTexts.push({
-          x: tx,
-          y: topY,
-          text: phrase.text,
-          fontSize: 12.5,
-          progressY: topY / height,
-          color: palette.bgText
+    // A. Top Header Margin (3 horizontal rows across top)
+    const topRowY = [35, 70, 105];
+    const topColX = [30, 160, 290, 420, 550, 680];
+    topRowY.forEach((ty) => {
+      if (ty < targetY - 18) {
+        topColX.forEach((tx) => {
+          if (phrases.length > 0) {
+            const phrase = phrases[wordIdx % phrases.length];
+            wordIdx++;
+            bgTexts.push({
+              x: tx,
+              y: ty,
+              text: phrase.text,
+              fontSize: 12.5,
+              progressY: ty / height,
+              color: palette.bgText
+            });
+          }
         });
       }
     });
 
-    // D. Bottom Footer (Spaced cleanly with generous breathing room, avoiding all text collision)
-    const bottomY1 = Math.min(height - 58, targetY + targetH + 34);
-    const bottomY2 = Math.min(height - 24, bottomY1 + 28);
+    // B. Left Gutter Margin (3 staggered columns)
+    const leftCols = [22, 68, 114];
+    for (let y = 35; y < height - 35; y += 38) {
+      leftCols.forEach((colX, cIdx) => {
+        if (colX < targetX - 16) {
+          const staggeredY = y + (cIdx % 2 === 1 ? 19 : 0);
+          if (staggeredY < height - 35 && phrases.length > 0) {
+            const phrase = phrases[wordIdx % phrases.length];
+            wordIdx++;
+            bgTexts.push({
+              x: colX,
+              y: staggeredY,
+              text: phrase.text,
+              fontSize: 12,
+              progressY: staggeredY / height,
+              color: palette.bgText
+            });
+          }
+        }
+      });
+    }
 
-    const bottomSlots1 = [45, 290, 535];
-    bottomSlots1.forEach((bx) => {
-      if (bx < width - 130) {
-        const phrase = phrases[wordIdx % phrases.length];
-        wordIdx++;
-        bgTexts.push({
-          x: bx,
-          y: bottomY1,
-          text: phrase.text,
-          fontSize: 12,
-          progressY: bottomY1 / height,
-          color: palette.bgText
-        });
-      }
-    });
+    // C. Right Gutter Margin (3 staggered columns)
+    const rightMarginStart = targetX + targetW + 18;
+    const rightCols = [rightMarginStart, rightMarginStart + 46, rightMarginStart + 92];
+    for (let y = 35; y < height - 35; y += 38) {
+      rightCols.forEach((colX, cIdx) => {
+        if (colX < width - 50) {
+          const staggeredY = y + (cIdx % 2 === 1 ? 19 : 0);
+          if (staggeredY < height - 35 && phrases.length > 0) {
+            const phrase = phrases[wordIdx % phrases.length];
+            wordIdx++;
+            bgTexts.push({
+              x: colX,
+              y: staggeredY,
+              text: phrase.text,
+              fontSize: 12,
+              progressY: staggeredY / height,
+              color: palette.bgText
+            });
+          }
+        }
+      });
+    }
 
-    const bottomSlots2 = [165, 415];
-    bottomSlots2.forEach((bx) => {
-      if (bx < width - 130) {
-        const phrase = phrases[wordIdx % phrases.length];
-        wordIdx++;
-        bgTexts.push({
-          x: bx,
-          y: bottomY2,
-          text: phrase.text,
-          fontSize: 12,
-          progressY: bottomY2 / height,
-          color: palette.bgText
+    // D. Bottom Footer Margin (3 horizontal rows across bottom)
+    const bottomStartY = targetY + targetH + 28;
+    const bottomRowY = [bottomStartY, bottomStartY + 35, bottomStartY + 70];
+    const bottomColX = [30, 160, 290, 420, 550, 680];
+    bottomRowY.forEach((by) => {
+      if (by < height - 20) {
+        bottomColX.forEach((bx) => {
+          if (phrases.length > 0) {
+            const phrase = phrases[wordIdx % phrases.length];
+            wordIdx++;
+            bgTexts.push({
+              x: bx,
+              y: by,
+              text: phrase.text,
+              fontSize: 12,
+              progressY: by / height,
+              color: palette.bgText
+            });
+          }
         });
       }
     });
@@ -604,7 +606,7 @@ export default function ScribbleVideoRenderer({
 
     // 3. DRAW BACKGROUND MULTILINGUAL CALLIGRAPHY
     const bgTexts = backgroundTextsRef.current;
-    ctx.font = `italic 400 12.5px Georgia, "Times New Roman", serif`;
+    ctx.font = `italic 400 12px "Segoe UI", "Noto Sans", "Apple Color Emoji", Georgia, "Times New Roman", serif`;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
 

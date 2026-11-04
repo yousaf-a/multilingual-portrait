@@ -254,6 +254,54 @@ const HANGUL_MAP: Record<string, string> = {
   u: '우', v: '브', w: '더블유', x: '엑스', y: '와이', z: '즈'
 };
 
+const CHINESE_MAP: Record<string, string> = {
+  a: '阿', b: '布', c: '西', d: '德', e: '艾', f: '弗', g: '格', h: '赫', i: '伊', j: '杰',
+  k: '克', l: '勒', m: '姆', n: '恩', o: '奥', p: '普', q: '奇', r: '尔', s: '斯', t: '特',
+  u: '乌', v: '维', w: '瓦', x: '克', y: '雅', z: '兹'
+};
+
+const BENGALI_MAP: Record<string, string> = {
+  a: 'আ', b: 'ব', c: 'ক', d: 'ড', e: 'এ', f: 'ফ', g: 'গ', h: 'হ', i: 'ই', j: 'জ',
+  k: 'ক', l: 'ল', m: 'ম', n: 'ন', o: 'ও', p: 'প', q: 'ক', r: 'র', s: 'স', t: 'ট',
+  u: 'উ', v: 'ভ', w: 'ও', x: 'ক্স', y: 'য', z: 'য'
+};
+
+const TAMIL_MAP: Record<string, string> = {
+  a: 'அ', b: 'ப', c: 'க', d: 'ட', e: 'எ', f: 'ப', g: 'க', h: 'ஹ', i: 'இ', j: 'ஜ',
+  k: 'க', l: 'ல', m: 'ம', n: 'ன', o: 'ஒ', p: 'ப', q: 'க', r: 'ர', s: 'ஸ', t: 'த',
+  u: 'உ', v: 'வ', w: 'வ', x: 'க', y: 'ய', z: 'ஜ'
+};
+
+const TELUGU_MAP: Record<string, string> = {
+  a: 'ఆ', b: 'బ', c: 'క', d: 'డ', e: 'ఏ', f: 'ఫ', g: 'గ', h: 'హ', i: 'ఇ', j: 'జ',
+  k: 'క', l: 'ల', m: 'మ', n: 'న', o: 'ఓ', p: 'ప', q: 'క', r: 'ర', s: 'స', t: 'ట',
+  u: 'ఉ', v: 'వ', w: 'వ', x: 'క్స్', y: 'య', z: 'జ'
+};
+
+const THAI_MAP: Record<string, string> = {
+  a: 'อา', b: 'บ', c: 'ซ', d: 'ด', e: 'เอ', f: 'ฟ', g: 'ก', h: 'ฮ', i: 'อิ', j: 'จ',
+  k: 'ค', l: 'ล', m: 'ม', n: 'น', o: 'โอ', p: 'ป', q: 'ค', r: 'ร', s: 'ส', t: 'ท',
+  u: 'อุ', v: 'ว', w: 'ว', x: 'กซ', y: 'ย', z: 'ซ'
+};
+
+const ARMENIAN_MAP: Record<string, string> = {
+  a: 'ա', b: 'բ', c: 'ց', d: 'դ', e: 'ե', f: 'ֆ', g: 'գ', h: 'հ', i: 'ի', j: 'ջ',
+  k: 'կ', l: 'լ', m: 'մ', n: 'ն', o: 'օ', p: 'պ', q: 'ք', r: 'ր', s: 'ս', t: 'տ',
+  u: 'ու', v: 'վ', w: 'վ', x: 'քս', y: 'յ', z: 'զ'
+};
+
+const GEORGIAN_MAP: Record<string, string> = {
+  a: 'ა', b: 'ბ', c: 'ც', d: 'დ', e: 'ე', f: 'ფ', g: 'გ', h: 'ჰ', i: 'ი', j: 'ჯ',
+  k: 'კ', l: 'ლ', m: 'მ', n: 'ნ', o: 'ო', p: 'პ', q: 'ქ', r: 'რ', s: 'ს', t: 'ტ',
+  u: 'უ', v: 'ვ', w: 'ვ', x: 'ქს', y: 'ყ', z: 'ზ'
+};
+
+const AMHARIC_MAP: Record<string, string> = {
+  a: 'አ', b: 'በ', c: 'ከ', d: 'ደ', e: 'ኤ', f: 'ፈ', g: 'ገ', h: 'ሀ', i: 'ኢ', j: 'ጀ',
+  k: 'ከ', l: 'ለ', m: 'መ', n: 'ነ', o: 'ኦ', p: 'ፐ', q: 'ቀ', r: 'ረ', s: 'ሰ', t: 'ተ',
+  u: 'ኡ', v: 'ቨ', w: 'ወ', x: 'ክስ', y: 'የ', z: 'ዘ'
+};
+
 function transliterateWithMap(text: string, map: Record<string, string>): string {
   const lower = text.toLowerCase();
   let result = '';
@@ -280,12 +328,23 @@ export function getMultilingualList(
     trimmedName.toLowerCase() === 'love you';
 
   if (isExplicitLove) {
-    return Object.entries(LOVE_TRANSLATIONS).map(([language, phrase]) => ({
+    const rawList = Object.entries(LOVE_TRANSLATIONS).map(([language, phrase]) => ({
       language,
       nativeLanguage: language,
       text: phrase,
       script: 'native'
     }));
+    // Interleave non-Latin (Cyrillic, Hindi, Arabic, Hanzi, etc.) with Latin for visual variety
+    const nonLatin = rawList.filter((i) => /[^\u0000-\u007F]/.test(i.text));
+    const latin = rawList.filter((i) => !/[^\u0000-\u007F]/.test(i.text));
+    const mixed: TranslatedItem[] = [];
+    let n = 0, l = 0;
+    while (n < nonLatin.length || l < latin.length) {
+      if (n < nonLatin.length) mixed.push(nonLatin[n++]);
+      if (n < nonLatin.length) mixed.push(nonLatin[n++]);
+      if (l < latin.length) mixed.push(latin[l++]);
+    }
+    return mixed;
   }
 
   if (mode === 'sorry' && trimmedName.toLowerCase().includes('sorry')) {
@@ -319,6 +378,22 @@ export function getMultilingualList(
       scriptText = transliterateWithMap(trimmedName, KATAKANA_MAP);
     } else if (lang === 'Korean') {
       scriptText = transliterateWithMap(trimmedName, HANGUL_MAP);
+    } else if (lang === 'Chinese') {
+      scriptText = transliterateWithMap(trimmedName, CHINESE_MAP);
+    } else if (['Bengali', 'Assamese'].includes(lang)) {
+      scriptText = transliterateWithMap(trimmedName, BENGALI_MAP);
+    } else if (lang === 'Tamil') {
+      scriptText = transliterateWithMap(trimmedName, TAMIL_MAP);
+    } else if (['Telugu', 'Kannada'].includes(lang)) {
+      scriptText = transliterateWithMap(trimmedName, TELUGU_MAP);
+    } else if (lang === 'Thai') {
+      scriptText = transliterateWithMap(trimmedName, THAI_MAP);
+    } else if (lang === 'Armenian') {
+      scriptText = transliterateWithMap(trimmedName, ARMENIAN_MAP);
+    } else if (lang === 'Georgian') {
+      scriptText = transliterateWithMap(trimmedName, GEORGIAN_MAP);
+    } else if (lang === 'Amharic') {
+      scriptText = transliterateWithMap(trimmedName, AMHARIC_MAP);
     } else {
       // Latin variations: exact user text
       scriptText = trimmedName;
@@ -332,6 +407,18 @@ export function getMultilingualList(
     });
   }
 
-  return list;
+  // Interleave diverse global scripts so adjacent words are in distinct alphabets
+  const nonLatin = list.filter((i) => i.text !== trimmedName);
+  const latin = list.filter((i) => i.text === trimmedName);
+  const interleaved: TranslatedItem[] = [];
+  let nIdx = 0, lIdx = 0;
+
+  while (nIdx < nonLatin.length || lIdx < latin.length) {
+    if (nIdx < nonLatin.length) interleaved.push(nonLatin[nIdx++]);
+    if (nIdx < nonLatin.length) interleaved.push(nonLatin[nIdx++]);
+    if (lIdx < latin.length) interleaved.push(latin[lIdx++]);
+  }
+
+  return interleaved;
 }
 

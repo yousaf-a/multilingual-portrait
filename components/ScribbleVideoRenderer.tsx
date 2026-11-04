@@ -5,15 +5,22 @@ import { TranslatedItem } from '@/lib/languages';
 import { Play, Pause, RotateCcw, Volume2, VolumeX, Download, ArrowLeft, Video } from 'lucide-react';
 import { audioController } from '@/lib/audio';
 
-interface CalligraphyStroke {
+// Continuous curly scribble loop point
+interface ScribblePoint {
+  x: number;
+  y: number;
+  progressY: number; // 0 to 1
+  isStart?: boolean;
+}
+
+// Background multilingual text placed strictly OUTSIDE the subject
+interface BackgroundText {
   x: number;
   y: number;
   text: string;
-  angle: number;
   fontSize: number;
+  progressY: number;
   color: string;
-  progressY: number; // 0 to 1
-  isMainScript?: boolean;
 }
 
 interface ScribbleVideoRendererProps {
@@ -45,74 +52,77 @@ export default function ScribbleVideoRenderer({
   const [currentProgress, setCurrentProgress] = useState(0);
   const [isRecording, setIsRecording] = useState(false);
 
-  const durationMs = 8500; // 8.5 seconds drawing duration
-  const pauseDurationMs = 3000; // 3 seconds pause on full reveal
+  const durationMs = 9000; // 9 seconds sketching sweep
+  const pauseDurationMs = 3500; // 3.5s pause to admire completed artwork
   const totalCycleMs = durationMs + pauseDurationMs;
   const startTimeRef = useRef<number>(Date.now());
 
-  const strokesRef = useRef<CalligraphyStroke[]>([]);
+  // Cached geometry
+  const scribblePointsRef = useRef<ScribblePoint[]>([]);
+  const backgroundTextsRef = useRef<BackgroundText[]>([]);
 
   // Theme palettes
   const getThemePalette = useCallback(() => {
     switch (themeStyle) {
-      case 'emerald': // Tea cup green & gold (matching reference)
+      case 'emerald':
         return {
-          bg: '#fbfaf8',
+          bg: '#fcfbfa',
           darkBg: false,
-          primary: '#1d4a2a',
-          secondary: '#8a7138',
-          accent: '#14381e',
-          textGlow: 'rgba(29, 74, 42, 0.3)',
-          photoOverlay: 'rgba(29, 74, 42, 0.08)'
+          ink: '#112918', // Deep forest green ink
+          inkSecondary: '#524021',
+          bgText: 'rgba(29, 74, 42, 0.45)',
+          paperVignette: '#f2ece4',
+          penGlow: '#2e7d32'
         };
       case 'gold':
         return {
           bg: '#08080a',
           darkBg: true,
-          primary: '#e6c364',
-          secondary: '#b89130',
-          accent: '#ffffff',
-          textGlow: 'rgba(230, 195, 100, 0.45)',
-          photoOverlay: 'rgba(230, 195, 100, 0.1)'
+          ink: '#e6c364', // Fine gold pen
+          inkSecondary: '#b89130',
+          bgText: 'rgba(230, 195, 100, 0.4)',
+          paperVignette: '#000000',
+          penGlow: '#e6c364'
         };
-      case 'rain_storm': // Adri reel storm & rain
+      case 'rain_storm':
         return {
-          bg: '#070b16',
+          bg: '#080d1a',
           darkBg: true,
-          primary: '#38bdf8',
-          secondary: '#94a3b8',
-          accent: '#ffffff',
-          textGlow: 'rgba(56, 189, 248, 0.4)',
-          photoOverlay: 'rgba(56, 189, 248, 0.08)'
-        };
-      case 'monochrome':
-        return {
-          bg: '#ffffff',
-          darkBg: false,
-          primary: '#111827',
-          secondary: '#4b5563',
-          accent: '#000000',
-          textGlow: 'rgba(0, 0, 0, 0.15)',
-          photoOverlay: 'rgba(0, 0, 0, 0.05)'
+          ink: '#e2e8f0', // Clean silver/white pen
+          inkSecondary: '#38bdf8',
+          bgText: 'rgba(56, 189, 248, 0.35)',
+          paperVignette: '#040710',
+          penGlow: '#38bdf8'
         };
       case 'neon':
-      default:
         return {
           bg: '#060a17',
           darkBg: true,
-          primary: primaryColor || '#00e5ff',
-          secondary: '#e024c3',
-          accent: '#ffffff',
-          textGlow: `${primaryColor}66`,
-          photoOverlay: 'rgba(0, 229, 255, 0.1)'
+          ink: '#00e5ff', // Neon cyan pen
+          inkSecondary: '#e024c3',
+          bgText: 'rgba(0, 229, 255, 0.35)',
+          paperVignette: '#03050c',
+          penGlow: '#00e5ff'
+        };
+      case 'monochrome':
+      default:
+        // Pure Authentic sudhin__art black ballpoint/gel pen on textured paper
+        return {
+          bg: '#faf8f5',
+          darkBg: false,
+          ink: '#18181b', // Crisp black gel pen
+          inkSecondary: '#3f3f46',
+          bgText: 'rgba(82, 82, 91, 0.45)',
+          paperVignette: '#ece7de',
+          penGlow: '#18181b'
         };
     }
-  }, [themeStyle, primaryColor]);
+  }, [themeStyle]);
 
-  // Generate artistic calligraphy strokes along the subject
+  // Generate Curly Scribbles for the Subject & Multilingual Text for the Background
   useEffect(() => {
     const width = 800;
-    const height = 960;
+    const height = 1000;
     const palette = getThemePalette();
 
     const phrases = items.length >= 8 ? items : [
@@ -127,87 +137,190 @@ export default function ScribbleVideoRenderer({
       { text: "Чашка для чая", language: "Russian" },
       { text: "Ti amo", language: "Italian" },
       { text: "Eu te amo", language: "Portuguese" },
-      { text: "사랑해", language: "Korean" }
+      { text: "사랑해", language: "Korean" },
+      { text: "Nakupenda", language: "Swahili" },
+      { text: "Seni seviyorum", language: "Turkish" },
+      { text: "Kocham cię", language: "Polish" },
+      { text: "Σ' αγαπώ", language: "Greek" }
     ];
 
-    const strokes: CalligraphyStroke[] = [];
-    const centerX = width / 2;
+    const scribblePoints: ScribblePoint[] = [];
+    const bgTexts: BackgroundText[] = [];
 
-    // 1. Top Steam / Calligraphy Swirls (Y: 5% to 26%)
-    for (let i = 0; i < 8; i++) {
-      const t = i / 8;
-      const py = height * (0.06 + t * 0.20);
-      const px = centerX + Math.sin(t * Math.PI * 3.5) * (width * 0.16 * (1 - t * 0.2));
-      const phrase = phrases[i % phrases.length];
+    // Grid dimensions for image sampling
+    const sampleCols = 160;
+    const sampleRows = 200;
+    const cellW = width / sampleCols;
+    const cellH = height / sampleRows;
 
-      strokes.push({
-        x: px,
-        y: py,
-        text: phrase.text,
-        angle: Math.sin(t * Math.PI * 2) * 0.2,
-        fontSize: 17 + (1 - t) * 4,
-        color: i % 2 === 0 ? palette.secondary : palette.primary,
-        progressY: py / height
-      });
+    // Subject density map
+    const densityMap: number[][] = Array.from({ length: sampleRows }, () => Array(sampleCols).fill(0));
+
+    if (photoImage) {
+      const offCanvas = document.createElement('canvas');
+      offCanvas.width = sampleCols;
+      offCanvas.height = sampleRows;
+      const offCtx = offCanvas.getContext('2d');
+
+      if (offCtx) {
+        // Draw image centered in the canvas
+        offCtx.fillStyle = '#ffffff';
+        offCtx.fillRect(0, 0, sampleCols, sampleRows);
+
+        const imgAspect = photoImage.width / photoImage.height;
+        let dw = sampleCols * 0.78;
+        let dh = dw / imgAspect;
+        if (dh > sampleRows * 0.85) {
+          dh = sampleRows * 0.85;
+          dw = dh * imgAspect;
+        }
+        const dx = (sampleCols - dw) / 2;
+        const dy = (sampleRows - dh) / 2 + 5;
+
+        offCtx.drawImage(photoImage, dx, dy, dw, dh);
+        const imgData = offCtx.getImageData(0, 0, sampleCols, sampleRows).data;
+
+        for (let y = 0; y < sampleRows; y++) {
+          for (let x = 0; x < sampleCols; x++) {
+            const idx = (y * sampleCols + x) * 4;
+            const r = imgData[idx];
+            const g = imgData[idx + 1];
+            const b = imgData[idx + 2];
+            const a = imgData[idx + 3];
+
+            if (a > 30) {
+              const luminance = (r * 0.299 + g * 0.587 + b * 0.114) / 255;
+              // Detect subject vs white background
+              if (luminance < 0.92) {
+                // Non-linear contrast curve for rich shadows and delicate skin highlights
+                const rawDensity = 1 - luminance;
+                densityMap[y][x] = Math.pow(rawDensity, 1.3);
+              }
+            }
+          }
+        }
+      }
+    } else {
+      // Procedural silhouette if no photo loaded
+      for (let y = 0; y < sampleRows; y++) {
+        for (let x = 0; x < sampleCols; x++) {
+          const nx = (x - sampleCols / 2) / (sampleCols * 0.35);
+          const ny = (y - sampleRows * 0.45) / (sampleRows * 0.35);
+          const dist = Math.sqrt(nx * nx + ny * ny);
+          if (dist < 1.0) {
+            densityMap[y][x] = Math.max(0, 1 - dist);
+          }
+        }
+      }
     }
 
-    // 2. Middle Perimeter & Silhouette Inscriptions (Y: 28% to 75%)
-    // Contouring gracefully around the subject instead of a solid blob
-    const perimeterCount = 18;
-    for (let i = 0; i < perimeterCount; i++) {
-      const t = i / perimeterCount;
-      const angle = t * Math.PI * 2;
-      const rx = width * 0.36;
-      const ry = height * 0.28;
-      const py = height * 0.52 + Math.sin(angle) * ry;
-      const px = centerX + Math.cos(angle) * rx;
-      const phrase = phrases[(i + 4) % phrases.length];
+    // 1. GENERATE CURLY SCRIBBLE LOOPS (Exactly like sudhin__art)
+    // Scan horizontal bands with connected looping cycloid curls
+    const rowStep = 3; // Scan every 3 rows for high-fidelity pen lines
 
-      strokes.push({
-        x: px,
-        y: py,
-        text: phrase.text,
-        angle: angle + Math.PI / 2,
-        fontSize: 14,
-        color: i % 2 === 0 ? palette.primary : palette.secondary,
-        progressY: py / height
-      });
+    for (let y = 4; y < sampleRows - 4; y += rowStep) {
+      let isDrawingStreak = false;
+      const py = y * cellH;
+      const progressY = py / height;
+
+      for (let x = 3; x < sampleCols - 3; x++) {
+        const d = densityMap[y][x];
+
+        // Is this part of the subject?
+        if (d > 0.08) {
+          const px = x * cellW;
+
+          // Number of curly loops per cell depends on shadow density (1 loop for light skin, up to 4 tight loops for dark hair)
+          const loopCount = d > 0.65 ? 4 : d > 0.35 ? 2 : 1;
+          const radius = Math.max(2.5, Math.min(10, 8.5 * (1 - d * 0.65)));
+
+          if (!isDrawingStreak) {
+            scribblePoints.push({ x: px, y: py, progressY, isStart: true });
+            isDrawingStreak = true;
+          }
+
+          // Generate curling loop points (cycloid coils)
+          for (let l = 0; l < loopCount; l++) {
+            const angleOffset = (x * 1.5 + l * Math.PI) % (Math.PI * 2);
+            const steps = 6;
+            for (let s = 0; s < steps; s++) {
+              const theta = angleOffset + (s / steps) * Math.PI * 2;
+              const cx = px + Math.cos(theta) * radius + (Math.sin(y + s) * 1.2);
+              const cy = py + Math.sin(theta) * radius + (Math.cos(x + s) * 1.2);
+
+              scribblePoints.push({
+                x: cx,
+                y: cy,
+                progressY
+              });
+            }
+          }
+
+          // In ultra-dark areas (hair, deep shadows), add counter-clockwise cross curls for rich ink saturation
+          if (d > 0.55 && x % 2 === 0) {
+            for (let s = 0; s < 5; s++) {
+              const theta = -(s / 5) * Math.PI * 2;
+              const cx = px + Math.cos(theta) * (radius * 0.7);
+              const cy = py + Math.sin(theta) * (radius * 0.7);
+              scribblePoints.push({ x: cx, y: cy, progressY });
+            }
+          }
+
+        } else {
+          isDrawingStreak = false;
+        }
+      }
     }
 
-    // 3. Main Center Signature Script (Y: ~76%)
-    strokes.push({
-      x: centerX,
-      y: height * 0.76,
-      text: titleText || "Love You",
-      angle: 0,
-      fontSize: 42,
-      color: palette.accent || palette.primary,
-      progressY: 0.76,
-      isMainScript: true
-    });
+    // 2. GENERATE BACKGROUND MULTILINGUAL TEXT (STRICTLY OUTSIDE THE SUBJECT)
+    // Place words in the margins/background where density == 0, never touching the face/body!
+    let wordIdx = 0;
+    const bgRowStep = 24; // Vertical spacing between text lines in background
+    const bgColStep = 20;
 
-    // 4. Bottom Saucer / Base Calligraphy (Y: 82% to 92%)
-    for (let i = 0; i < 6; i++) {
-      const t = i / 6;
-      const px = width * (0.2 + t * 0.6);
-      const py = height * (0.86 + Math.sin(t * Math.PI) * 0.05);
-      const phrase = phrases[(i + 8) % phrases.length];
+    for (let y = 6; y < sampleRows - 6; y += bgRowStep) {
+      const py = y * cellH;
+      const progressY = py / height;
 
-      strokes.push({
-        x: px,
-        y: py,
-        text: phrase.text,
-        angle: (t - 0.5) * 0.25,
-        fontSize: 15,
-        color: palette.primary,
-        progressY: py / height
-      });
+      for (let x = 4; x < sampleCols - 4; x += bgColStep) {
+        // Check if this region is CLEAR of the subject
+        let hasSubjectNearby = false;
+        for (let dy = -6; dy <= 6; dy += 3) {
+          for (let dx = -6; dx <= 6; dx += 3) {
+            const checkY = Math.max(0, Math.min(sampleRows - 1, y + dy));
+            const checkX = Math.max(0, Math.min(sampleCols - 1, x + dx));
+            if (densityMap[checkY][checkX] > 0.05) {
+              hasSubjectNearby = true;
+              break;
+            }
+          }
+          if (hasSubjectNearby) break;
+        }
+
+        // Only place in pure background space outside the subject
+        if (!hasSubjectNearby) {
+          const phrase = phrases[wordIdx % phrases.length];
+          wordIdx++;
+
+          bgTexts.push({
+            x: x * cellW + (Math.sin(y) * 10),
+            y: py,
+            text: phrase.text,
+            fontSize: 13,
+            progressY,
+            color: palette.bgText
+          });
+        }
+      }
     }
 
-    // Sort top to bottom
-    strokes.sort((a, b) => a.progressY - b.progressY);
-    strokesRef.current = strokes;
-  }, [items, titleText, getThemePalette]);
+    // Sort all background text and scribble points from top to bottom
+    scribblePoints.sort((a, b) => a.progressY - b.progressY);
+    bgTexts.sort((a, b) => a.progressY - b.progressY);
+
+    scribblePointsRef.current = scribblePoints;
+    backgroundTextsRef.current = bgTexts;
+  }, [photoImage, items, titleText, getThemePalette]);
 
   // Audio start/stop
   useEffect(() => {
@@ -217,34 +330,33 @@ export default function ScribbleVideoRenderer({
     };
   }, [musicTrack, customMusicUrl]);
 
-  // Draw each frame
+  // Draw frame
   const drawFrame = useCallback((ctx: CanvasRenderingContext2D, width: number, height: number, progressRatio: number) => {
     const palette = getThemePalette();
     const centerX = width / 2;
     const centerY = height / 2;
 
-    // 1. Background
+    // 1. Paper Background
     ctx.save();
     ctx.fillStyle = palette.bg;
     ctx.fillRect(0, 0, width, height);
 
+    // Warm paper texture / vignette
     if (!palette.darkBg) {
-      // Warm porcelain / parchment vignette
-      const bgGrad = ctx.createRadialGradient(centerX, centerY, width * 0.2, centerX, centerY, width * 0.7);
-      bgGrad.addColorStop(0, '#ffffff');
-      bgGrad.addColorStop(1, '#f3ece3');
-      ctx.fillStyle = bgGrad;
+      const paperGrad = ctx.createRadialGradient(centerX, centerY, width * 0.25, centerX, centerY, width * 0.72);
+      paperGrad.addColorStop(0, '#ffffff');
+      paperGrad.addColorStop(1, palette.paperVignette);
+      ctx.fillStyle = paperGrad;
       ctx.fillRect(0, 0, width, height);
     } else {
-      // Dark atmospheric aura
-      const darkGrad = ctx.createRadialGradient(centerX, centerY, width * 0.15, centerX, centerY, width * 0.65);
-      darkGrad.addColorStop(0, 'rgba(30, 41, 59, 0.4)');
-      darkGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      const darkGrad = ctx.createRadialGradient(centerX, centerY, width * 0.2, centerX, centerY, width * 0.7);
+      darkGrad.addColorStop(0, 'rgba(255, 255, 255, 0.03)');
+      darkGrad.addColorStop(1, 'rgba(0, 0, 0, 0.6)');
       ctx.fillStyle = darkGrad;
       ctx.fillRect(0, 0, width, height);
     }
 
-    // Rain streaks if rain_storm
+    // Falling rain streaks if rain_storm
     if (themeStyle === 'rain_storm') {
       const now = Date.now() * 0.001;
       ctx.strokeStyle = 'rgba(148, 163, 184, 0.2)';
@@ -259,155 +371,85 @@ export default function ScribbleVideoRenderer({
       }
     }
 
-    const currentY = progressRatio * height;
+    // 2. DRAW BACKGROUND MULTILINGUAL TEXT (OUTSIDE IMAGE ONLY)
+    const bgTexts = backgroundTextsRef.current;
+    ctx.font = `500 13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
 
-    // 2. THE IMAGE / SUBJECT DRAWING (Progressively Revealed Top-to-Bottom)
-    // The photo is framed cleanly in the center, and wiped down with the pen!
-    if (photoImage) {
-      const imgAspect = photoImage.width / photoImage.height;
-      const targetW = width * 0.72;
-      const targetH = targetW / imgAspect;
-      const imgX = centerX - targetW / 2;
-      const imgY = height * 0.24;
-
-      ctx.save();
-      // Clip to the progressive top-to-bottom pen wipe line
-      ctx.beginPath();
-      ctx.rect(0, 0, width, currentY);
-      ctx.clip();
-
-      // Rounded mask for portrait/subject
-      ctx.save();
-      ctx.beginPath();
-      ctx.roundRect(imgX, imgY, targetW, targetH, 28);
-      ctx.clip();
-
-      // Draw the actual image clearly!
-      ctx.drawImage(photoImage, imgX, imgY, targetW, targetH);
-
-      // Subtle artistic duotone tint overlay matching theme
-      ctx.fillStyle = palette.photoOverlay;
-      ctx.fillRect(imgX, imgY, targetW, targetH);
-
-      // Soft vignette border around the image
-      const edgeVignette = ctx.createRadialGradient(
-        imgX + targetW / 2,
-        imgY + targetH / 2,
-        targetW * 0.35,
-        imgX + targetW / 2,
-        imgY + targetH / 2,
-        targetW * 0.55
-      );
-      edgeVignette.addColorStop(0, 'rgba(0, 0, 0, 0)');
-      edgeVignette.addColorStop(1, palette.darkBg ? 'rgba(6, 10, 23, 0.55)' : 'rgba(251, 250, 248, 0.45)');
-      ctx.fillStyle = edgeVignette;
-      ctx.fillRect(imgX, imgY, targetW, targetH);
-
-      ctx.restore();
-
-      // Delicate outer contour border around the image
-      ctx.strokeStyle = palette.primary;
-      ctx.lineWidth = 2;
-      ctx.shadowColor = palette.textGlow;
-      ctx.shadowBlur = 8;
-      ctx.beginPath();
-      ctx.roundRect(imgX, imgY, targetW, targetH, 28);
-      ctx.stroke();
-
-      ctx.restore();
-    }
-
-    // 3. MULTILINGUAL CALLIGRAPHY STROKES (Revealed Top-to-Bottom)
-    const strokes = strokesRef.current;
-    let penX = centerX;
-    let penY = currentY;
-
-    for (let i = 0; i < strokes.length; i++) {
-      const s = strokes[i];
-      if (s.progressY <= progressRatio) {
-        ctx.save();
-        ctx.translate(s.x, s.y);
-        ctx.rotate(s.angle);
-
-        if (s.isMainScript) {
-          // Large main center script with flourish
-          ctx.font = `italic bold ${s.fontSize}px "Brush Script MT", "Dancing Script", "Caveat", "Segoe Script", cursive`;
-          ctx.shadowColor = palette.textGlow;
-          ctx.shadowBlur = 14;
-          ctx.fillStyle = s.color;
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText(s.text, 0, 0);
-
-          // Underline calligraphy arc
-          ctx.strokeStyle = s.color;
-          ctx.lineWidth = 2.5;
-          ctx.beginPath();
-          ctx.arc(0, s.fontSize * 0.55, s.fontSize * 1.3, 0.2, Math.PI - 0.2);
-          ctx.stroke();
-        } else {
-          // Clean multilingual script
-          ctx.font = `600 ${s.fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
-          ctx.shadowColor = palette.textGlow;
-          ctx.shadowBlur = 6;
-          ctx.fillStyle = s.color;
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText(s.text, 0, 0);
-
-          // Curving flourish leaves/connectors (like the reference teacup)
-          if (i % 2 === 0) {
-            ctx.strokeStyle = palette.secondary;
-            ctx.lineWidth = 1.2;
-            ctx.beginPath();
-            ctx.moveTo(-s.fontSize * 1.2, 0);
-            ctx.bezierCurveTo(-s.fontSize * 0.6, -6, s.fontSize * 0.6, 6, s.fontSize * 1.2, 0);
-            ctx.stroke();
-          }
-        }
-
-        ctx.restore();
-        penX = s.x;
-        penY = s.y;
+    for (let i = 0; i < bgTexts.length; i++) {
+      const bt = bgTexts[i];
+      if (bt.progressY <= progressRatio) {
+        ctx.fillStyle = bt.color;
+        ctx.fillText(bt.text, bt.x, bt.y);
       }
     }
 
-    // 4. Glowing Pen Tip & Sweep Line (Active writing cursor)
-    if (progressRatio < 1.0) {
-      ctx.save();
-      // Horizontal laser / sweep shimmer
-      const sweepGrad = ctx.createLinearGradient(0, currentY, width, currentY);
-      sweepGrad.addColorStop(0, 'rgba(255,255,255,0)');
-      sweepGrad.addColorStop(0.5, palette.primary);
-      sweepGrad.addColorStop(1, 'rgba(255,255,255,0)');
-      ctx.strokeStyle = sweepGrad;
-      ctx.lineWidth = 1.5;
+    // 3. DRAW CURLY SCRIBBLE ART FOR THE PORTRAIT (sudhin__art style)
+    const pts = scribblePointsRef.current;
+    if (pts.length > 0) {
+      ctx.strokeStyle = palette.ink;
+      ctx.lineWidth = 0.95; // Fine ballpoint pen weight
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
       ctx.beginPath();
-      ctx.moveTo(0, currentY);
-      ctx.lineTo(width, currentY);
+      let hasOpenPath = false;
+      let lastX = centerX;
+      let lastY = 0;
+
+      for (let i = 0; i < pts.length; i++) {
+        const pt = pts[i];
+        if (pt.progressY <= progressRatio) {
+          if (pt.isStart || !hasOpenPath) {
+            ctx.moveTo(pt.x, pt.y);
+            hasOpenPath = true;
+          } else {
+            ctx.lineTo(pt.x, pt.y);
+          }
+          lastX = pt.x;
+          lastY = pt.y;
+        } else {
+          break;
+        }
+      }
       ctx.stroke();
 
-      // Glowing ink nib / stylus
-      const penGrad = ctx.createRadialGradient(penX, currentY, 2, penX, currentY, 22);
-      penGrad.addColorStop(0, '#ffffff');
-      penGrad.addColorStop(0.4, palette.primary);
-      penGrad.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.fillStyle = penGrad;
-      ctx.beginPath();
-      ctx.arc(penX, currentY, 22, 0, Math.PI * 2);
-      ctx.fill();
+      // 4. ACTIVE PEN NIB & SKETCHING SPARKLE (Sweeping down)
+      if (progressRatio < 1.0) {
+        const currentY = progressRatio * height;
 
-      // Center spark
-      ctx.fillStyle = '#ffffff';
-      ctx.beginPath();
-      ctx.arc(penX, currentY, 3.5, 0, Math.PI * 2);
-      ctx.fill();
+        ctx.save();
+        // Fine ink nib stylus
+        const nibGrad = ctx.createRadialGradient(lastX, currentY, 1, lastX, currentY, 16);
+        nibGrad.addColorStop(0, '#ffffff');
+        nibGrad.addColorStop(0.3, palette.penGlow);
+        nibGrad.addColorStop(1, 'rgba(0,0,0,0)');
 
-      ctx.restore();
+        ctx.fillStyle = nibGrad;
+        ctx.beginPath();
+        ctx.arc(lastX, currentY, 16, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = palette.ink;
+        ctx.beginPath();
+        ctx.arc(lastX, currentY, 2, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
+      }
     }
 
+    // 5. Signature Watermark at Bottom Right (like sudhin__art)
+    ctx.save();
+    ctx.font = `italic 11px sans-serif`;
+    ctx.fillStyle = palette.bgText;
+    ctx.textAlign = 'right';
+    ctx.fillText(`${titleText || 'Scribble Art'} • sudhin_art style`, width - 24, height - 20);
     ctx.restore();
-  }, [photoImage, getThemePalette, themeStyle]);
+
+    ctx.restore();
+  }, [getThemePalette, themeStyle, titleText]);
 
   // Main animation frame loop
   useEffect(() => {
@@ -427,7 +469,7 @@ export default function ScribbleVideoRenderer({
         if (elapsed < durationMs) {
           progress = elapsed / durationMs;
         } else {
-          progress = 1.0; // Artwork fully revealed and visible
+          progress = 1.0; // Drawing completely sketched and visible
         }
 
         setCurrentProgress(Math.round(progress * 100));
@@ -457,12 +499,12 @@ export default function ScribbleVideoRenderer({
   const downloadHighResImage = () => {
     const exportCanvas = document.createElement('canvas');
     exportCanvas.width = 1600;
-    exportCanvas.height = 1920;
+    exportCanvas.height = 2000;
     const exportCtx = exportCanvas.getContext('2d');
     if (exportCtx) {
-      drawFrame(exportCtx, 1600, 1920, 1.0);
+      drawFrame(exportCtx, 1600, 2000, 1.0);
       const link = document.createElement('a');
-      link.download = `${titleText || 'calligraphy-portrait'}-artwork.png`;
+      link.download = `${titleText || 'scribble-portrait'}-sudhin-art.png`;
       link.href = exportCanvas.toDataURL('image/png', 1.0);
       link.click();
     }
@@ -493,7 +535,7 @@ export default function ScribbleVideoRenderer({
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `${titleText || 'calligraphy-portrait'}-video.webm`;
+        a.download = `${titleText || 'scribble-art'}-video.webm`;
         a.click();
         URL.revokeObjectURL(url);
         setIsRecording(false);
@@ -527,7 +569,7 @@ export default function ScribbleVideoRenderer({
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#0c1429] border border-[#243356] text-xs text-slate-300">
             <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
-            <span>Writing Animation: {currentProgress}%</span>
+            <span>Scribble Progress: {currentProgress}%</span>
           </div>
 
           <button
@@ -546,11 +588,11 @@ export default function ScribbleVideoRenderer({
       </div>
 
       {/* Main Video Canvas Player Frame */}
-      <div className="relative rounded-3xl overflow-hidden border border-[#243356] shadow-[0_0_60px_rgba(0,180,255,0.18)] bg-[#050914] aspect-[4/4.8] w-full max-w-[560px]">
+      <div className="relative rounded-3xl overflow-hidden border border-[#243356] shadow-[0_0_60px_rgba(0,180,255,0.18)] bg-[#050914] aspect-[4/5] w-full max-w-[560px]">
         <canvas
           ref={canvasRef}
           width={800}
-          height={960}
+          height={1000}
           className="w-full h-full object-contain block"
         />
 
@@ -592,7 +634,7 @@ export default function ScribbleVideoRenderer({
             className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#0c1429] hover:bg-[#162347] text-slate-300 hover:text-white text-xs font-medium border border-[#243356] transition"
           >
             <Download size={14} />
-            <span>Download Image</span>
+            <span>Download 4K Scribble Art</span>
           </button>
 
           <button

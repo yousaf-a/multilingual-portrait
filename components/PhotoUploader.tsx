@@ -127,14 +127,14 @@ export default function PhotoUploader({ onImageLoaded }: PhotoUploaderProps) {
       </div>
 
       {/* Preset sample buttons */}
-      <div className="flex items-center gap-2 pt-1 border-t border-[#182442]">
+      <div className="flex items-center gap-2 pt-1 border-t border-[#182442] flex-wrap">
         <span className="text-[11px] text-slate-400">Sample templates:</span>
         <button
           type="button"
-          onClick={() => loadSample('/sample-teacup.jpg', 'Teacup Art (Reference)')}
-          className="text-[11px] px-2.5 py-1 rounded-lg bg-[#0e172e] hover:bg-[#152347] text-cyan-300 border border-[#243356] transition"
+          onClick={() => loadSample('/sample-scribble.jpg', 'Sudhin Scribble Reference')}
+          className="text-[11px] px-2.5 py-1 rounded-lg bg-[#0e172e] hover:bg-[#152347] text-amber-300 border border-[#243356] transition"
         >
-          ☕ Teacup Reference
+          ✍️ Sudhin Art Reference
         </button>
         <button
           type="button"
@@ -142,6 +142,13 @@ export default function PhotoUploader({ onImageLoaded }: PhotoUploaderProps) {
           className="text-[11px] px-2.5 py-1 rounded-lg bg-[#0e172e] hover:bg-[#152347] text-slate-300 border border-[#243356] transition"
         >
           👤 Portrait
+        </button>
+        <button
+          type="button"
+          onClick={() => loadSample('/sample-teacup.jpg', 'Teacup')}
+          className="text-[11px] px-2.5 py-1 rounded-lg bg-[#0e172e] hover:bg-[#152347] text-cyan-300 border border-[#243356] transition"
+        >
+          ☕ Teacup
         </button>
       </div>
     </div>

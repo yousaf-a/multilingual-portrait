@@ -73,6 +73,24 @@ export default function ScribbleVideoRenderer({
   const [activeWhisper, setActiveWhisper] = useState<string | null>(null);
   const [showArtistHand, setShowArtistHand] = useState(true);
 
+  // Smooth cursive ink trail & luxury fountain pen asset
+  interface TrailPoint {
+    x: number;
+    y: number;
+    time: number;
+  }
+  const inkTrailRef = useRef<TrailPoint[]>([]);
+  const luxuryPenImgRef = useRef<HTMLImageElement | null>(null);
+
+  // Preload photorealistic luxury fountain pen asset
+  useEffect(() => {
+    const img = new Image();
+    img.src = '/luxury-fountain-pen.png';
+    img.onload = () => {
+      luxuryPenImgRef.current = img;
+    };
+  }, []);
+
   // Stable room ID for live 2-person chat
   const activeRoomId = useMemo(() => {
     if (propRoomId) return propRoomId;
@@ -545,245 +563,140 @@ export default function ScribbleVideoRenderer({
     };
   }, [musicTrack, customMusicUrl]);
 
-  // Realistic Artist Hand & Dip-Pen / Fine-Art Stylus
-  const drawArtistHand = useCallback((
+  // Photorealistic Luxury Fountain Pen (Montblanc Meisterstück Style with Solid Gold Nib & Flowing Ink Trail)
+  const drawLuxuryFountainPen = useCallback((
     ctx: CanvasRenderingContext2D,
     penX: number,
     penY: number,
     palette: { ink: string; penGlow: string },
     isDrawing: boolean
   ) => {
-    // Natural grip angle ~47 degrees (hand enters smoothly from bottom-right)
-    const angle = 0.82;
+    // 1. FLUID LIQUID INK FLOURISH TRAILING FROM NIB TIP (Direct reference to user's uploaded art)
+    const now = Date.now();
+    const trail = inkTrailRef.current;
+    
+    // Add current nib tip position to ink ribbon history
+    if (isDrawing) {
+      trail.push({ x: penX, y: penY, time: now });
+      // Keep recent 700ms trail for a dynamic, smooth cursive ink ribbon
+      while (trail.length > 0 && now - trail[0].time > 700) {
+        trail.shift();
+      }
+    } else {
+      trail.length = 0;
+    }
+
+    // Render the smooth cursive ink wave
+    if (trail.length >= 2) {
+      ctx.save();
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      for (let i = 0; i < trail.length - 1; i++) {
+        const p1 = trail[i];
+        const p2 = trail[i + 1];
+        const progress = i / (trail.length - 1);
+        const alpha = Math.max(0.18, progress);
+        const strokeW = 0.9 + progress * 2.8;
+
+        // Rich fountain pen ink
+        ctx.strokeStyle = palette.ink;
+        ctx.globalAlpha = alpha;
+        ctx.lineWidth = strokeW;
+
+        ctx.beginPath();
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.stroke();
+
+        // Wet ink glistening sheen along newest portion of the line
+        if (progress > 0.65) {
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+          ctx.lineWidth = 0.8;
+          ctx.beginPath();
+          ctx.moveTo(p1.x - 0.5, p1.y - 0.5);
+          ctx.lineTo(p2.x - 0.5, p2.y - 0.5);
+          ctx.stroke();
+        }
+      }
+      ctx.restore();
+    }
+
+    // 2. LUXURY FOUNTAIN PEN BODY & STUDIO CONTACT SHADOW
+    const penImg = luxuryPenImgRef.current;
+    const penW = 215;
+    const penH = 225;
+    const posX = penX - 3;
+    const posY = penY;
 
     ctx.save();
-    ctx.translate(penX, penY);
-    ctx.rotate(angle);
 
-    // 1. SOFT NATURAL CAST SHADOW ON PAPER
+    // Soft diffused studio contact shadow cast onto paper
     ctx.save();
-    ctx.translate(12, 16);
-    ctx.fillStyle = 'rgba(28, 20, 14, 0.2)';
+    ctx.translate(posX + 16, posY + 18);
+    ctx.filter = 'blur(8px)';
+    ctx.fillStyle = 'rgba(25, 20, 15, 0.24)';
     ctx.beginPath();
-    ctx.moveTo(6, 0);
-    ctx.lineTo(30, -5);
-    ctx.lineTo(190, -9);
-    ctx.lineTo(190, 9);
-    ctx.lineTo(30, 5);
-    ctx.closePath();
-    ctx.fill();
-
-    // Shadow of hand / knuckles
-    ctx.fillStyle = 'rgba(28, 20, 14, 0.15)';
-    ctx.beginPath();
-    ctx.ellipse(105, 10, 52, 32, 0.2, 0, Math.PI * 2);
+    ctx.ellipse(85, 75, 78, 18, 0.78, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
 
-    // 2. TURNED MAHOGANY / ROSEWOOD DIP-PEN BARREL
-    const woodGrad = ctx.createLinearGradient(40, -7, 40, 7);
-    woodGrad.addColorStop(0, '#5a2d14'); // warm wood highlight
-    woodGrad.addColorStop(0.3, '#85421a');
-    woodGrad.addColorStop(0.7, '#451e08'); // shadow underside
-    woodGrad.addColorStop(1, '#250f03');
+    if (penImg && penImg.complete && penImg.naturalWidth > 0) {
+      // Draw photorealistic Meisterstück luxury fountain pen
+      ctx.drawImage(penImg, posX, posY, penW, penH);
+    } else {
+      // Instant high-polish vector fallback (18K two-tone gold nib & piano-black lacquer barrel)
+      ctx.save();
+      ctx.translate(penX, penY);
+      ctx.rotate(0.82);
 
-    ctx.fillStyle = woodGrad;
-    ctx.beginPath();
-    ctx.moveTo(42, -5.5);
-    ctx.quadraticCurveTo(115, -7.5, 215, -5);
-    ctx.lineTo(215, 5);
-    ctx.quadraticCurveTo(115, 7.5, 42, 5.5);
-    ctx.closePath();
-    ctx.fill();
+      // 18K Gold Nib
+      const nibGrad = ctx.createLinearGradient(0, -6, 0, 6);
+      nibGrad.addColorStop(0, '#ffd700');
+      nibGrad.addColorStop(0.3, '#fff4b8');
+      nibGrad.addColorStop(0.6, '#d4af37');
+      nibGrad.addColorStop(1, '#854d0e');
+      ctx.fillStyle = nibGrad;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(24, -7);
+      ctx.lineTo(24, 7);
+      ctx.closePath();
+      ctx.fill();
 
-    // 3. POLISHED BRASS / 24K GOLD FERRULE COLLAR
-    const brassGrad = ctx.createLinearGradient(26, -6, 26, 6);
-    brassGrad.addColorStop(0, '#d4af37');
-    brassGrad.addColorStop(0.25, '#fef08a');
-    brassGrad.addColorStop(0.6, '#ca8a04');
-    brassGrad.addColorStop(0.85, '#854d0e');
-    brassGrad.addColorStop(1, '#451a03');
+      // Piano-Black Precious Lacquer Barrel
+      const barrelGrad = ctx.createLinearGradient(24, -9, 24, 9);
+      barrelGrad.addColorStop(0, '#2d3748');
+      barrelGrad.addColorStop(0.2, '#0a0a0a');
+      barrelGrad.addColorStop(0.7, '#171923');
+      barrelGrad.addColorStop(1, '#000000');
+      ctx.fillStyle = barrelGrad;
+      ctx.fillRect(24, -8, 160, 16);
 
-    ctx.fillStyle = brassGrad;
-    ctx.beginPath();
-    ctx.rect(26, -6, 16, 12);
-    ctx.fill();
+      // Gold Triple Trim Rings
+      ctx.fillStyle = '#ffd700';
+      ctx.fillRect(38, -8.5, 4, 17);
+      ctx.fillRect(92, -8.5, 6, 17);
+      ctx.fillRect(100, -8.5, 2, 17);
 
-    // Ferrule engraved ring details
-    ctx.strokeStyle = 'rgba(69, 26, 3, 0.7)';
-    ctx.lineWidth = 0.9;
-    ctx.beginPath();
-    ctx.moveTo(31, -6);
-    ctx.lineTo(31, 6);
-    ctx.moveTo(37, -6);
-    ctx.lineTo(37, 6);
-    ctx.stroke();
+      ctx.restore();
+    }
 
-    // 4. POINTED DIP-PEN NIB (Master Calligraphy Nib)
-    const nibGrad = ctx.createLinearGradient(0, -5, 0, 5);
-    nibGrad.addColorStop(0, '#e5e7eb');
-    nibGrad.addColorStop(0.2, '#ffffff'); // bright metallic reflection
-    nibGrad.addColorStop(0.5, '#d4af37'); // vintage gold
-    nibGrad.addColorStop(0.85, '#92400e');
-    nibGrad.addColorStop(1, '#451a03');
-
-    ctx.fillStyle = nibGrad;
-    ctx.beginPath();
-    ctx.moveTo(0, 0); // precise sharp tip touching paper
-    ctx.quadraticCurveTo(10, -3.5, 20, -5.5);
-    ctx.lineTo(26, -5.5);
-    ctx.lineTo(26, 5.5);
-    ctx.lineTo(20, 5.5);
-    ctx.quadraticCurveTo(10, 3.5, 0, 0);
-    ctx.closePath();
-    ctx.fill();
-
-    // Nib central slit & breather hole
-    ctx.strokeStyle = 'rgba(28, 27, 31, 0.9)';
-    ctx.lineWidth = 0.75;
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.lineTo(15, 0);
-    ctx.stroke();
-
-    ctx.fillStyle = 'rgba(28, 27, 31, 0.9)';
-    ctx.beginPath();
-    ctx.arc(15, 0, 1.2, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Micro bead of ink at tip
-    ctx.fillStyle = palette.ink;
-    ctx.beginPath();
-    ctx.arc(1.2, 0, 1.2, 0, Math.PI * 2);
-    ctx.fill();
-
-    // 5. ARTIST HAND & FINGERS (Realistic Natural Grip)
-    const skinLight = '#fae2ce';
-    const skinMid = '#e5b894';
-    const skinShadow = '#b87b55';
-    const skinDeep = '#884f31';
-
-    // Middle finger supporting from underneath
-    const midFingerGrad = ctx.createRadialGradient(85, 12, 4, 85, 12, 18);
-    midFingerGrad.addColorStop(0, skinMid);
-    midFingerGrad.addColorStop(1, skinDeep);
-    ctx.fillStyle = midFingerGrad;
-    ctx.beginPath();
-    ctx.rect(72, 4, 32, 15);
-    ctx.fill();
-
-    // Index finger bent over top of the pen barrel
-    const indexGrad = ctx.createLinearGradient(54, -20, 120, 0);
-    indexGrad.addColorStop(0, skinLight);
-    indexGrad.addColorStop(0.35, skinMid);
-    indexGrad.addColorStop(0.75, skinShadow);
-    indexGrad.addColorStop(1, skinDeep);
-    ctx.fillStyle = indexGrad;
-
-    ctx.beginPath();
-    ctx.moveTo(56, -4);
-    ctx.quadraticCurveTo(52, -14, 62, -18);
-    ctx.quadraticCurveTo(88, -24, 118, -20);
-    ctx.quadraticCurveTo(138, -16, 160, -12);
-    ctx.lineTo(155, 4);
-    ctx.quadraticCurveTo(115, -4, 90, -4);
-    ctx.lineTo(56, -4);
-    ctx.closePath();
-    ctx.fill();
-
-    // Fingernail on index finger
-    const nailGrad = ctx.createLinearGradient(56, -14, 68, -14);
-    nailGrad.addColorStop(0, '#fce7f3');
-    nailGrad.addColorStop(0.7, '#fbcfe8');
-    nailGrad.addColorStop(1, 'rgba(255,255,255,0.9)');
-    ctx.fillStyle = nailGrad;
-    ctx.beginPath();
-    ctx.ellipse(62, -13, 5, 3.2, 0.4, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Index finger knuckle creases
-    ctx.strokeStyle = skinDeep;
-    ctx.lineWidth = 0.8;
-    ctx.beginPath();
-    ctx.moveTo(96, -21);
-    ctx.quadraticCurveTo(99, -17, 98, -14);
-    ctx.moveTo(103, -20);
-    ctx.quadraticCurveTo(105, -17, 104, -13);
-    ctx.stroke();
-
-    // Thumb supporting from side/underside
-    const thumbGrad = ctx.createLinearGradient(66, 0, 125, 28);
-    thumbGrad.addColorStop(0, skinLight);
-    thumbGrad.addColorStop(0.4, skinMid);
-    thumbGrad.addColorStop(0.8, skinShadow);
-    thumbGrad.addColorStop(1, skinDeep);
-    ctx.fillStyle = thumbGrad;
-
-    ctx.beginPath();
-    ctx.moveTo(68, 3.5);
-    ctx.quadraticCurveTo(62, 14, 72, 20);
-    ctx.quadraticCurveTo(95, 26, 125, 24);
-    ctx.quadraticCurveTo(145, 20, 168, 14);
-    ctx.lineTo(162, 4);
-    ctx.quadraticCurveTo(115, 3, 68, 3.5);
-    ctx.closePath();
-    ctx.fill();
-
-    // Thumb knuckle crease
-    ctx.strokeStyle = skinDeep;
-    ctx.lineWidth = 0.8;
-    ctx.beginPath();
-    ctx.moveTo(94, 18);
-    ctx.quadraticCurveTo(96, 13, 95, 8);
-    ctx.stroke();
-
-    // Palm / Thenar
-    const palmGrad = ctx.createLinearGradient(135, -15, 195, 25);
-    palmGrad.addColorStop(0, skinMid);
-    palmGrad.addColorStop(0.7, skinShadow);
-    palmGrad.addColorStop(1, skinDeep);
-    ctx.fillStyle = palmGrad;
-    ctx.beginPath();
-    ctx.moveTo(140, -15);
-    ctx.quadraticCurveTo(175, -20, 198, -14);
-    ctx.lineTo(198, 24);
-    ctx.quadraticCurveTo(165, 26, 135, 20);
-    ctx.closePath();
-    ctx.fill();
-
-    // Artist studio shirt cuff (Dark charcoal linen cuff)
-    const cuffGrad = ctx.createLinearGradient(190, -22, 250, 28);
-    cuffGrad.addColorStop(0, '#1e293b');
-    cuffGrad.addColorStop(0.5, '#334155');
-    cuffGrad.addColorStop(1, '#0f172a');
-    ctx.fillStyle = cuffGrad;
-    ctx.beginPath();
-    ctx.moveTo(195, -20);
-    ctx.lineTo(250, -22);
-    ctx.lineTo(250, 30);
-    ctx.lineTo(195, 26);
-    ctx.closePath();
-    ctx.fill();
-
-    // Cuff hemline
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.28)';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(195, -20);
-    ctx.lineTo(195, 26);
-    ctx.stroke();
-
-    // 6. ACTIVE DRAWING INK SHIMMER AT NIB TIP
+    // 3. WET INK BEAD AT EXACT NIB TIP
     if (isDrawing) {
       const timeSec = Date.now() / 1000;
-      const shimmerR = 3.5 + Math.sin(timeSec * 16) * 1.5;
-      const nibGlow = ctx.createRadialGradient(0, 0, 0, 0, 0, shimmerR);
-      nibGlow.addColorStop(0, '#ffffff');
-      nibGlow.addColorStop(0.5, palette.penGlow);
-      nibGlow.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.fillStyle = nibGlow;
+      const beadR = 2.0 + Math.sin(timeSec * 14) * 0.5;
+
+      // Deep ink bead
+      ctx.fillStyle = palette.ink;
       ctx.beginPath();
-      ctx.arc(0, 0, shimmerR, 0, Math.PI * 2);
+      ctx.arc(penX, penY, beadR, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Specular micro-reflection
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+      ctx.beginPath();
+      ctx.arc(penX - 0.6, penY - 0.6, 0.7, 0, Math.PI * 2);
       ctx.fill();
     }
 
@@ -801,6 +714,11 @@ export default function ScribbleVideoRenderer({
     const palette = getThemePalette();
     const currentY = height * progressRatio;
     const centerX = width / 2;
+
+    // Calculate natural calligraphic cursive motion for the fountain pen
+    const time = Date.now() / 1000;
+    const cursiveWaveX = Math.sin(time * 8.5) * 44 + Math.cos(time * 19.0) * 16;
+    const cursiveWaveY = Math.sin(time * 17.0) * 11 + Math.cos(time * 7.5) * 5;
 
     // 1. PAPER BACKGROUND WITH FINE ART TEXTURE & VIGNETTE
     ctx.fillStyle = palette.bg;
@@ -836,7 +754,7 @@ export default function ScribbleVideoRenderer({
       }
     }
 
-    // 2. DRAW LOOSE GESTURAL SKETCH STROKES (Radiating construction marks like master sketchbook)
+    // 2. DRAW LOOSE GESTURAL SKETCH STROKES
     const gesturalStrokes = gesturalStrokesRef.current;
     for (let i = 0; i < gesturalStrokes.length; i++) {
       const gs = gesturalStrokes[i];
@@ -865,24 +783,9 @@ export default function ScribbleVideoRenderer({
       }
     }
 
-    // 4. DRAW MASTERPIECE GRAPHITE SKETCH & VOLUMETRIC SHADING (Revealed Top-to-Bottom)
-    const sketchCanvas = sketchCanvasRef.current;
-    const bounds = imageBoundsRef.current;
-
-    if (sketchCanvas && bounds.w > 0) {
-      ctx.save();
-      ctx.beginPath();
-      ctx.rect(bounds.x, bounds.y, bounds.w, Math.max(0, currentY - bounds.y));
-      ctx.clip();
-
-      ctx.drawImage(sketchCanvas, bounds.x, bounds.y, bounds.w, bounds.h);
-      ctx.restore();
-    }
-
-    // 5. DRAW AUTHENTIC DIAGONAL CROSS-HATCHING FOR SHADOWS & FABRIC
+    // Dynamic active pen coordinates (following hatching lines or dancing along calligraphy)
     const hatchStrokes = hatchStrokesRef.current;
     let penX = centerX;
-
     ctx.lineCap = 'round';
 
     for (let i = 0; i < hatchStrokes.length; i++) {
@@ -900,42 +803,59 @@ export default function ScribbleVideoRenderer({
       }
     }
 
-    // 6. ACTIVE SKETCHING PEN NIB & GRAPHITE SPARKLE (Sweeping down)
-    if (progressRatio < 1.0) {
-      ctx.save();
-      // Shimmer sweep line across the canvas
-      const sweepGrad = ctx.createLinearGradient(0, currentY, width, currentY);
-      sweepGrad.addColorStop(0, 'rgba(0,0,0,0)');
-      sweepGrad.addColorStop(0.5, palette.ink);
-      sweepGrad.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.strokeStyle = sweepGrad;
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(0, currentY);
-      ctx.lineTo(width, currentY);
-      ctx.stroke();
+    const activePenX = Math.min(width - 40, Math.max(40, penX + cursiveWaveX));
+    const activePenY = Math.min(height - 15, Math.max(15, currentY + cursiveWaveY));
 
-      // Realistic Artist Hand & Dip-Pen
+    // 4. DRAW MASTERPIECE GRAPHITE SKETCH & VOLUMETRIC SHADING (Organic Calligraphic Reveal)
+    const sketchCanvas = sketchCanvasRef.current;
+    const bounds = imageBoundsRef.current;
+
+    if (sketchCanvas && bounds.w > 0) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(bounds.x, bounds.y);
+      ctx.lineTo(bounds.x + bounds.w, bounds.y);
+      ctx.lineTo(bounds.x + bounds.w, Math.max(bounds.y, currentY));
+
+      // Organic feathered edge trailing the active pen position (No artificial straight scanner line!)
+      const steps = 30;
+      const stepW = bounds.w / steps;
+      for (let s = steps; s >= 0; s--) {
+        const px = bounds.x + s * stepW;
+        const dist = Math.abs(px - activePenX);
+        const wave = Math.sin(s * 0.75 + progressRatio * 18) * 7 * Math.exp(-dist / 140);
+        ctx.lineTo(px, Math.max(bounds.y, currentY + wave));
+      }
+      ctx.closePath();
+      ctx.clip();
+
+      ctx.drawImage(sketchCanvas, bounds.x, bounds.y, bounds.w, bounds.h);
+      ctx.restore();
+    }
+
+    // 5. ACTIVE LUXURY FOUNTAIN PEN (Montblanc Style with Gold Nib & Dynamic Ink Trail)
+    if (progressRatio < 1.0) {
       if (renderHand) {
-        drawArtistHand(ctx, penX, currentY, palette, true);
+        drawLuxuryFountainPen(ctx, activePenX, activePenY, palette, true);
       } else {
-        // Classic luminous stylus glow
-        const nibGrad = ctx.createRadialGradient(penX, currentY, 1, penX, currentY, 16);
+        // Classic luminous nib glow
+        ctx.save();
+        const nibGrad = ctx.createRadialGradient(activePenX, activePenY, 1, activePenX, activePenY, 16);
         nibGrad.addColorStop(0, '#ffffff');
         nibGrad.addColorStop(0.3, palette.penGlow);
         nibGrad.addColorStop(1, 'rgba(0,0,0,0)');
 
         ctx.fillStyle = nibGrad;
         ctx.beginPath();
-        ctx.arc(penX, currentY, 16, 0, Math.PI * 2);
+        ctx.arc(activePenX, activePenY, 16, 0, Math.PI * 2);
         ctx.fill();
 
         ctx.fillStyle = palette.ink;
         ctx.beginPath();
-        ctx.arc(penX, currentY, 2.5, 0, Math.PI * 2);
+        ctx.arc(activePenX, activePenY, 2.5, 0, Math.PI * 2);
         ctx.fill();
+        ctx.restore();
       }
-      ctx.restore();
     }
 
     // 7. ELEGANT WATERMARK
@@ -949,7 +869,7 @@ export default function ScribbleVideoRenderer({
       height - 20
     );
     ctx.restore();
-  }, [getThemePalette, themeStyle, titleText, drawArtistHand, showArtistHand]);
+  }, [getThemePalette, themeStyle, titleText, drawLuxuryFountainPen, showArtistHand]);
 
   // Main animation frame loop
   useEffect(() => {
@@ -1163,15 +1083,15 @@ export default function ScribbleVideoRenderer({
             <button
               type="button"
               onClick={() => setShowArtistHand(!showArtistHand)}
-              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-xl text-xs font-medium border transition ${
+              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-xl text-xs font-medium border transition cursor-pointer ${
                 showArtistHand
                   ? 'bg-amber-500/20 border-amber-500/40 text-amber-300 shadow-sm'
                   : 'bg-[#0c1429] border-[#243356] text-slate-400 hover:text-white'
               }`}
-              title="Toggle realistic artist hand trailing drawing strokes"
+              title="Toggle luxury fountain pen & ink trail animation"
             >
               <PenTool size={13} className={showArtistHand ? 'text-amber-400' : 'text-slate-400'} />
-              <span>Hand: {showArtistHand ? 'ON' : 'OFF'}</span>
+              <span>Pen: {showArtistHand ? 'ON' : 'OFF'}</span>
             </button>
           </div>
 

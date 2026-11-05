@@ -169,7 +169,7 @@ export default function VillageBuilder({
     img.onload = () => {
       heroImgRef.current = img;
     };
-  }, [activeHero.image, activeHero.id]);
+  }, [activeHero.image]);
 
   // 2.5D Isometric Rendering Loop
   useEffect(() => {

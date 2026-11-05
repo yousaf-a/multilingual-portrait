@@ -266,6 +266,49 @@ export default function CouplePhotoUploader({
   const partner1Ref = useRef<HTMLImageElement | null>(null);
   const partner2Ref = useRef<HTMLImageElement | null>(null);
 
+  // Helper to draw an image with soft feathered edges on all 4 sides (eliminates rectangular photo boxes & harsh edges)
+  const drawPhotoWithSoftBorders = (
+    targetCtx: CanvasRenderingContext2D,
+    img: HTMLImageElement,
+    drawX: number,
+    drawY: number,
+    drawW: number,
+    drawH: number,
+    featherPx: number = 36
+  ) => {
+    const offCanvas = document.createElement('canvas');
+    offCanvas.width = Math.round(drawW);
+    offCanvas.height = Math.round(drawH);
+    const offCtx = offCanvas.getContext('2d');
+    if (!offCtx) return;
+
+    // 1. Draw raw image
+    offCtx.drawImage(img, 0, 0, offCanvas.width, offCanvas.height);
+
+    // 2. Soften horizontal edges (left & right)
+    offCtx.globalCompositeOperation = 'destination-in';
+    const hGrad = offCtx.createLinearGradient(0, 0, offCanvas.width, 0);
+    const hF = Math.min(0.25, featherPx / offCanvas.width);
+    hGrad.addColorStop(0, 'rgba(0,0,0,0)');
+    hGrad.addColorStop(hF, 'rgba(0,0,0,1)');
+    hGrad.addColorStop(1 - hF, 'rgba(0,0,0,1)');
+    hGrad.addColorStop(1, 'rgba(0,0,0,0)');
+    offCtx.fillStyle = hGrad;
+    offCtx.fillRect(0, 0, offCanvas.width, offCanvas.height);
+
+    // 3. Soften vertical edges (top & bottom)
+    const vGrad = offCtx.createLinearGradient(0, 0, 0, offCanvas.height);
+    const vF = Math.min(0.25, featherPx / offCanvas.height);
+    vGrad.addColorStop(0, 'rgba(0,0,0,0)');
+    vGrad.addColorStop(vF, 'rgba(0,0,0,1)');
+    vGrad.addColorStop(1 - vF, 'rgba(0,0,0,1)');
+    vGrad.addColorStop(1, 'rgba(0,0,0,0)');
+    offCtx.fillStyle = vGrad;
+    offCtx.fillRect(0, 0, offCanvas.width, offCanvas.height);
+
+    targetCtx.drawImage(offCanvas, drawX, drawY);
+  };
+
   // Helper to render one partner photo into a full-canvas layer centered at (targetCenterX, targetCenterY)
   const renderPartnerLayer = (
     img: HTMLImageElement,
@@ -286,11 +329,9 @@ export default function CouplePhotoUploader({
     const normPanX = (transform.panX || 0) / 100;
     const normPanY = (transform.panY || 0) / 100;
 
-    // Default focal anchor is center (50%) and slightly above midline (40% upper third for face)
     const focalX = Math.max(0.05, Math.min(0.95, 0.50 + normPanX));
     const focalY = Math.max(0.05, Math.min(0.95, 0.40 + normPanY));
 
-    // Cover scale factor
     const coverScale = Math.max(canvasW / img.width, canvasH / img.height);
     const effectiveScale = coverScale * zoom;
 
@@ -300,7 +341,7 @@ export default function CouplePhotoUploader({
     const drawX = targetCenterX - (focalX * img.width * effectiveScale);
     const drawY = targetCenterY - (focalY * img.height * effectiveScale);
 
-    lCtx.drawImage(img, drawX, drawY, renderedW, renderedH);
+    drawPhotoWithSoftBorders(lCtx, img, drawX, drawY, renderedW, renderedH, 40);
     return layer;
   };
 
@@ -405,7 +446,7 @@ export default function CouplePhotoUploader({
             const p1DrawX = p1CenterX - (p1FocalX * p1W);
             const p1DrawY = centerFaceY - (p1FocalY * p1H);
 
-            l1Ctx.drawImage(img1, p1DrawX, p1DrawY, p1W, p1H);
+            drawPhotoWithSoftBorders(l1Ctx, img1, p1DrawX, p1DrawY, p1W, p1H, 45);
           }
 
           // Render Partner 2 as full individual on right panel
@@ -422,7 +463,7 @@ export default function CouplePhotoUploader({
             const p2DrawX = p2CenterX - (p2FocalX * p2W);
             const p2DrawY = centerFaceY - (p2FocalY * p2H);
 
-            l2Ctx.drawImage(img2, p2DrawX, p2DrawY, p2W, p2H);
+            drawPhotoWithSoftBorders(l2Ctx, img2, p2DrawX, p2DrawY, p2W, p2H, 45);
           }
 
           // 1. Draw Partner 1 (Left Companion)

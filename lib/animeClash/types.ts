@@ -27,6 +27,22 @@ export interface HeroFormVariant {
   catchphraseJp: string;
 }
 
+export interface HeroTurnaroundAngles {
+  front: string;
+  left34?: string;
+  leftSide?: string;
+  back?: string;
+  rightSide?: string;
+  right34?: string;
+}
+
+export interface HeroPoseImages {
+  combat?: string;
+  epic?: string;
+  goat?: string;
+  meditate?: string;
+}
+
 export interface HeroData {
   id: string;
   name: string;
@@ -52,6 +68,8 @@ export interface HeroData {
   accentColor: string;
   tierRank?: HeroTierRank;
   forms?: HeroFormVariant[];
+  turnaround?: HeroTurnaroundAngles;
+  poseImages?: HeroPoseImages;
 }
 
 export interface TroopData {

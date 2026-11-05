@@ -1561,11 +1561,11 @@ export default function VillageBuilder({
                   }`}
                 >
                   <div>
-                    <div className="relative w-full aspect-[4/5] rounded-2xl overflow-hidden mb-2.5 border border-white/10 shadow-md">
+                    <div className="relative w-full aspect-[4/5] rounded-2xl overflow-hidden mb-2.5 border border-white/10 shadow-md bg-gradient-to-b from-[#131f3d] via-[#0b1226] to-[#060a16] flex items-center justify-center p-1.5">
                       <img
                         src={hero.image}
                         alt={hero.name}
-                        className="w-full h-full object-cover object-top hover:scale-105 transition duration-500"
+                        className="w-full h-full object-contain object-top hover:scale-105 transition duration-500"
                       />
                       <div className="absolute top-2 left-2">
                         <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 shadow-md">

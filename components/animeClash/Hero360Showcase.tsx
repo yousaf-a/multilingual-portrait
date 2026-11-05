@@ -175,6 +175,40 @@ export default function Hero360Showcase({
   const isProfileRight = rotationAngle > 240 && rotationAngle <= 300;
   const perspectiveSkewX = Math.sin(rad) * 12;
 
+  // Resolve dynamic display image: true 360° turnaround, poses & transformations
+  let displayImage = hero.image;
+
+  if (hero.turnaround) {
+    if (currentPose === 'combat' && hero.poseImages?.combat) {
+      displayImage = hero.poseImages.combat;
+    } else if (selectedRank === 'goat' && hero.poseImages?.goat) {
+      displayImage = hero.poseImages.goat;
+    } else if (selectedRank === 'epic' && hero.poseImages?.epic) {
+      displayImage = hero.poseImages.epic;
+    } else {
+      // 360 Turnaround angle selection from reference sheet
+      const deg = ((rotationAngle % 360) + 360) % 360;
+      if (deg >= 330 || deg < 30) {
+        displayImage = hero.turnaround.front;
+      } else if (deg >= 30 && deg < 75) {
+        displayImage = hero.turnaround.left34 || hero.turnaround.front;
+      } else if (deg >= 75 && deg < 135) {
+        displayImage = hero.turnaround.leftSide || hero.turnaround.front;
+      } else if (deg >= 135 && deg < 225) {
+        displayImage = hero.turnaround.back || hero.turnaround.front;
+      } else if (deg >= 225 && deg < 285) {
+        displayImage = hero.turnaround.rightSide || hero.turnaround.leftSide || hero.turnaround.front;
+      } else {
+        displayImage = hero.turnaround.right34 || hero.turnaround.left34 || hero.turnaround.front;
+      }
+    }
+  } else {
+    // For heroes without multi-angle sheet, always prefer transparent PNG cutout to eliminate white box!
+    if (displayImage.endsWith('.jpg')) {
+      displayImage = displayImage.replace('.jpg', '.png');
+    }
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/92 backdrop-blur-2xl animate-in fade-in duration-300 select-none overflow-y-auto">
       {/* Voice Shout Kanji Banner Overlay */}
@@ -378,10 +412,10 @@ export default function Hero360Showcase({
                   }`}
                 >
                   <img
-                    src={hero.image}
+                    src={displayImage}
                     alt={hero.name}
-                    className={`h-full w-auto object-contain transition-all duration-300 ${
-                      isFacingBack
+                    className={`h-full w-auto object-contain transition-all duration-100 select-none pointer-events-none drop-shadow-2xl ${
+                      !hero.turnaround && isFacingBack
                         ? 'brightness-[0.45] contrast-125 saturate-50'
                         : isProfileLeft
                         ? 'skew-y-1 brightness-95'
@@ -390,15 +424,16 @@ export default function Hero360Showcase({
                         : 'brightness-100'
                     }`}
                     style={{
-                      // In back stance, render as backlit battle silhouette
-                      filter: isFacingBack
-                        ? `drop-shadow(0 0 16px ${activeForm.auraColor}) drop-shadow(0 0 35px ${activeForm.auraColor}88)`
-                        : undefined
+                      // In back stance without turnaround, render as backlit battle silhouette
+                      filter:
+                        !hero.turnaround && isFacingBack
+                          ? `drop-shadow(0 0 16px ${activeForm.auraColor}) drop-shadow(0 0 35px ${activeForm.auraColor}88)`
+                          : undefined
                     }}
                   />
 
-                  {/* Backlit Rim Aura when turning */}
-                  {isFacingBack && (
+                  {/* Backlit Rim Aura when turning (only if no turnaround sheet) */}
+                  {!hero.turnaround && isFacingBack && (
                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 px-3 py-1 rounded-full bg-black/80 border border-white/20 text-[10px] font-mono text-cyan-300 tracking-widest uppercase">
                       ★ Rear Guard Angle ★
                     </div>

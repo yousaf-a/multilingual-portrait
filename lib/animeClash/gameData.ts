@@ -147,7 +147,6 @@ export const HEROES_CATALOG: Record<string, HeroData> = {
     title: 'Substitute Shinigami / Moon Cutter',
     franchise: 'bleach',
     avatar: '⚔️',
-    image: '/anime-heroes/ichigo-tactical.jpg',
     hp: 800,
     maxHp: 800,
     attack: 120,
@@ -163,7 +162,66 @@ export const HEROES_CATALOG: Record<string, HeroData> = {
     ultimateDesc: 'Fires a massive pitch-black reiatsu blade wave that pierces through an entire straight line of buildings.',
     ultimateCooldown: 12,
     color: '#1e1b4b',
-    accentColor: '#6366f1'
+    accentColor: '#6366f1',
+    tierRank: 'goat',
+    image: '/anime-heroes/ichigo-turnaround/front.png',
+    turnaround: {
+      front: '/anime-heroes/ichigo-turnaround/front.png',
+      left34: '/anime-heroes/ichigo-turnaround/left_34.png',
+      leftSide: '/anime-heroes/ichigo-turnaround/left_side.png',
+      back: '/anime-heroes/ichigo-turnaround/back.png',
+      rightSide: '/anime-heroes/ichigo-turnaround/right_side.png',
+      right34: '/anime-heroes/ichigo-turnaround/right_34.png'
+    },
+    poseImages: {
+      combat: '/anime-heroes/ichigo-turnaround/pose_combat.png',
+      epic: '/anime-heroes/ichigo-turnaround/pose_epic.png',
+      goat: '/anime-heroes/ichigo-turnaround/pose_goat.png'
+    },
+    forms: [
+      {
+        id: 'normal',
+        name: 'Substitute Shinigami Tactical',
+        badge: '🥉 Normal Form',
+        title: 'Karakura Guardian Specialist',
+        attackMultiplier: 1.0,
+        hpMultiplier: 1.0,
+        auraColor: '#6366f1',
+        auraVfx: 'shadow',
+        customSkill: 'Shunpo Flash-Step Raid',
+        customUltimate: 'Bankai: Tensa Zangetsu',
+        catchphrase: "I don't fight to win; I fight because I have people to protect! Getsuga Tensho!",
+        catchphraseJp: "俺が守る！卍解・天鎖斬月！"
+      },
+      {
+        id: 'epic',
+        name: 'Hollow Mask Bankai Awakening',
+        badge: '🥈 Epic Awakening',
+        title: 'Inner Hollow Synchronization',
+        attackMultiplier: 1.4,
+        hpMultiplier: 1.3,
+        auraColor: '#dc2626',
+        auraVfx: 'fire',
+        customSkill: 'Black Getsuga Cero Slicer',
+        customUltimate: 'Hollowfied Tensa Kurotsuchi',
+        catchphrase: "I won't let my instincts consume me. Kuroi Getsuga Tensho!",
+        catchphraseJp: "黒い月牙…これが俺の力だ！"
+      },
+      {
+        id: 'goat',
+        name: 'Horn of Salvation True Bankai',
+        badge: '👑 GOAT Mode',
+        title: 'Apex Soul Reaper / Hollow King',
+        attackMultiplier: 2.05,
+        hpMultiplier: 1.75,
+        auraColor: '#fbbf24',
+        auraVfx: 'divine',
+        customSkill: 'Gran Rey Cero Getsuga',
+        customUltimate: 'True Bankai: Dimensional Splitter',
+        catchphrase: "This is the true shape of my soul! Bankai!",
+        catchphraseJp: "これが…俺の真の卍解だァァァッ！"
+      }
+    ]
   },
   asta: {
     id: 'asta',
@@ -411,7 +469,7 @@ export const HEROES_CATALOG: Record<string, HeroData> = {
     title: "Humanity's Strongest / Beast Titan Shredder",
     franchise: 'attack_on_titan',
     avatar: '⚔️',
-    image: '/anime-heroes/levi-tactical.jpg',
+    image: '/anime-heroes/levi-tactical.png',
     hp: 1350,
     maxHp: 1350,
     attack: 160,
@@ -480,7 +538,7 @@ export const HEROES_CATALOG: Record<string, HeroData> = {
     title: 'The Uncrowned Undefeated Lioness / Flame Empress',
     franchise: 'black_clover',
     avatar: '🦁',
-    image: '/anime-heroes/mereoleona-tactical.jpg',
+    image: '/anime-heroes/mereoleona-tactical.png',
     hp: 1650,
     maxHp: 1650,
     attack: 155,

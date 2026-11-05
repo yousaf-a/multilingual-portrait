@@ -546,6 +546,13 @@ export const ANIME_VOICE_SHOUTS: Record<string, AnimeVoiceShout> = {
     kanji: '断魔・ブラックディバイダー',
     subTitle: 'Demon-Slayer Greatsword Cleave',
     audioKey: 'black_divider'
+  },
+  gojo: {
+    heroId: 'gojo',
+    shoutText: 'RYOIKI TENKAI: INFINITE VOID!!',
+    kanji: '領域展開・無量空処',
+    subTitle: 'Limitless Six Eyes Dimensional Domain',
+    audioKey: 'infinite_void'
   }
 };
 

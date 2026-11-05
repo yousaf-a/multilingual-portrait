@@ -16,11 +16,15 @@ class AnimeAudioManager {
     return this.ctx;
   }
 
-  // Play Hero Ultimate Voice Shout SFX
+  // Play Hero Ultimate Voice Shout SFX & Spoken Dialogue
   playHeroShout(heroId: string): AnimeVoiceShout | null {
     const shout = ANIME_VOICE_SHOUTS[heroId];
     if (!shout) return null;
 
+    // 1. Speak the actual anime dialogue with character voice tuning
+    this.speakHeroDialogue(heroId, `${shout.shoutText}! ${shout.subTitle}`);
+
+    // 2. Pair with atmospheric energy sweep / acoustic SFX
     try {
       const ctx = this.initCtx();
       const now = ctx.currentTime;
@@ -92,12 +96,102 @@ class AnimeAudioManager {
         gain.connect(ctx.destination);
         osc.start(now);
         osc.stop(now + 0.55);
+      } else if (heroId === 'gojo') {
+        // Infinite Void: Resonant cosmic bell chime
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(528, now);
+        osc.frequency.exponentialRampToValueAtTime(1056, now + 0.6);
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.8);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.85);
       }
     } catch {
       // Audio fallback
     }
 
     return shout;
+  }
+
+  // Spoken character dialogue via browser speech synthesis with personality voice profiles
+  speakHeroDialogue(heroId: string, textToSpeak?: string) {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+
+    try {
+      window.speechSynthesis.cancel(); // Stop overlapping speech
+
+      const shout = ANIME_VOICE_SHOUTS[heroId];
+      const defaultDialogue = shout ? `${shout.shoutText}! ${shout.subTitle}` : 'Sanctuary secured!';
+      const phrase = textToSpeak ? textToSpeak.replace(/["*]/g, '').trim() : defaultDialogue;
+
+      const utterance = new SpeechSynthesisUtterance(phrase);
+
+      // Character-tuned pitch and speech speed
+      if (heroId === 'naruto') {
+        utterance.pitch = 1.25;
+        utterance.rate = 1.08;
+      } else if (heroId === 'luffy') {
+        utterance.pitch = 1.35;
+        utterance.rate = 1.15;
+      } else if (heroId === 'ichigo') {
+        utterance.pitch = 0.82;
+        utterance.rate = 1.0;
+      } else if (heroId === 'asta') {
+        utterance.pitch = 1.4;
+        utterance.rate = 1.2;
+      } else if (heroId === 'gojo') {
+        utterance.pitch = 0.9;
+        utterance.rate = 0.95;
+      } else {
+        utterance.pitch = 1.0;
+        utterance.rate = 1.0;
+      }
+
+      // Voice selection (prefers natural/expressive voice if available)
+      const voices = window.speechSynthesis.getVoices();
+      if (voices && voices.length > 0) {
+        const isJapanese =
+          /[\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\uff00-\uff9f\u4e00-\u9faf]/.test(phrase) ||
+          phrase.includes('Bankai') ||
+          phrase.includes('Rasengan') ||
+          phrase.includes('Gomu') ||
+          phrase.includes('Dattebayo') ||
+          phrase.includes('Ryoiki');
+
+        let preferredVoice = null;
+        if (isJapanese) {
+          preferredVoice = voices.find((v) => v.lang.startsWith('ja') || v.lang.includes('JP'));
+        }
+        if (!preferredVoice) {
+          preferredVoice = voices.find(
+            (v) =>
+              v.lang.startsWith('en') &&
+              (v.name.includes('Natural') ||
+                v.name.includes('Guy') ||
+                v.name.includes('David') ||
+                v.name.includes('Google') ||
+                v.name.includes('George') ||
+                v.name.includes('Male'))
+          );
+        }
+        if (preferredVoice) {
+          utterance.voice = preferredVoice;
+        }
+      }
+
+      window.speechSynthesis.speak(utterance);
+    } catch {
+      // Speech synthesis error fallback
+    }
+  }
+
+  // Speak when user interacts with patrolling hero
+  speakHeroQuote(heroId: string, quoteText: string) {
+    this.speakHeroDialogue(heroId, quoteText);
   }
 
   // Play Cannon / Troop Attack Sound

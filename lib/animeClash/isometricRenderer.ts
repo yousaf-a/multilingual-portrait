@@ -1068,84 +1068,114 @@ export function drawIsoHeroPatrol(
   const heroR = 23;
   const heroCenterY = drawY - 26;
 
-  if (heroImage && heroImage.complete) {
+  // Render hero background pedestal/glow
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(cx, heroCenterY, heroR, 0, Math.PI * 2);
+  ctx.fillStyle = '#0f172a';
+  ctx.fill();
+
+  if (heroImage && heroImage.complete && heroImage.naturalWidth > 0) {
     ctx.save();
     ctx.beginPath();
     ctx.arc(cx, heroCenterY, heroR, 0, Math.PI * 2);
     ctx.clip();
     ctx.drawImage(heroImage, cx - heroR, heroCenterY - heroR, heroR * 2, heroR * 2);
     ctx.restore();
-
-    // Multi-layered Flaming Elemental Aura Ring
-    ctx.strokeStyle = heroColor;
-    ctx.lineWidth = isSelected ? 3.8 : 2.8;
-    ctx.shadowColor = heroColor;
-    ctx.shadowBlur = 14;
-    ctx.beginPath();
-    ctx.arc(cx, heroCenterY, heroR, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.shadowBlur = 0;
-
-    // Outer Rotating Chakra/Haki Energy Orbit
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 1.2;
-    ctx.setLineDash([3, 5]);
-    ctx.beginPath();
-    ctx.arc(cx, heroCenterY, heroR + 3.5, animTime * 2.2, animTime * 2.2 + Math.PI * 2);
-    ctx.stroke();
-    ctx.setLineDash([]);
   } else {
-    // Stylized Anime Hero Silhouette
-    ctx.fillStyle = heroColor;
+    // Stylized Anime Hero Medallion with Hero Accent Gradient & Icon
+    const grad = ctx.createRadialGradient(cx, heroCenterY, 4, cx, heroCenterY, heroR);
+    grad.addColorStop(0, '#ffffff');
+    grad.addColorStop(0.5, heroColor);
+    grad.addColorStop(1, '#0b0f19');
     ctx.beginPath();
     ctx.arc(cx, heroCenterY, heroR, 0, Math.PI * 2);
+    ctx.fillStyle = grad;
     ctx.fill();
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 2;
-    ctx.stroke();
+
+    // Hero Character Initial
+    ctx.font = 'bold 16px "Segoe UI", sans-serif';
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(heroName.charAt(0), cx, heroCenterY);
   }
+
+  // Multi-layered Flaming Elemental Aura Ring
+  ctx.beginPath();
+  ctx.arc(cx, heroCenterY, heroR, 0, Math.PI * 2);
+  ctx.strokeStyle = heroColor;
+  ctx.lineWidth = isSelected ? 3.8 : 2.8;
+  ctx.shadowColor = heroColor;
+  ctx.shadowBlur = 14;
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // Outer Rotating Chakra/Haki Energy Orbit
+  ctx.beginPath();
+  ctx.arc(cx, heroCenterY, heroR + 3.5, animTime * 2.2, animTime * 2.2 + Math.PI * 2);
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 1.2;
+  ctx.setLineDash([3, 5]);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
 
   // 4. Hero Name & Level Badge (Plaque with Gold Star)
   const tagY = heroCenterY - heroR - 8;
   const tagText = `★ [Lv ${heroLevel}] ${heroName.split(' ')[0]} ★`;
   ctx.font = 'bold 10px "Segoe UI", sans-serif';
-  const tagWidth = ctx.measureText(tagText).width + 12;
+  const tagWidth = ctx.measureText(tagText).width + 14;
 
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
-  ctx.roundRect(cx - tagWidth / 2, tagY - 11, tagWidth, 14, 7);
+  ctx.save();
+  ctx.beginPath();
+  ctx.roundRect(cx - tagWidth / 2, tagY - 11, tagWidth, 15, 7.5);
+  ctx.fillStyle = 'rgba(10, 15, 30, 0.92)';
   ctx.fill();
   ctx.strokeStyle = heroColor;
-  ctx.lineWidth = 1.2;
+  ctx.lineWidth = 1.3;
   ctx.stroke();
 
   ctx.fillStyle = '#fbbf24';
   ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic';
   ctx.fillText(tagText, cx, tagY);
+  ctx.restore();
 
   // 5. Speech Bubble if Speaking
   if (speechBubbleText) {
     const bubbleY = tagY - 22;
     ctx.font = 'bold 10.5px sans-serif';
-    const textW = Math.min(180, ctx.measureText(speechBubbleText).width + 16);
-    const bubbleH = 22;
+    const textW = Math.min(220, ctx.measureText(speechBubbleText).width + 18);
+    const bubbleH = 24;
 
-    ctx.fillStyle = '#ffffff';
+    ctx.save();
+    // Bubble Box
+    ctx.beginPath();
     ctx.roundRect(cx - textW / 2, bubbleY - bubbleH, textW, bubbleH, 8);
+    ctx.fillStyle = '#ffffff';
     ctx.fill();
     ctx.strokeStyle = '#0284c7';
-    ctx.lineWidth = 1.5;
+    ctx.lineWidth = 1.6;
     ctx.stroke();
 
     // Tail pointer
     ctx.beginPath();
-    ctx.moveTo(cx - 4, bubbleY);
-    ctx.lineTo(cx, bubbleY + 5);
-    ctx.lineTo(cx + 4, bubbleY);
+    ctx.moveTo(cx - 5, bubbleY);
+    ctx.lineTo(cx, bubbleY + 6);
+    ctx.lineTo(cx + 5, bubbleY);
+    ctx.closePath();
+    ctx.fillStyle = '#ffffff';
     ctx.fill();
+    ctx.strokeStyle = '#0284c7';
+    ctx.stroke();
 
+    // Speech Text
     ctx.fillStyle = '#0f172a';
     ctx.textAlign = 'center';
-    ctx.fillText(speechBubbleText, cx, bubbleY - 7);
+    ctx.textBaseline = 'middle';
+    ctx.fillText(speechBubbleText, cx, bubbleY - bubbleH / 2);
+    ctx.restore();
   }
 
   ctx.restore();

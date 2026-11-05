@@ -163,14 +163,13 @@ export default function VillageBuilder({
   useEffect(() => {
     const img = new Image();
     img.src = activeHero.image;
-    if (img.complete) {
+    if (img.complete && img.naturalWidth > 0) {
       heroImgRef.current = img;
-    } else {
-      img.onload = () => {
-        heroImgRef.current = img;
-      };
     }
-  }, [activeHero.image]);
+    img.onload = () => {
+      heroImgRef.current = img;
+    };
+  }, [activeHero.image, activeHero.id]);
 
   // 2.5D Isometric Rendering Loop
   useEffect(() => {
@@ -346,9 +345,9 @@ export default function VillageBuilder({
       ];
       const q = heroQuotes[Math.floor(Math.random() * heroQuotes.length)];
       hp.speech = q;
-      hp.speechTimer = Date.now() + 3500;
+      hp.speechTimer = Date.now() + 4500;
       setHeroInteractionQuote(q);
-      animeAudio.playHeroShout(activeHero.id);
+      animeAudio.speakHeroQuote(activeHero.id, q);
       return;
     }
 

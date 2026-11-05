@@ -222,3 +222,4 @@ export function calculateJournalStreak(entries: DailyJournalEntry[]): number {
 
   return streak;
 }
+

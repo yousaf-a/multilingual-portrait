@@ -11,6 +11,7 @@ import FingerprintHeartPicker from '@/components/FingerprintHeartPicker';
 import DailyLockscreenStudio from '@/components/DailyLockscreenStudio';
 import DailyInkNote from '@/components/DailyInkNote';
 import OneSketchJournal from '@/components/OneSketchJournal';
+import AnimeClashGame from '@/components/animeClash/AnimeClashGame';
 import { getMultilingualList, TranslatedItem } from '@/lib/languages';
 import { MusicTrackItem } from '@/lib/musicTracks';
 import { CelestialMapConfig, DEFAULT_CELESTIAL_CONFIG } from '@/lib/celestialStarMap';
@@ -31,7 +32,8 @@ import {
   Smartphone,
   Feather,
   BookOpen,
-  Flame
+  Flame,
+  Sword
 } from 'lucide-react';
 
 // Legacy fallback to avoid any stale HMR cache runtime errors
@@ -83,8 +85,8 @@ const THEME_OPTIONS = [
 ];
 
 export default function Home() {
-  // Master Studio Mode: 'portrait' (full studio), 'lockscreen' (daily wallpapers), 'ink_note' (daily love notes), 'journal' (one sketch a day)
-  const [studioMode, setStudioMode] = useState<'portrait' | 'lockscreen' | 'ink_note' | 'journal'>('portrait');
+  // Master Studio Mode: 'portrait', 'lockscreen', 'ink_note', 'journal', 'anime_clash'
+  const [studioMode, setStudioMode] = useState<'portrait' | 'lockscreen' | 'ink_note' | 'journal' | 'anime_clash'>('portrait');
 
   // Page view: 'form' (settings only, NO preview) or 'video' (looping video player)
   const [currentView, setCurrentView] = useState<'form' | 'video'>('form');
@@ -255,7 +257,26 @@ export default function Home() {
           <Flame size={14} className={studioMode === 'journal' ? 'fill-slate-950' : ''} />
           <span>📖 One Sketch a Day</span>
         </button>
+
+        <button
+          type="button"
+          onClick={() => setStudioMode('anime_clash')}
+          className={`px-3.5 py-2 rounded-2xl text-xs font-bold flex items-center gap-2 whitespace-nowrap transition cursor-pointer ${
+            studioMode === 'anime_clash'
+              ? 'bg-gradient-to-r from-red-600 via-rose-500 to-orange-500 text-white shadow-lg shadow-red-500/30 border border-red-400/50'
+              : 'bg-[#0b1226] text-slate-400 hover:text-white border border-[#1e2a4a]'
+          }`}
+        >
+          <Sword size={14} className={studioMode === 'anime_clash' ? 'fill-white' : ''} />
+          <span>⚔️ Anime Clash: Neo-Village</span>
+          <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-red-400/20 text-red-300 border border-red-400/40">
+            GAME 🎮
+          </span>
+        </button>
       </div>
+
+      {/* GAME MODE: ANIME CLASH NEO-VILLAGE */}
+      {studioMode === 'anime_clash' && <AnimeClashGame />}
 
       {/* DAILY MODE 1: TODAY'S LOCKSCREEN STUDIO */}
       {studioMode === 'lockscreen' && <DailyLockscreenStudio />}

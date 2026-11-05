@@ -150,24 +150,15 @@ export default function VillageBuilder({
       }
       const elapsed = (Date.now() - startTime) / 1000;
 
-      const dpr = Math.min(typeof window !== 'undefined' ? window.devicePixelRatio || 2 : 2, 2.5);
-      const logicalW = 860;
-      const logicalH = 480;
-
-      if (canvas.width !== Math.round(logicalW * dpr) || canvas.height !== Math.round(logicalH * dpr)) {
-        canvas.width = Math.round(logicalW * dpr);
-        canvas.height = Math.round(logicalH * dpr);
-      }
-
-      ctx.save();
-      ctx.scale(dpr, dpr);
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = 'high';
-
-      const width = logicalW;
-      const height = logicalH;
+      const width = 820;
+      const height = 440;
       const originX = width / 2;
       const originY = 65;
+
+      if (canvas.width !== width || canvas.height !== height) {
+        canvas.width = width;
+        canvas.height = height;
+      }
 
       ctx.clearRect(0, 0, width, height);
 
@@ -252,8 +243,6 @@ export default function VillageBuilder({
       // 6. Draw Clash of Clans Top HUD
       drawClashHUD(ctx, width, villageState, activeHero.name);
 
-      ctx.restore();
-
       animRef.current = requestAnimationFrame(render);
     };
 
@@ -271,12 +260,12 @@ export default function VillageBuilder({
     if (!canvas) return;
 
     const rect = canvas.getBoundingClientRect();
-    const logicalW = 860;
-    const logicalH = 480;
-    const clickX = ((e.clientX - rect.left) / rect.width) * logicalW;
-    const clickY = ((e.clientY - rect.top) / rect.height) * logicalH;
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const clickX = (e.clientX - rect.left) * scaleX;
+    const clickY = (e.clientY - rect.top) * scaleY;
 
-    const originX = logicalW / 2;
+    const originX = canvas.width / 2;
     const originY = 65;
 
     const { gridX, gridY } = fromIso(clickX, clickY, originX, originY);
@@ -919,9 +908,10 @@ export default function VillageBuilder({
             <div className="flex-1 w-full rounded-3xl overflow-hidden border-2 border-[#1e3a5f] shadow-2xl relative bg-[#091522]">
             <canvas
               ref={canvasRef}
+              width={820}
+              height={440}
               onClick={handleCanvasClick}
               className="w-full h-auto block cursor-crosshair select-none"
-              style={{ aspectRatio: '860 / 480' }}
             />
 
             {/* In-Canvas Hero Guard Indicator Pill */}

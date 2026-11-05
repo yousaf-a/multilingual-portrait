@@ -31,6 +31,97 @@ export interface HeroPowerup {
   quote: string;
 }
 
+export interface SurpriseAlly {
+  id: string;
+  name: string;
+  anime: string;
+  title: string;
+  avatar: string;
+  image: string;
+  signatureMove: string;
+  signatureDesc: string;
+  color: string;
+  quote: string;
+  damage: number;
+  stunDuration: number;
+}
+
+export interface HeroLoreDossier {
+  heroId: string;
+  heroName: string;
+  animeFranchise: string;
+  originMoment: string;
+  riftTransition: string;
+  modernWardrobeSynthesis: string;
+  powerAdaptation: string;
+  tokyoSecretLife: string;
+  alliedBond: string;
+}
+
+export const SURPRISE_ALLIES_CATALOG: Record<string, SurpriseAlly> = {
+  gojo: {
+    id: 'gojo',
+    name: 'Satoru Gojo',
+    anime: 'Jujutsu Kaisen',
+    title: 'The Honored One / Shibuya Paradox',
+    avatar: '🤞',
+    image: '/anime-heroes/gojo_shibuya_awakening.jpg',
+    signatureMove: 'Domain Expansion: Infinite Void (無量空処)',
+    signatureDesc: 'Overloads enemy consciousness with endless cosmic stimuli, freezing the boss completely in place for 5 seconds and inflicting 650 critical damage.',
+    color: '#06b6d4',
+    quote: "Throughout heaven and earth, I alone am the honored one. Don't worry... you guys catch your breath. I'm the strongest, after all.",
+    damage: 650,
+    stunDuration: 5000
+  }
+};
+
+export const HERO_EXPANDED_LORE: Record<string, HeroLoreDossier> = {
+  naruto: {
+    heroId: 'naruto',
+    heroName: 'Naruto Uzumaki',
+    animeFranchise: 'Naruto Shippuden',
+    originMoment: 'Testing an experimental space-time seal at the Valley of the End when the dimensional tear inverted the continuum.',
+    riftTransition: 'Atmospheric pressure disintegrated his traditional orange jumpsuit. Kurama instinctively manifested a protective chakra cocoon that synthesized modern ballistic techwear from ambient carbon fibers.',
+    modernWardrobeSynthesis: 'Waterproof high-density techwear hoodie, chest utility rig for explosive flash capsules, tactical carbon kunai, and reinforced shinobi mask.',
+    powerAdaptation: 'Discovered that Tokyo’s underground 500kV maglev power grid acts as a massive artificial chakra circulatory network, allowing him to charge Sage Mode almost instantaneously from subway tracks.',
+    tokyoSecretLife: 'Obsessed with finding the ultimate Tokyo ramen shop; can frequently be found in Shinjuku alleys arguing with chefs to stack 12 extra chashu slices.',
+    alliedBond: 'Acts as the heart of the Sanctuary Alliance, inspiring Luffy, Ichigo, and Asta to treat Tokyo as their adopted home village.'
+  },
+  luffy: {
+    heroId: 'luffy',
+    heroName: 'Monkey D. Luffy',
+    animeFranchise: 'One Piece',
+    originMoment: 'The Thousand Sunny was drawn into a cosmic whirlpool storm near the threshold of the Grand Line, defying all Log Pose magnetic fields.',
+    riftTransition: 'Hurtled across oceanic space-time currents into Tokyo Bay. Bounced off three container ship hulls before landing laughing on the Yokohama docks.',
+    modernWardrobeSynthesis: 'Crimson biker leather sleeveless vest, industrial cargo pants with weatherproof straps, heavy dock boots, and his sacred straw hat tied with kevlar cord.',
+    powerAdaptation: 'Gear 5’s rubber elasticity interacts wildly with modern industrial steel. He can turn skyscraper glass into bouncy trampolines and transform construction cranes into colossal slingshots.',
+    tokyoSecretLife: 'Raided the Toyosu fish auction at 4:30 AM, attempting to eat a 300kg bluefin tuna in one single bite while dockworkers took viral TikToks.',
+    alliedBond: 'Considers the other heroes his temporary "Metropolitan Crew" and will immediately declare war on any villain who threatens their food or friends.'
+  },
+  ichigo: {
+    heroId: 'ichigo',
+    heroName: 'Ichigo Kurosaki',
+    animeFranchise: 'Bleach',
+    originMoment: 'Patrolling the Karakura Town boundary when Aizen hacked the Senkaimon gateway using quantum fiber-optic relays.',
+    riftTransition: 'Plummeted through cyberspace data packets, solidifying in spiritual density on a rain-swept skyscraper helipad in central Shinjuku.',
+    modernWardrobeSynthesis: 'Matte-black high-collar techwear trench coat, combat tactical trousers, obsidian ring choker, and dual Zanpakuto concealed in a customized electric guitar case.',
+    powerAdaptation: 'Discovered that global fiber-optic internet cables vibrate at the exact frequency of spiritual particles (Reishi). Can traverse digital signals to teleport across city districts in a flash.',
+    tokyoSecretLife: 'Takes night shifts at an Akihabara cyber-café, secretly using his smartphone to exorcise rogue digital Hollows corrupting banking firewalls.',
+    alliedBond: 'The strategic vanguard of the team, reading Aizen’s psychological manipulation and keeping the hot-headed Luffy and Asta focused.'
+  },
+  asta: {
+    heroId: 'asta',
+    heroName: 'Asta',
+    animeFranchise: 'Black Clover',
+    originMoment: 'Engaged in combat against Lucius Zogratis’s Chrono-Singularity spell, which imploded when Anti-Magic severed the concept of temporal flow.',
+    riftTransition: 'Having zero magic of his own, the dimensional pressure didn’t crush his spirit; he plummeted like a meteor through the clouds into Tokyo’s outer perimeter.',
+    modernWardrobeSynthesis: 'Heavy athletic training hoodie, Black Bulls commemorative tactical headband, reinforced weightlifting belt, and Demon-Slayer Katana strapped securely to his spine.',
+    powerAdaptation: 'Anti-Magic functions as a localized EMP in modern Tokyo, neutralizing syndicate surveillance drones, hacking cameras, and nullifying villain spatial barriers with zero electrical damage to innocent civilians.',
+    tokyoSecretLife: 'Spends all his money on convenience store protein shakes and conducts daily 1,000-pushup sessions on the public steps of Tokyo Metropolitan Government Building.',
+    alliedBond: 'The unwavering frontline tank who refuses to let anyone give up, reminding the alliance that physical grit beats any god-complex villain.'
+  }
+};
+
 export interface AnimeEpisode {
   id: string;
   episodeNumber: number;
@@ -44,7 +135,7 @@ export interface AnimeEpisode {
     avatar: string;
     isVillain?: boolean;
     narration?: boolean;
-    visualFocus?: 'naruto' | 'luffy' | 'ichigo' | 'asta' | 'madara' | 'doflamingo' | 'aizen' | 'lucius' | 'all_heroes' | 'rift' | 'collision_void' | 'naruto_eyes' | 'villains_domination' | 'heroes_assemble';
+    visualFocus?: 'naruto' | 'luffy' | 'ichigo' | 'asta' | 'madara' | 'doflamingo' | 'aizen' | 'lucius' | 'all_heroes' | 'rift' | 'collision_void' | 'naruto_eyes' | 'villains_domination' | 'heroes_assemble' | 'gojo_shatter';
     text: string;
     bgVibe: string;
   }[];
@@ -209,6 +300,21 @@ export const ANIME_EPISODES: AnimeEpisode[] = [
         visualFocus: 'naruto_eyes',
         text: '*(Gasping for air)* Where... where am I?! I can barely open my eyes... the cold rain is pouring down on my face! These aren’t the trees of Konoha... these are towering glass skyscrapers with neon billboards! My jumpsuit was shredded in the vortex, but I geared up in this waterproof tactical techwear and chest rig. The city’s underground power grid is pulsing directly into my Chakra!',
         bgVibe: '#1c1307'
+      },
+      {
+        speaker: 'Narrator',
+        avatar: '📜',
+        narration: true,
+        visualFocus: 'gojo_shatter',
+        text: '⚡ SURPRISE ANOMALY! A massive sonic boom shatters the wet asphalt of Shibuya Crossing! A metaphysical black cubic seal plummets from the rift and EXPLODES into a million floating holographic glass shards! As the smoke clears, a tall figure in modern dark streetwear lowers his blindfold to reveal an electric turquoise-blue Six Eye radiating infinite power.',
+        bgVibe: '#0c1b33'
+      },
+      {
+        speaker: 'Satoru Gojo',
+        avatar: '🤞',
+        visualFocus: 'gojo_shatter',
+        text: '*(Playful smirk)* "Yo! Was taking a nap trapped inside that annoying Prison Realm box until your dimensional collision shattered the seals! Rain in Shibuya, huh? Familiar turf... and those four clown bosses on top of the skyscraper look like they need a lesson in manners. Mind if the strongest lends you a hand?"',
+        bgVibe: '#082f49'
       },
       {
         speaker: 'Monkey D. Luffy',

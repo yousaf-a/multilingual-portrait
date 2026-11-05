@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { AnimeEpisode, AnimeVillain, HeroPowerup, ANIME_VILLAINS } from '@/lib/animeClash/animeStoryData';
+import { AnimeEpisode, AnimeVillain, HeroPowerup, ANIME_VILLAINS, SURPRISE_ALLIES_CATALOG, SurpriseAlly } from '@/lib/animeClash/animeStoryData';
 import { HEROES_CATALOG } from '@/lib/animeClash/gameData';
 import { HeroData } from '@/lib/animeClash/types';
 import {
@@ -39,6 +39,9 @@ export default function AnimeBossFightArena({
   const [heroAwakened, setHeroAwakened] = useState(false);
   const [awakeningMeter, setAwakeningMeter] = useState(40); // 0 to 100%
   const [activeCutscene, setActiveCutscene] = useState<string | null>(null);
+  const [gojoSummoned, setGojoSummoned] = useState(false);
+  const [bossFrozen, setBossFrozen] = useState(false);
+  const [activeSurpriseCutscene, setActiveSurpriseCutscene] = useState<SurpriseAlly | null>(null);
   const [battleWon, setBattleWon] = useState(false);
   const [battleLost, setBattleLost] = useState(false);
   const [screenShake, setScreenShake] = useState(false);
@@ -175,6 +178,44 @@ export default function AnimeBossFightArena({
     }, 3200);
   };
 
+  // Trigger Surprise Ally Assist: Satoru Gojo (Infinite Void)
+  const handleSummonGojo = () => {
+    if (gojoSummoned || battleWon || battleLost || awakeningMeter < 40) return;
+    setGojoSummoned(true);
+    setBossFrozen(true);
+    setActiveSurpriseCutscene(SURPRISE_ALLIES_CATALOG.gojo);
+    setScreenShake(true);
+
+    // Inflict Gojo Void damage
+    setBossHp((prev) => {
+      const next = Math.max(0, prev - SURPRISE_ALLIES_CATALOG.gojo.damage);
+      if (next <= 0) setBattleWon(true);
+      return next;
+    });
+
+    // Spawn massive cyan and purple void particles
+    const c = combatRef.current;
+    for (let i = 0; i < 40; i++) {
+      c.particles.push({
+        x: c.bossX + (Math.random() - 0.5) * 80,
+        y: c.bossY + (Math.random() - 0.5) * 80,
+        vx: (Math.random() - 0.5) * 14,
+        vy: (Math.random() - 0.5) * 14,
+        color: i % 2 === 0 ? '#06b6d4' : '#a855f7',
+        life: 1.8
+      });
+    }
+
+    setTimeout(() => {
+      setActiveSurpriseCutscene(null);
+      setScreenShake(false);
+    }, 3200);
+
+    setTimeout(() => {
+      setBossFrozen(false);
+    }, 5500);
+  };
+
   // Combat Animation Loop
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -208,9 +249,9 @@ export default function AnimeBossFightArena({
       ctx.lineWidth = 1;
       ctx.strokeRect(0, height * 0.65, width, 1);
 
-      // 2. Boss AI: Periodic Boss Attack
+      // 2. Boss AI: Periodic Boss Attack (Disabled while frozen by Infinite Void)
       const now = Date.now();
-      if (!battleWon && !battleLost && now - c.lastBossAttack > 2200) {
+      if (!battleWon && !battleLost && !bossFrozen && now - c.lastBossAttack > 2200) {
         c.lastBossAttack = now;
         c.bossVelX = -12;
 
@@ -358,6 +399,23 @@ export default function AnimeBossFightArena({
       ctx.fillStyle = villain.color;
       ctx.textAlign = 'center';
       ctx.fillText(villain.name, c.bossX, c.bossY - 78);
+
+      // Infinite Void Stun Indicator
+      if (bossFrozen) {
+        ctx.save();
+        ctx.strokeStyle = '#06b6d4';
+        ctx.lineWidth = 3;
+        ctx.setLineDash([6, 4]);
+        ctx.beginPath();
+        ctx.arc(c.bossX, c.bossY, 75, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.font = 'bold 11px "Segoe UI", sans-serif';
+        ctx.fillStyle = '#67e8f9';
+        ctx.textAlign = 'center';
+        ctx.fillText('⚡ INFINITE VOID: STUNNED', c.bossX, c.bossY + 95);
+        ctx.restore();
+      }
       ctx.restore();
 
       animRef.current = requestAnimationFrame(render);
@@ -476,6 +534,34 @@ export default function AnimeBossFightArena({
           </div>
         )}
 
+        {/* Surprise Ally Assist Cutscene (Gojo Satoru) */}
+        {activeSurpriseCutscene && (
+          <div className="absolute inset-0 bg-black/90 flex items-center justify-center p-6 animate-in fade-in zoom-in duration-300">
+            <div className="flex flex-col md:flex-row items-center gap-6 max-w-3xl">
+              <img
+                src={activeSurpriseCutscene.image}
+                alt={activeSurpriseCutscene.name}
+                className="w-40 h-52 rounded-2xl object-cover object-top border-4 border-cyan-400 shadow-[0_0_40px_rgba(6,182,212,0.9)]"
+              />
+              <div>
+                <span className="text-xs font-black text-cyan-400 tracking-widest uppercase block">
+                  ★ SURPRISE ALLY INTERVENTION • {activeSurpriseCutscene.anime.toUpperCase()} ★
+                </span>
+                <h2 className="text-2xl sm:text-3xl font-black text-white italic drop-shadow-[0_0_20px_rgba(255,255,255,0.8)]">
+                  {activeSurpriseCutscene.signatureMove}!
+                </h2>
+                <div className="text-xs text-cyan-300 font-mono mt-0.5">{activeSurpriseCutscene.title}</div>
+                <p className="text-xs text-slate-200 mt-2 italic font-medium leading-relaxed">
+                  &ldquo;{activeSurpriseCutscene.quote}&rdquo;
+                </p>
+                <div className="mt-2 text-[11px] text-cyan-300 font-semibold">
+                  ❄️ {activeSurpriseCutscene.signatureDesc}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Victory Screen */}
         {battleWon && (
           <div className="absolute inset-0 bg-black/85 flex flex-col items-center justify-center p-6 animate-in fade-in">
@@ -565,7 +651,7 @@ export default function AnimeBossFightArena({
             type="button"
             disabled={awakeningMeter < 100 || heroAwakened || battleWon || battleLost}
             onClick={handleAwakenPowerup}
-            className={`py-2 px-4 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+            className={`py-2 px-3 sm:px-4 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
               heroAwakened
                 ? 'bg-amber-400/20 text-amber-300 border border-amber-400/50 cursor-default'
                 : awakeningMeter >= 100
@@ -574,7 +660,25 @@ export default function AnimeBossFightArena({
             }`}
           >
             <Flame size={14} />
-            <span>{heroAwakened ? '🔥 AWAKENED ACTIVE' : `AWAKEN FORM (${Math.round(awakeningMeter)}%)`}</span>
+            <span>{heroAwakened ? '🔥 AWAKENED' : `AWAKEN (${Math.round(awakeningMeter)}%)`}</span>
+          </button>
+
+          {/* Move 4: SURPRISE ALLY ASSIST (Satoru Gojo - Infinite Void) */}
+          <button
+            type="button"
+            disabled={gojoSummoned || battleWon || battleLost || awakeningMeter < 40}
+            onClick={handleSummonGojo}
+            className={`py-2 px-3 sm:px-4 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+              gojoSummoned
+                ? 'bg-cyan-950/40 text-cyan-500/50 border border-cyan-800/40 cursor-not-allowed'
+                : awakeningMeter >= 40
+                ? 'bg-gradient-to-r from-cyan-500 via-sky-400 to-blue-600 text-white font-black shadow-[0_0_18px_rgba(6,182,212,0.8)] hover:brightness-110 cursor-pointer animate-pulse'
+                : 'bg-slate-800 text-slate-500 cursor-not-allowed'
+            }`}
+            title="Summon Satoru Gojo: Freeze boss for 5.5s & deal 650 damage!"
+          >
+            <Sparkles size={14} className={gojoSummoned ? '' : 'text-yellow-300 animate-spin'} />
+            <span>{gojoSummoned ? '⚡ GOJO CALLED' : '🤞 CALL GOJO (40%)'}</span>
           </button>
         </div>
       </div>

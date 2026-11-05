@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { AnimeEpisode, ANIME_EPISODES, ANIME_VILLAINS } from '@/lib/animeClash/animeStoryData';
+import { AnimeEpisode, ANIME_EPISODES, ANIME_VILLAINS, HERO_EXPANDED_LORE, SURPRISE_ALLIES_CATALOG } from '@/lib/animeClash/animeStoryData';
 import { HEROES_CATALOG } from '@/lib/animeClash/gameData';
 import {
   Play,
@@ -19,7 +19,9 @@ import {
   Tv,
   BookOpen,
   Zap,
-  Eye
+  Eye,
+  FileText,
+  X
 } from 'lucide-react';
 
 interface AnimeEpisodePlayerProps {
@@ -43,6 +45,10 @@ export default function AnimeEpisodePlayer({
   // Eye opening animation state: 0 = closed, 0.35 = squint/flutter, 1.0 = wide open
   const [eyeOpenProgress, setEyeOpenProgress] = useState(0);
   const [eyeBlur, setEyeBlur] = useState(16);
+
+  // In-Depth Character Lore & Secret Dossiers Modal
+  const [showDossierModal, setShowDossierModal] = useState(false);
+  const [selectedDossierHero, setSelectedDossierHero] = useState<string>('naruto');
 
   const episode = ANIME_EPISODES[selectedEpIndex] || ANIME_EPISODES[0];
   const isPrologue = episode.episodeNumber === 0;
@@ -359,6 +365,7 @@ export default function AnimeEpisodePlayer({
   };
 
   const getSpeakerImage = () => {
+    if (currentScene.visualFocus === 'gojo_shatter' || currentScene.speaker.includes('Gojo')) return '/anime-heroes/gojo_shibuya_awakening.jpg';
     if (currentScene.visualFocus === 'naruto' || currentScene.visualFocus === 'naruto_eyes') return HEROES_CATALOG.naruto.image;
     if (currentScene.visualFocus === 'luffy') return HEROES_CATALOG.luffy.image;
     if (currentScene.visualFocus === 'ichigo') return HEROES_CATALOG.ichigo.image;
@@ -409,6 +416,17 @@ export default function AnimeEpisodePlayer({
               <span>Story Reader</span>
             </button>
           </div>
+
+          {/* Secret Dossiers Button */}
+          <button
+            type="button"
+            onClick={() => setShowDossierModal(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-950/70 border border-purple-500/50 hover:bg-purple-900/80 text-purple-200 text-xs font-bold transition shadow-md cursor-pointer"
+          >
+            <FileText size={14} className="text-pink-400" />
+            <span className="hidden sm:inline">Character Dossiers &amp; Secrets</span>
+            <span className="sm:hidden">Dossiers</span>
+          </button>
         </div>
 
         {/* Episode Selector Tabs */}
@@ -532,6 +550,20 @@ export default function AnimeEpisodePlayer({
                   <div className="absolute top-14 left-6 px-3.5 py-1.5 rounded-full bg-amber-950/80 border border-amber-500/60 text-amber-200 text-xs font-black tracking-widest flex items-center gap-2 shadow-lg">
                     <Eye size={14} className="text-cyan-400 animate-ping" />
                     <span>AWAKENING IN SHIBUYA CROSSING • RAIN NEON FOCUS</span>
+                  </div>
+                </div>
+              ) : currentScene.visualFocus === 'gojo_shatter' ? (
+                /* SURPRISE GUEST: SATORU GOJO PRISON REALM SHATTER */
+                <div className="relative w-full h-full overflow-hidden animate-in zoom-in-105 duration-1000">
+                  <img
+                    src="/anime-heroes/gojo_shibuya_awakening.jpg"
+                    alt="Satoru Gojo Shibuya Shatter"
+                    className="w-full h-full object-cover object-center transform scale-100 hover:scale-105 transition-all duration-1000"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-cyan-950/20 to-black/60 pointer-events-none" />
+                  <div className="absolute top-14 left-6 px-3.5 py-1.5 rounded-full bg-cyan-950/90 border border-cyan-400/80 text-cyan-200 text-xs font-black tracking-widest flex items-center gap-2 shadow-[0_0_20px_rgba(6,182,212,0.6)]">
+                    <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping" />
+                    <span>⚡ SURPRISE ALLY: SATORU GOJO • PRISON REALM SHATTERED IN SHIBUYA</span>
                   </div>
                 </div>
               ) : currentScene.visualFocus === 'villains_domination' ? (
@@ -926,6 +958,156 @@ export default function AnimeEpisodePlayer({
                 <Sword size={15} />
                 <span>{isPrologue ? 'START EPISODE 1 BATTLE' : 'START ANIME BOSS FIGHT NOW!'}</span>
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 4. IN-DEPTH CHARACTER DOSSIERS & SECRET LORE MODAL */}
+      {showDossierModal && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-[#0b1226] border border-[#1e2a4a] rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-[#1e2a4a] bg-[#070b16]">
+              <div className="flex items-center gap-2">
+                <FileText size={18} className="text-pink-400" />
+                <h3 className="text-base font-extrabold text-white">Classified Hero Dossiers &amp; Tokyo Secret Lore</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowDossierModal(false)}
+                className="p-1.5 rounded-xl hover:bg-white/10 text-slate-400 hover:text-white transition cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Character Tabs */}
+            <div className="flex items-center gap-2 p-3 border-b border-[#182442] overflow-x-auto bg-[#0a1022]">
+              {Object.keys(HERO_EXPANDED_LORE).map((heroKey) => {
+                const h = HERO_EXPANDED_LORE[heroKey];
+                const isSelected = selectedDossierHero === heroKey;
+                return (
+                  <button
+                    key={heroKey}
+                    type="button"
+                    onClick={() => setSelectedDossierHero(heroKey)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 ${
+                      isSelected
+                        ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black shadow-md'
+                        : 'bg-[#131d38] text-slate-300 hover:text-white'
+                    }`}
+                  >
+                    <span>{h.heroName.split(' ')[0]}</span>
+                    <span className="text-[10px] opacity-75">({h.animeFranchise.split(' ')[0]})</span>
+                  </button>
+                );
+              })}
+              {/* Gojo Tab */}
+              <button
+                type="button"
+                onClick={() => setSelectedDossierHero('gojo')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 ${
+                  selectedDossierHero === 'gojo'
+                    ? 'bg-gradient-to-r from-cyan-400 to-blue-600 text-white font-black shadow-md'
+                    : 'bg-[#131d38] text-cyan-300 hover:text-white'
+                }`}
+              >
+                <span>Satoru Gojo</span>
+                <span className="text-[10px] text-cyan-200">(Surprise Ally)</span>
+              </button>
+            </div>
+
+            {/* Content Body */}
+            <div className="p-5 overflow-y-auto space-y-4">
+              {selectedDossierHero === 'gojo' ? (
+                /* Gojo Surprise Ally Dossier */
+                <div className="flex flex-col sm:flex-row gap-5">
+                  <img
+                    src="/anime-heroes/gojo_shibuya_awakening.jpg"
+                    alt="Satoru Gojo"
+                    className="w-full sm:w-56 h-72 object-cover object-top rounded-2xl border-2 border-cyan-400 shadow-xl shrink-0"
+                  />
+                  <div className="space-y-3 flex-1 text-xs">
+                    <div>
+                      <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-widest block">
+                        SPECIAL SURPRISE INTERVENTION • JUJUTSU KAISEN
+                      </span>
+                      <h4 className="text-xl font-black text-white">Satoru Gojo (五条 悟)</h4>
+                      <p className="text-slate-300 italic">&ldquo;The Honored One / Shibuya Paradox&rdquo;</p>
+                    </div>
+
+                    <div className="p-3 rounded-2xl bg-black/40 border border-cyan-500/20 space-y-2">
+                      <div>
+                        <strong className="text-cyan-300">💥 Prison Realm Shatter Event:</strong>
+                        <p className="text-slate-300 mt-0.5 leading-relaxed">
+                          Sealed inside the metaphysical Prison Realm during the Shibuya Incident, Gojo was presumed immobilized forever. However, the 2026 cosmic dimensional tear warped Euclidean geometry, causing the Prison Realm’s cubic boundary to spontaneously fracture into holographic glass shards directly in Shibuya Crossing!
+                        </p>
+                      </div>
+                      <div>
+                        <strong className="text-cyan-300">🌌 Modern Power Synergy:</strong>
+                        <p className="text-slate-300 mt-0.5 leading-relaxed">
+                          His Six Eyes perceive the infinite data flow of modern Earth. By raising his fingers, he can deploy <em>Domain Expansion: Infinite Void</em> to stun any dimensional boss for 5.5 seconds, giving the 4 tactical heroes the opening they need!
+                        </p>
+                      </div>
+                      <div>
+                        <strong className="text-cyan-300">☕ Tokyo Lifestyle:</strong>
+                        <p className="text-slate-300 mt-0.5 leading-relaxed">
+                          Immediately bought out every strawberry crepe and daifuku stand in Harajuku, casually wandering down Omotesando in high-end tailored streetwear while dodging tourist cameras.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                /* Core 4 Hero Dossiers */
+                (() => {
+                  const dossier = HERO_EXPANDED_LORE[selectedDossierHero] || HERO_EXPANDED_LORE.naruto;
+                  const heroData = HEROES_CATALOG[selectedDossierHero] || HEROES_CATALOG.naruto;
+                  return (
+                    <div className="flex flex-col sm:flex-row gap-5">
+                      <img
+                        src={heroData.image}
+                        alt={dossier.heroName}
+                        className="w-full sm:w-56 h-72 object-cover object-top rounded-2xl border-2 shadow-xl shrink-0"
+                        style={{ borderColor: heroData.color }}
+                      />
+                      <div className="space-y-3 flex-1 text-xs">
+                        <div>
+                          <span className="text-[10px] font-bold text-amber-400 uppercase tracking-widest block">
+                            CLASSIFIED DOSSIER • {dossier.animeFranchise.toUpperCase()}
+                          </span>
+                          <h4 className="text-xl font-black text-white">{dossier.heroName}</h4>
+                          <p className="text-slate-300 italic">{heroData.title}</p>
+                        </div>
+
+                        <div className="p-3 rounded-2xl bg-black/40 border border-white/10 space-y-2.5">
+                          <div>
+                            <strong className="text-amber-300">⚡ Moment of Dimensional Displacement:</strong>
+                            <p className="text-slate-300 mt-0.5 leading-relaxed">{dossier.originMoment}</p>
+                          </div>
+                          <div>
+                            <strong className="text-cyan-300">🌀 Rift Transition &amp; Gear Synthesis:</strong>
+                            <p className="text-slate-300 mt-0.5 leading-relaxed">{dossier.riftTransition}</p>
+                          </div>
+                          <div>
+                            <strong className="text-emerald-300">🏙️ Tokyo Power Adaptation:</strong>
+                            <p className="text-slate-300 mt-0.5 leading-relaxed">{dossier.powerAdaptation}</p>
+                          </div>
+                          <div>
+                            <strong className="text-purple-300">🍜 Secret Tokyo Life:</strong>
+                            <p className="text-slate-300 mt-0.5 leading-relaxed">{dossier.tokyoSecretLife}</p>
+                          </div>
+                          <div>
+                            <strong className="text-rose-300">🤝 Alliance Bond:</strong>
+                            <p className="text-slate-300 mt-0.5 leading-relaxed">{dossier.alliedBond}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()
+              )}
             </div>
           </div>
         </div>

@@ -174,7 +174,7 @@ export const HEROES_CATALOG: Record<string, HeroData> = {
     color: '#1e1b4b',
     accentColor: '#6366f1',
     tierRank: 'goat',
-    image: '/anime-heroes/ichigo-turnaround/front.png',
+    image: '/anime-heroes/ichigo-tactical.png',
     turnaround: {
       front: '/anime-heroes/ichigo-turnaround/front.png',
       left34: '/anime-heroes/ichigo-turnaround/left_34.png',
@@ -184,9 +184,9 @@ export const HEROES_CATALOG: Record<string, HeroData> = {
       right34: '/anime-heroes/ichigo-turnaround/right_34.png'
     },
     poseImages: {
-      combat: '/anime-heroes/ichigo-turnaround/pose_combat.png',
-      epic: '/anime-heroes/ichigo-turnaround/pose_epic.png',
-      goat: '/anime-heroes/ichigo-turnaround/pose_goat.png'
+      combat: '/anime-heroes/ichigo-tactical.png',
+      epic: '/anime-heroes/ichigo-epic.png',
+      goat: '/anime-heroes/ichigo-goat.png'
     },
     forms: [
       {
@@ -355,7 +355,7 @@ export const HEROES_CATALOG: Record<string, HeroData> = {
     tierRank: 'goat',
     poseImages: {
       combat: '/anime-heroes/sung-jinwoo-tactical.png',
-      epic: '/anime-heroes/sung-jinwoo-tactical.png',
+      epic: '/anime-heroes/sung-jinwoo-epic.png',
       goat: '/anime-heroes/sung-jinwoo-goat.png'
     },
   },
@@ -503,6 +503,11 @@ export const HEROES_CATALOG: Record<string, HeroData> = {
     color: '#065f46',
     accentColor: '#34d399',
     tierRank: 'goat',
+    poseImages: {
+      combat: '/anime-heroes/levi-tactical.png',
+      epic: '/anime-heroes/levi-epic.png',
+      goat: '/anime-heroes/levi-goat.png'
+    },
     forms: [
       {
         id: 'normal',
@@ -572,6 +577,11 @@ export const HEROES_CATALOG: Record<string, HeroData> = {
     color: '#b91c1c',
     accentColor: '#f87171',
     tierRank: 'goat',
+    poseImages: {
+      combat: '/anime-heroes/mereoleona-tactical.png',
+      epic: '/anime-heroes/mereoleona-epic.png',
+      goat: '/anime-heroes/mereoleona-goat.png'
+    },
     forms: [
       {
         id: 'normal',

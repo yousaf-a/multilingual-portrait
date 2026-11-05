@@ -234,39 +234,22 @@ export default function Anime3DViewer({
     backMesh.castShadow = true;
     figureGroup.add(backMesh);
 
-    // Glowing Neon 3D Rim Bevel Edge (Light Piping)
-    const edgeGeo = new THREE.CylinderGeometry(figWidth * 0.48, figWidth * 0.48, depth, 32, 1, true);
-    const edgeMat = new THREE.MeshStandardMaterial({
-      color: heroMainColor,
-      emissive: heroMainColor,
-      emissiveIntensity: 0.8,
-      roughness: 0.2,
-      metalness: 0.8,
+    // Glowing Divine Halo Ring positioned safely behind the character's back (No clipping)
+    const haloGeo = new THREE.TorusGeometry(0.52, 0.014, 16, 64);
+    const haloMat = new THREE.MeshStandardMaterial({
+      color: heroAccentColor,
+      emissive: heroAccentColor,
+      emissiveIntensity: selectedRank === 'goat' ? 1.6 : selectedRank === 'epic' ? 0.9 : 0.35,
+      roughness: 0.15,
+      metalness: 0.85,
       transparent: true,
-      opacity: 0.65
+      opacity: selectedRank === 'goat' ? 0.95 : selectedRank === 'epic' ? 0.65 : 0.25
     });
-    const edgeMesh = new THREE.Mesh(edgeGeo, edgeMat);
-    edgeMesh.rotation.z = Math.PI / 2;
-    edgeMesh.position.set(0, figHeight / 2, 0);
-    figureGroup.add(edgeMesh);
+    const haloMesh = new THREE.Mesh(haloGeo, haloMat);
+    haloMesh.position.set(0, 1.15, -0.08); // Floating safely behind upper torso
+    figureGroup.add(haloMesh);
 
-    // 8. 3D ORBITING ELEMENTAL SATELLITES & WEAPONS
-    const satelliteGroup = new THREE.Group();
-    figureGroup.add(satelliteGroup);
-
-    // Two orbiting elemental chakra / haki orbs
-    const orbGeo = new THREE.SphereGeometry(0.065, 16, 16);
-    const orbMat = new THREE.MeshStandardMaterial({
-      color: heroMainColor,
-      emissive: heroMainColor,
-      emissiveIntensity: 1.0,
-      roughness: 0.2
-    });
-    const orb1 = new THREE.Mesh(orbGeo, orbMat);
-    const orb2 = new THREE.Mesh(orbGeo, orbMat);
-    satelliteGroup.add(orb1, orb2);
-
-    // 9. Volumetric Particle Ascension Aura System
+    // 8. Volumetric Particle Ascension Aura System
     const particleCount = 130;
     const particleGeo = new THREE.BufferGeometry();
     const particlePos = new Float32Array(particleCount * 3);
@@ -357,10 +340,9 @@ export default function Anime3DViewer({
         figureGroup.scale.set(0.96, 0.96, 0.96);
       }
 
-      // Orbiting Satellites
-      const orbAngle = elapsed * 2.5;
-      orb1.position.set(Math.cos(orbAngle) * 0.55, 0.85 + Math.sin(orbAngle * 2) * 0.12, Math.sin(orbAngle) * 0.55);
-      orb2.position.set(Math.cos(orbAngle + Math.PI) * 0.55, 0.85 - Math.sin(orbAngle * 2) * 0.12, Math.sin(orbAngle + Math.PI) * 0.55);
+      // Gentle Divine Halo Rotation & Resonance
+      haloMesh.rotation.z += 0.006;
+      haloMesh.rotation.y = Math.sin(elapsed * 1.5) * 0.08;
 
       // 3. Tier Transformation Aura Vibrancy
       if (rank === 'goat') {
@@ -368,19 +350,22 @@ export default function Anime3DViewer({
         particleMat.opacity = 0.95;
         rimLight.intensity = 4.8;
         innerDiscMat.emissiveIntensity = 0.9;
-        edgeMat.emissiveIntensity = 1.4;
+        haloMat.emissiveIntensity = 1.8;
+        haloMat.opacity = 0.95;
       } else if (rank === 'epic') {
         particleMat.size = 0.07;
         particleMat.opacity = 0.8;
         rimLight.intensity = 3.4;
         innerDiscMat.emissiveIntensity = 0.55;
-        edgeMat.emissiveIntensity = 0.9;
+        haloMat.emissiveIntensity = 0.9;
+        haloMat.opacity = 0.65;
       } else {
         particleMat.size = 0.045;
         particleMat.opacity = 0.55;
         rimLight.intensity = 2.4;
         innerDiscMat.emissiveIntensity = 0.35;
-        edgeMat.emissiveIntensity = 0.5;
+        haloMat.emissiveIntensity = 0.3;
+        haloMat.opacity = 0.2;
       }
 
       // Particle physics
@@ -425,10 +410,8 @@ export default function Anime3DViewer({
       frontMat.dispose();
       backPlaneGeo.dispose();
       backMat.dispose();
-      edgeGeo.dispose();
-      edgeMat.dispose();
-      orbGeo.dispose();
-      orbMat.dispose();
+      haloGeo.dispose();
+      haloMat.dispose();
       particleGeo.dispose();
       particleMat.dispose();
     };

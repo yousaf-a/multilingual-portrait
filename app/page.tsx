@@ -8,6 +8,9 @@ import InstagramMusicPicker from '@/components/InstagramMusicPicker';
 import CelestialMapPicker from '@/components/CelestialMapPicker';
 import ZodiacFusionPicker from '@/components/ZodiacFusionPicker';
 import FingerprintHeartPicker from '@/components/FingerprintHeartPicker';
+import DailyLockscreenStudio from '@/components/DailyLockscreenStudio';
+import DailyInkNote from '@/components/DailyInkNote';
+import OneSketchJournal from '@/components/OneSketchJournal';
 import { getMultilingualList, TranslatedItem } from '@/lib/languages';
 import { MusicTrackItem } from '@/lib/musicTracks';
 import { CelestialMapConfig, DEFAULT_CELESTIAL_CONFIG } from '@/lib/celestialStarMap';
@@ -24,7 +27,11 @@ import {
   Palette,
   AlertCircle,
   Heart,
-  User
+  User,
+  Smartphone,
+  Feather,
+  BookOpen,
+  Flame
 } from 'lucide-react';
 
 // Legacy fallback to avoid any stale HMR cache runtime errors
@@ -76,6 +83,9 @@ const THEME_OPTIONS = [
 ];
 
 export default function Home() {
+  // Master Studio Mode: 'portrait' (full studio), 'lockscreen' (daily wallpapers), 'ink_note' (daily love notes), 'journal' (one sketch a day)
+  const [studioMode, setStudioMode] = useState<'portrait' | 'lockscreen' | 'ink_note' | 'journal'>('portrait');
+
   // Page view: 'form' (settings only, NO preview) or 'video' (looping video player)
   const [currentView, setCurrentView] = useState<'form' | 'video'>('form');
 
@@ -189,8 +199,75 @@ export default function Home() {
         </div>
       </header>
 
+      {/* MASTER STUDIO MODE SELECTOR (Daily Utility Navigation) */}
+      <div className="w-full max-w-4xl flex items-center justify-start sm:justify-center overflow-x-auto gap-2 py-3.5 my-2 border-b border-[#182442]/80 scrollbar-none">
+        <button
+          type="button"
+          onClick={() => {
+            setStudioMode('portrait');
+            setCurrentView('form');
+          }}
+          className={`px-3.5 py-2 rounded-2xl text-xs font-bold flex items-center gap-2 whitespace-nowrap transition cursor-pointer ${
+            studioMode === 'portrait'
+              ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-lg shadow-cyan-500/25 border border-cyan-400/40'
+              : 'bg-[#0b1226] text-slate-400 hover:text-white border border-[#1e2a4a]'
+          }`}
+        >
+          <Sparkles size={14} className={studioMode === 'portrait' ? 'fill-white' : ''} />
+          <span>🎨 Master Portrait Studio</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setStudioMode('lockscreen')}
+          className={`px-3.5 py-2 rounded-2xl text-xs font-bold flex items-center gap-2 whitespace-nowrap transition cursor-pointer ${
+            studioMode === 'lockscreen'
+              ? 'bg-gradient-to-r from-indigo-600 to-sky-500 text-white shadow-lg shadow-sky-500/25 border border-sky-400/40'
+              : 'bg-[#0b1226] text-slate-400 hover:text-white border border-[#1e2a4a]'
+          }`}
+        >
+          <Smartphone size={14} />
+          <span>📱 Today&apos;s Lockscreen</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setStudioMode('ink_note')}
+          className={`px-3.5 py-2 rounded-2xl text-xs font-bold flex items-center gap-2 whitespace-nowrap transition cursor-pointer ${
+            studioMode === 'ink_note'
+              ? 'bg-gradient-to-r from-pink-600 to-rose-500 text-white shadow-lg shadow-pink-500/25 border border-pink-400/40'
+              : 'bg-[#0b1226] text-slate-400 hover:text-white border border-[#1e2a4a]'
+          }`}
+        >
+          <Heart size={14} className={studioMode === 'ink_note' ? 'fill-white' : ''} />
+          <span>💌 Daily Ink Note</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setStudioMode('journal')}
+          className={`px-3.5 py-2 rounded-2xl text-xs font-bold flex items-center gap-2 whitespace-nowrap transition cursor-pointer ${
+            studioMode === 'journal'
+              ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 shadow-lg shadow-orange-500/25 border border-amber-400/50'
+              : 'bg-[#0b1226] text-slate-400 hover:text-white border border-[#1e2a4a]'
+          }`}
+        >
+          <Flame size={14} className={studioMode === 'journal' ? 'fill-slate-950' : ''} />
+          <span>📖 One Sketch a Day</span>
+        </button>
+      </div>
+
+      {/* DAILY MODE 1: TODAY'S LOCKSCREEN STUDIO */}
+      {studioMode === 'lockscreen' && <DailyLockscreenStudio />}
+
+      {/* DAILY MODE 2: DAILY INK NOTE STUDIO */}
+      {studioMode === 'ink_note' && <DailyInkNote />}
+
+      {/* DAILY MODE 3: ONE SKETCH A DAY JOURNAL */}
+      {studioMode === 'journal' && <OneSketchJournal />}
+
       {/* VIEW 1: CREATION FORM (NO PREVIEW ON PAGE) */}
-      {currentView === 'form' && (
+      {studioMode === 'portrait' && currentView === 'form' && (
         <div className="w-full max-w-2xl flex flex-col gap-4 sm:gap-5 my-4 sm:my-8">
           {/* Card 1: Upload Photo / Subject (Required) */}
           <div
@@ -475,7 +552,7 @@ export default function Home() {
       )}
 
       {/* VIEW 2: FULL-SCREEN VIDEO PLAYER (LOOPING ANIMATION WITH MUSIC) */}
-      {currentView === 'video' && (
+      {studioMode === 'portrait' && currentView === 'video' && (
         <ScribbleVideoRenderer
           photoImage={photoImage}
           items={items}

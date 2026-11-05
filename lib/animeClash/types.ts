@@ -133,6 +133,15 @@ export interface RaidBattleReport {
   isDefense: boolean;
 }
 
+export interface UserAccount {
+  id: string;
+  username: string;
+  tag: string;
+  avatarHeroId: string;
+  pin?: string;
+  createdAt: number;
+}
+
 export interface PlayerVillageState {
   level: number;
   berries: number;
@@ -150,9 +159,11 @@ export interface PlayerVillageState {
   guildContribution?: number;
   playerName?: string;
   sanctuaryTag?: string;
+  trophies?: number;
   customFriends?: FriendProfile[];
   battleReports?: RaidBattleReport[];
   profileSlots?: Record<string, PlayerVillageState>;
   activeProfileKey?: string;
+  ownerUserId?: string;
 }
 

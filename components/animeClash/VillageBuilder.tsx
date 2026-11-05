@@ -9,7 +9,8 @@ import {
   WeatherTimeMode,
   SanctuaryGuild,
   FriendProfile,
-  RaidBattleReport
+  RaidBattleReport,
+  UserAccount
 } from '@/lib/animeClash/types';
 import {
   HEROES_CATALOG,
@@ -29,6 +30,7 @@ import {
   getHeroStatsForLevel,
   getHeroUpgradeCost
 } from '@/lib/animeClash/gameData';
+import { recordCrossUserRaid } from '@/lib/animeClash/accountManager';
 import {
   toIso,
   fromIso,
@@ -76,22 +78,38 @@ import {
   Check,
   Lock,
   Unlock,
-  UserPlus
+  UserPlus,
+  Eye,
+  Home,
+  User
 } from 'lucide-react';
 
 interface VillageBuilderProps {
   villageState: PlayerVillageState;
+  currentUser?: UserAccount;
+  viewingTargetUser?: FriendProfile | null;
   onUpdateVillage: (state: PlayerVillageState) => void;
   onLaunchBattle: () => void;
   onOpenStory: () => void;
+  onOpenAuthModal?: () => void;
+  onScoutBase?: (target: FriendProfile) => void;
+  onReturnToMyBase?: () => void;
 }
 
 export default function VillageBuilder({
   villageState,
+  currentUser,
+  viewingTargetUser,
   onUpdateVillage,
   onLaunchBattle,
-  onOpenStory
+  onOpenStory,
+  onOpenAuthModal,
+  onScoutBase,
+  onReturnToMyBase
 }: VillageBuilderProps) {
+  // Strict Permission Check: Is current user the owner of this sanctuary?
+  const isOwner = !viewingTargetUser || viewingTargetUser.id === (currentUser?.id || villageState.ownerUserId);
+
   const [selectedBuilding, setSelectedBuilding] = useState<BuildingInstance | null>(null);
   const [villageViewMode, setVillageViewMode] = useState<'orbit_hub' | 'grid'>('orbit_hub');
   const [activeBuildTab, setActiveBuildTab] = useState<'village' | 'shop' | 'heroes' | 'layouts' | 'roadmap' | 'attack' | 'guilds' | 'multiplayer'>('village');
@@ -657,6 +675,19 @@ export default function VillageBuilder({
               chakra: Math.min(villageState.maxStorage, villageState.chakra + lootChakra),
               battleReports: [report, ...(villageState.battleReports || [])].slice(0, 15)
             });
+
+            // Cross-user raid persistence: deduct loot and log defense on target's profile
+            if (selectedRaidFriend) {
+              recordCrossUserRaid(
+                selectedRaidFriend.id,
+                villageState.playerName || currentUser?.username || 'Attacking Challenger',
+                stars || 0,
+                stars === 3 ? 100 : stars === 2 ? 75 : 45,
+                lootBerries,
+                lootChakra
+              );
+            }
+
             setIsArenaRaidActive(false);
             setSelectedRaidFriend(null);
           }}
@@ -825,6 +856,22 @@ export default function VillageBuilder({
             <Sword size={14} />
             <span>⚔️ 2.5D Raid!</span>
           </button>
+
+          {/* User Account / Login Switcher Pill */}
+          <button
+            type="button"
+            onClick={onOpenAuthModal}
+            className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-blue-900/80 via-indigo-900/80 to-purple-900/80 hover:brightness-110 border border-blue-400/50 text-white text-xs font-bold transition flex items-center gap-2 shadow-md cursor-pointer"
+            title="Switch User / Login to a different account"
+          >
+            <div className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center text-[10px]">
+              👤
+            </div>
+            <span>User: <strong className="text-cyan-300">{currentUser?.username?.split(' ')[0] || villageState.playerName?.split(' ')[0] || 'Player'}</strong></span>
+            <span className="text-[10px] bg-blue-500/30 text-blue-200 px-1.5 py-0.5 rounded border border-blue-400/30">
+              Switch 🔄
+            </span>
+          </button>
         </div>
       </div>
 
@@ -856,6 +903,53 @@ export default function VillageBuilder({
           <span>Play Origin Video</span>
         </button>
       </div>
+
+      {/* SCOUTING SANCTUARY READ-ONLY BANNER */}
+      {!isOwner && viewingTargetUser && (
+        <div className="w-full bg-gradient-to-r from-amber-950 via-slate-900 to-amber-950 border-2 border-amber-500 rounded-2xl p-4 shadow-xl flex flex-wrap items-center justify-between gap-4 animate-in fade-in">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500 flex items-center justify-center text-amber-400 shrink-0">
+              <Eye size={22} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-[10px] font-black uppercase tracking-wider text-amber-400 px-2 py-0.5 rounded bg-amber-950 border border-amber-600">
+                  SCOUTING SANCTUARY &bull; READ ONLY
+                </span>
+                <span className="text-sm font-black text-white">{viewingTargetUser.name}</span>
+                <span className="text-xs font-mono text-cyan-300">[{viewingTargetUser.tag}]</span>
+              </div>
+              <p className="text-xs text-slate-300 mt-0.5">
+                🔒 You are inspecting another player&apos;s base. Only <strong>{viewingTargetUser.name}</strong> can build, move, or upgrade here.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedRaidFriend(viewingTargetUser);
+                setIsArenaRaidActive(true);
+              }}
+              className="px-4 py-2 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:brightness-110 text-white font-black text-xs shadow-lg cursor-pointer flex items-center gap-1.5 transition"
+            >
+              <Sword size={14} />
+              <span>⚔️ Raid This Base!</span>
+            </button>
+            {onReturnToMyBase && (
+              <button
+                type="button"
+                onClick={onReturnToMyBase}
+                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs border border-white/20 cursor-pointer flex items-center gap-1.5 transition"
+              >
+                <Home size={14} />
+                <span>🏠 Return to My Base</span>
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* 2. MODE NAVIGATION TABS */}
       <div className="flex items-center gap-1.5 bg-[#080d1e] p-1 rounded-2xl border border-[#1e2f54] self-start overflow-x-auto">
@@ -1062,25 +1156,38 @@ export default function VillageBuilder({
                   )}
                 </div>
 
-                {/* Upgrade Button */}
-                <button
-                  type="button"
-                  onClick={() => handleUpgradeBuilding(selectedBuilding)}
-                  className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:brightness-110 text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 shadow-md cursor-pointer"
-                >
-                  <ArrowUpCircle size={15} />
-                  <span>Upgrade to Level {selectedBuilding.level + 1} (💰 {selectedBuilding.level * 150})</span>
-                </button>
+                {/* Action Buttons: Only Available to Sanctuary Owner */}
+                {isOwner ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => handleUpgradeBuilding(selectedBuilding)}
+                      className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:brightness-110 text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 shadow-md cursor-pointer"
+                    >
+                      <ArrowUpCircle size={15} />
+                      <span>Upgrade to Level {selectedBuilding.level + 1} (💰 {selectedBuilding.level * 150})</span>
+                    </button>
 
-                {/* Move Building Button */}
-                <button
-                  type="button"
-                  onClick={() => setIsRelocatingBuildingId(selectedBuilding.id)}
-                  className="w-full py-2.5 px-4 rounded-xl bg-[#1e293b] hover:bg-[#334155] border border-[#334155] text-slate-200 font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
-                >
-                  <Move size={14} className="text-cyan-400" />
-                  <span>Move to New Grid Tile</span>
-                </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsRelocatingBuildingId(selectedBuilding.id)}
+                      className="w-full py-2.5 px-4 rounded-xl bg-[#1e293b] hover:bg-[#334155] border border-[#334155] text-slate-200 font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
+                    >
+                      <Move size={14} className="text-cyan-400" />
+                      <span>Move to New Grid Tile</span>
+                    </button>
+                  </>
+                ) : (
+                  <div className="p-3.5 rounded-2xl bg-amber-950/40 border border-amber-500/50 flex flex-col items-center gap-1.5 text-center">
+                    <div className="flex items-center gap-1.5 text-amber-300 font-bold text-xs">
+                      <Lock size={14} />
+                      <span>Read-Only Building Inspector</span>
+                    </div>
+                    <p className="text-[11px] text-slate-300">
+                      This structure is protected by <strong>{viewingTargetUser?.name || 'Owner'}</strong>. Only the base owner has permission to upgrade, move, or demolish buildings.
+                    </p>
+                  </div>
+                )}
               </div>
             ) : (
               /* Active Hero Defender Showcase */
@@ -1933,17 +2040,34 @@ export default function VillageBuilder({
                       </div>
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelectedRaidFriend(friend);
-                        setIsArenaRaidActive(true);
-                      }}
-                      className="w-full py-2 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:brightness-110 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-md transition cursor-pointer"
-                    >
-                      <Sword size={14} />
-                      <span>⚔️ Raid {friend.name.split(' ')[0]}&apos;s Base!</span>
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedRaidFriend(friend);
+                          setIsArenaRaidActive(true);
+                        }}
+                        className="flex-1 py-2 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:brightness-110 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-md transition cursor-pointer"
+                      >
+                        <Sword size={13} />
+                        <span>⚔️ Raid</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (onScoutBase) {
+                            onScoutBase(friend);
+                            setActiveBuildTab('village');
+                            setVillageViewMode('grid');
+                          }
+                        }}
+                        className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-white/10 cursor-pointer flex items-center gap-1 transition"
+                        title="Inspect friend's base layout in Read-Only Scout Mode"
+                      >
+                        <Eye size={13} className="text-amber-400" />
+                        <span>Scout</span>
+                      </button>
+                    </div>
                   </div>
                 );
               })}

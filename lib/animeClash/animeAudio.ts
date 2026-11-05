@@ -142,6 +142,18 @@ class AnimeAudioManager {
       // ignore
     }
   }
+
+  playButtonClick() {
+    this.playCombatSFX('shuriken');
+  }
+
+  playUpgradeSuccess() {
+    this.playCombatSFX('spell');
+  }
+
+  playWallHit() {
+    this.playCombatSFX('cannon');
+  }
 }
 
 export const animeAudio = new AnimeAudioManager();

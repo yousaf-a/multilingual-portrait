@@ -1,42 +1,72 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { PlayerVillageState, StoryChapter } from '@/lib/animeClash/types';
+import { PlayerVillageState, StoryChapter, UserAccount, FriendProfile } from '@/lib/animeClash/types';
 import { INITIAL_PLAYER_STATE, STORY_CHAPTERS, HEROES_CATALOG } from '@/lib/animeClash/gameData';
 import { AnimeEpisode, ANIME_EPISODES } from '@/lib/animeClash/animeStoryData';
+import {
+  getActiveAccount,
+  setActiveUserId,
+  getUserVillageState,
+  saveUserVillageState
+} from '@/lib/animeClash/accountManager';
 import VillageBuilder from './VillageBuilder';
 import BattleArena from './BattleArena';
 import StoryCampaignModal from './StoryCampaignModal';
 import AnimeEpisodePlayer from './AnimeEpisodePlayer';
 import AnimeBossFightArena from './AnimeBossFightArena';
-
-const STORAGE_KEY = 'anime_clash_village_v1';
+import UserAuthModal from './UserAuthModal';
 
 export default function AnimeClashGame() {
-  const [villageState, setVillageState] = useState<PlayerVillageState>(INITIAL_PLAYER_STATE);
+  const [currentAccount, setCurrentAccount] = useState<UserAccount>(() => getActiveAccount());
+  const [villageState, setVillageState] = useState<PlayerVillageState>(() =>
+    getUserVillageState(getActiveAccount().id)
+  );
+  const [scoutingFriend, setScoutingFriend] = useState<FriendProfile | null>(null);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [gameMode, setGameMode] = useState<'village' | 'battle' | 'story_episodes' | 'boss_fight'>('village');
   const [activeBossEpisode, setActiveBossEpisode] = useState<AnimeEpisode>(ANIME_EPISODES[0]);
   const [isStoryOpen, setIsStoryOpen] = useState(false);
 
-  // Load saved game from localStorage
+  // Sync state on load / account change
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        setVillageState(JSON.parse(raw));
-      }
-    } catch (_) {}
+    const acc = getActiveAccount();
+    setCurrentAccount(acc);
+    const loadedState = getUserVillageState(acc.id);
+    setVillageState(loadedState);
+
+    // Check for recent defense alert
+    const recentDefense = loadedState.battleReports?.find(
+      (r) => r.isDefense && Date.now() - r.timestamp < 300000
+    );
+    if (recentDefense) {
+      setTimeout(() => {
+        alert(
+          `🚨 S.O.S DEFENSE ALERT for ${acc.username}!\n\nYour sanctuary was recently attacked by ${recentDefense.attackerName} (${recentDefense.stars} Stars, ${recentDefense.destructionPct}% damage)!\n\nCheck your defense log in "🌐 Friends & Rivals".`
+        );
+      }, 500);
+    }
   }, []);
 
-  // Save changes
-  const handleUpdateVillage = (newState: PlayerVillageState) => {
+  // Switch Active User Account
+  const handleSelectAccount = (accountId: string) => {
+    setActiveUserId(accountId);
+    const newAcc = getActiveAccount();
+    setCurrentAccount(newAcc);
+    const newState = getUserVillageState(accountId);
     setVillageState(newState);
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(newState));
-      } catch (_) {}
+    setScoutingFriend(null);
+  };
+
+  // Save changes to current user's isolated village
+  const handleUpdateVillage = (newState: PlayerVillageState) => {
+    if (scoutingFriend) {
+      alert("🔒 Read-Only Mode: You cannot modify another player's sanctuary!");
+      return;
     }
+    setVillageState(newState);
+    saveUserVillageState(currentAccount.id, newState);
   };
 
   // Handle Battle Rewards
@@ -70,14 +100,41 @@ export default function AnimeClashGame() {
     alert(`🎉 Chapter ${chapter.chapterNumber} Complete! Rewards Claimed!`);
   };
 
+  // Build active display village (either personal base or friend's base in Scout Mode)
+  const displayVillage: PlayerVillageState = scoutingFriend
+    ? {
+        ...villageState,
+        level: scoutingFriend.level,
+        buildings: scoutingFriend.buildings,
+        activeHeroId: scoutingFriend.activeHeroId,
+        playerName: scoutingFriend.name,
+        sanctuaryTag: scoutingFriend.tag,
+        ownerUserId: scoutingFriend.id
+      }
+    : villageState;
+
   return (
     <div className="w-full flex flex-col items-center">
       {gameMode === 'village' && (
         <VillageBuilder
-          villageState={villageState}
+          villageState={displayVillage}
+          currentUser={currentAccount}
+          viewingTargetUser={scoutingFriend}
           onUpdateVillage={handleUpdateVillage}
           onLaunchBattle={() => setGameMode('battle')}
           onOpenStory={() => setGameMode('story_episodes')}
+          onOpenAuthModal={() => setIsAuthModalOpen(true)}
+          onScoutBase={(friend) => setScoutingFriend(friend)}
+          onReturnToMyBase={() => setScoutingFriend(null)}
+        />
+      )}
+
+      {/* User Login & Account Switcher Modal */}
+      {isAuthModalOpen && (
+        <UserAuthModal
+          currentAccount={currentAccount}
+          onSelectAccount={handleSelectAccount}
+          onClose={() => setIsAuthModalOpen(false)}
         />
       )}
 

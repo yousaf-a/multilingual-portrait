@@ -1,6 +1,6 @@
 // Anime Clash: Audio & Voice Shout Synthesis Engine (Web Audio API)
 
-import { ANIME_VOICE_SHOUTS, AnimeVoiceShout } from './gameData';
+import { ANIME_VOICE_SHOUTS, AnimeVoiceShout, HEROES_CATALOG } from './gameData';
 
 class AnimeAudioManager {
   private ctx: AudioContext | null = null;
@@ -21,8 +21,11 @@ class AnimeAudioManager {
     const shout = ANIME_VOICE_SHOUTS[heroId];
     if (!shout) return null;
 
+    const hero = HEROES_CATALOG[heroId];
+    const phrase = hero?.catchphrase ? `${shout.shoutText}! ${hero.catchphrase}` : `${shout.shoutText}! ${shout.subTitle}`;
+
     // 1. Speak the actual anime dialogue with character voice tuning
-    this.speakHeroDialogue(heroId, `${shout.shoutText}! ${shout.subTitle}`);
+    this.speakHeroDialogue(heroId, phrase);
 
     // 2. Pair with atmospheric energy sweep / acoustic SFX
     try {

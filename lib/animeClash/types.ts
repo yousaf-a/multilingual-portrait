@@ -15,6 +15,8 @@ export interface HeroData {
   range: number;
   speed: number;
   quote: string;
+  catchphrase: string;
+  catchphraseJp?: string;
   modernOutfit: string;
   skillName: string;
   skillDesc: string;

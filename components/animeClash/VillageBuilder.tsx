@@ -338,6 +338,7 @@ export default function VillageBuilder({
     const heroDist = Math.hypot(gridX - hp.currentX, gridY - hp.currentY);
     if (heroDist < 1.1) {
       const heroQuotes = [
+        `"${activeHero.catchphrase}"`,
         `"Sanctuary perimeter locked down!"`,
         `"I'll defend this village with my life!"`,
         `"Guard status: 100% active!"`,
@@ -1430,6 +1431,19 @@ export default function VillageBuilder({
                       <span className="text-xs text-red-400 font-bold">⚔️ {stats.attack} ATK</span>
                     </div>
                     <p className="text-[11px] text-amber-300 font-medium">{hero.title}</p>
+
+                    {/* Iconic Catchphrase Banner with Audio Listen Button */}
+                    <div className="my-1.5 p-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-[11px] text-amber-200 italic flex items-center justify-between gap-1.5 shadow-sm">
+                      <span className="line-clamp-2">&ldquo;{hero.catchphrase}&rdquo;</span>
+                      <button
+                        type="button"
+                        onClick={() => animeAudio.speakHeroQuote(hero.id, hero.catchphrase)}
+                        className="p-1 rounded-lg bg-amber-500/25 hover:bg-amber-500/40 text-amber-300 transition cursor-pointer shrink-0"
+                        title="Listen to character catchphrase voice line"
+                      >
+                        <Volume2 size={13} className="text-amber-400" />
+                      </button>
+                    </div>
 
                     {/* Level Progress Bar */}
                     <div className="w-full bg-slate-800 h-1.5 rounded-full my-2 overflow-hidden">

@@ -1,5 +1,5 @@
 import { UserAccount, PlayerVillageState, RaidBattleReport } from './types';
-import { INITIAL_PLAYER_STATE, DEFAULT_FRIEND_BASES } from './gameData';
+import { INITIAL_PLAYER_STATE, DEFAULT_FRIEND_BASES, HERO_UNLOCK_HQ_REQUIREMENTS } from './gameData';
 
 const ACCOUNTS_STORAGE_KEY = 'anime_clash_accounts_registry_v1';
 const ACTIVE_USER_ID_KEY = 'anime_clash_active_user_id_v1';
@@ -251,8 +251,8 @@ export function registerAccount(
     sanctuaryTag: newAccount.tag,
     ownerUserId: newAccount.id,
     activeHeroId: avatarHeroId || 'naruto',
-    unlockedHeroes: [avatarHeroId || 'naruto'],
-    heroLevels: { [avatarHeroId || 'naruto']: 1 }
+    unlockedHeroes: Array.from(new Set(['naruto', avatarHeroId || 'naruto'])),
+    heroLevels: { naruto: 1, [avatarHeroId || 'naruto']: 1 }
   };
   saveUserVillageState(newAccount.id, initialVillage);
 
@@ -273,6 +273,15 @@ export function getUserVillageState(userId: string): PlayerVillageState {
       const parsed = JSON.parse(raw);
       // Ensure owner is tagged
       parsed.ownerUserId = userId;
+
+      // Always guarantee Naruto (Starter Hero) and all HQ-eligible heroes are unlocked
+      const unlockedSet = new Set(['naruto', ...(parsed.unlockedHeroes || [])]);
+      Object.entries(HERO_UNLOCK_HQ_REQUIREMENTS).forEach(([hId, req]) => {
+        if ((parsed.level || 1) >= req.hqLevel) {
+          unlockedSet.add(hId);
+        }
+      });
+      parsed.unlockedHeroes = Array.from(unlockedSet);
       return parsed;
     }
   } catch (_) {}

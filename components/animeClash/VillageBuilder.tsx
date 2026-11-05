@@ -579,7 +579,7 @@ export default function VillageBuilder({
 
     const nextLevel = villageState.level + 1;
     let newlyUnlockedHero: HeroData | null = null;
-    const currentUnlocked = villageState.unlockedHeroes || ['naruto'];
+    const currentUnlocked = Array.from(new Set(['naruto', ...(villageState.unlockedHeroes || [])]));
 
     if (nextLevel === 2 && !currentUnlocked.includes('luffy')) {
       newlyUnlockedHero = HEROES_CATALOG.luffy;
@@ -591,9 +591,10 @@ export default function VillageBuilder({
       newlyUnlockedHero = HEROES_CATALOG.gojo;
     }
 
-    const updatedUnlocked = newlyUnlockedHero
-      ? [...currentUnlocked, newlyUnlockedHero.id]
-      : currentUnlocked;
+    if (newlyUnlockedHero && !currentUnlocked.includes(newlyUnlockedHero.id)) {
+      currentUnlocked.push(newlyUnlockedHero.id);
+    }
+    const updatedUnlocked = currentUnlocked;
 
     if (newlyUnlockedHero) {
       setHeroUnlockCelebration(newlyUnlockedHero);
@@ -1395,7 +1396,11 @@ export default function VillageBuilder({
               const nextStats = getHeroStatsForLevel(hero, heroLevel + 1);
               const costInfo = getHeroUpgradeCost(hero.id, heroLevel);
               const isMaxedForHQ = heroLevel >= maxHeroLevel;
-              const isUnlocked = villageState.unlockedHeroes.includes(hero.id);
+              const reqHqLevel = HERO_UNLOCK_HQ_REQUIREMENTS[hero.id]?.hqLevel || 1;
+              const isUnlocked =
+                hero.id === 'naruto' ||
+                villageState.level >= reqHqLevel ||
+                Boolean(villageState.unlockedHeroes && villageState.unlockedHeroes.includes(hero.id));
               const isActive = villageState.activeHeroId === hero.id;
 
               return (
@@ -1484,7 +1489,10 @@ export default function VillageBuilder({
                     ) : isUnlocked ? (
                       <button
                         type="button"
-                        onClick={() => onUpdateVillage({ ...villageState, activeHeroId: hero.id })}
+                        onClick={() => {
+                          const allUnlocked = Array.from(new Set([...(villageState.unlockedHeroes || ['naruto']), hero.id, 'naruto']));
+                          onUpdateVillage({ ...villageState, activeHeroId: hero.id, unlockedHeroes: allUnlocked });
+                        }}
                         className="w-full py-1.5 rounded-xl bg-blue-600/80 hover:bg-blue-600 text-white font-bold text-xs transition cursor-pointer"
                       >
                         Assign as Patrol Guard

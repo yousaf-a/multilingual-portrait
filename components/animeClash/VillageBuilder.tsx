@@ -564,6 +564,11 @@ export default function VillageBuilder({
   // Upgrade Village Town Hall HQ Level
   const currentHQPlan = VILLAGE_HQ_LEVEL_PLANS[villageState.level] || VILLAGE_HQ_LEVEL_PLANS[1];
   const nextHQPlan = VILLAGE_HQ_LEVEL_PLANS[villageState.level + 1];
+  const nextHQLevel = villageState.level + 1;
+  const nextHeroUnlockEntry = Object.entries(HERO_UNLOCK_HQ_REQUIREMENTS).find(
+    ([heroId, req]) => req.hqLevel === nextHQLevel && !villageState.unlockedHeroes.includes(heroId)
+  );
+  const nextHeroName = nextHeroUnlockEntry ? nextHeroUnlockEntry[1].heroName : null;
 
   const handleUpgradeTownHallHQ = () => {
     if (!nextHQPlan) return;
@@ -754,26 +759,128 @@ export default function VillageBuilder({
       )}
 
       {/* 1. TOP HEADER & ACTION BAR */}
-      <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-3xl bg-[#0b1226]/95 border border-[#1e2a4a] shadow-xl backdrop-blur-md">
-        <div className="flex items-center gap-3">
-          <img
-            src={activeHero.image}
-            alt={activeHero.name}
-            className="w-12 h-12 rounded-2xl object-cover object-top border-2 shadow-lg"
-            style={{ borderColor: activeHero.color }}
-          />
+      <div className="flex flex-wrap items-center justify-between gap-2.5 p-3 sm:p-4 rounded-3xl bg-[#0b1226]/95 border border-[#1e2a4a] shadow-xl backdrop-blur-md">
+        {/* Left: Active Hero Avatar & Player Profile */}
+        <div className="flex items-center gap-2.5 sm:gap-3">
+          <div className="relative">
+            <img
+              src={activeHero.image}
+              alt={activeHero.name}
+              className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl object-cover object-top border-2 shadow-lg"
+              style={{ borderColor: activeHero.color }}
+            />
+            <span className="absolute -bottom-1 -right-1 text-[9px] font-black px-1.5 py-0.2 bg-amber-400 text-slate-950 rounded-full shadow">
+              Lv {villageState.heroLevels?.[villageState.activeHeroId] || 1}
+            </span>
+          </div>
           <div>
-            <div className="text-sm font-bold text-white flex items-center gap-2">
-              <span>Neo-Sanctuary Base</span>
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/40">
-                HQ LVL {villageState.level} • {currentHQPlan.title}
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs sm:text-sm font-black text-white">
+                {currentUser?.username.split(' ')[0] || villageState.playerName || 'Sanctuary'}
+              </span>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/40">
+                HQ {villageState.level}
               </span>
             </div>
-            <div className="text-xs text-slate-400">
-              Active Defender: <strong className="text-white">{activeHero.name}</strong>{' '}
-              <span className="text-emerald-400 text-[10px] ml-1">(Patrolling Live in 2.5D)</span>
+            <div className="flex items-center gap-1 text-[11px] text-slate-400">
+              <span className="text-amber-300 font-semibold">{activeHero.name}</span>
+              {currentUser ? (
+                <button
+                  type="button"
+                  onClick={onOpenAuthModal}
+                  className="text-cyan-400 hover:underline ml-1 cursor-pointer font-bold"
+                >
+                  (Switch)
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={onOpenAuthModal}
+                  className="text-yellow-400 hover:underline ml-1 cursor-pointer font-bold animate-pulse"
+                >
+                  (Log In)
+                </button>
+              )}
             </div>
           </div>
+        </div>
+
+        {/* Center: Guided Objective Pill (Solves "What to do next") */}
+        <button
+          type="button"
+          onClick={() => setActiveBuildTab('roadmap')}
+          className="hidden md:flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/15 border border-amber-500/40 hover:bg-amber-500/25 transition cursor-pointer text-xs"
+        >
+          <span className="text-amber-400">🎯</span>
+          <span className="text-amber-200 font-medium">
+            Next Goal: <strong className="text-white">{nextHeroName ? `Upgrade HQ to Lv ${nextHQLevel} (Unlocks ${nextHeroName}!)` : `Upgrade HQ to Lv ${nextHQLevel} (Expands Army)`}</strong>
+          </span>
+          <span className="text-[10px] text-amber-400 font-bold ml-1 bg-amber-500/20 px-2 py-0.5 rounded-full">
+            View HQ &rarr;
+          </span>
+        </button>
+
+        {/* Right: Resources & Quick Harvest */}
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* Resources Pill */}
+          <div className="flex items-center gap-2 sm:gap-3 bg-black/60 px-3 py-1.5 rounded-2xl border border-white/10 text-xs font-bold">
+            <span className="text-amber-300 flex items-center gap-1" title="Berries">
+              💰 <span>{villageState.berries.toLocaleString()}</span>
+            </span>
+            <span className="text-cyan-300 flex items-center gap-1" title="Chakra">
+              🌀 <span>{villageState.chakra.toLocaleString()}</span>
+            </span>
+            <span className="text-purple-300 flex items-center gap-1" title="Reishi">
+              🔮 <span>{villageState.reishi.toLocaleString()}</span>
+            </span>
+          </div>
+
+          {/* Quick Harvest Button */}
+          <button
+            type="button"
+            onClick={handleCollectResources}
+            className="px-3 py-1.5 sm:py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:brightness-110 text-white text-xs font-bold transition flex items-center gap-1 shadow-md cursor-pointer"
+            title="Collect all generated resources"
+          >
+            <span>🌾 Harvest</span>
+          </button>
+        </div>
+      </div>
+
+      {/* 2. PRIMARY VIEW MODE SWITCHER & ENVIRONMENT BAR */}
+      <div className="flex flex-wrap items-center justify-between gap-2 px-1">
+        <div className="flex items-center gap-1 bg-[#080d1e] p-1 rounded-2xl border border-[#1e2f54]">
+          <button
+            type="button"
+            onClick={() => {
+              setActiveBuildTab('village');
+              setVillageViewMode('orbit_hub');
+            }}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+              activeBuildTab === 'village' && villageViewMode === 'orbit_hub'
+                ? 'bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-black shadow-[0_0_15px_rgba(245,158,11,0.6)]'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Crown size={14} className="text-yellow-400" />
+            <span>👑 Command Hub</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setActiveBuildTab('village');
+              setVillageViewMode('grid');
+            }}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+              activeBuildTab === 'village' && villageViewMode === 'grid'
+                ? 'bg-blue-600 text-white shadow-md font-black'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Layers size={14} />
+            <span>🏰 Base Grid & Build</span>
+          </button>
         </div>
 
         {/* Dynamic Weather & Time Atmosphere Switcher */}
@@ -786,7 +893,7 @@ export default function VillageBuilder({
               (villageState.weatherMode || 'night') === 'day' ? 'bg-amber-500 text-black shadow-md' : 'text-slate-400 hover:text-white'
             }`}
           >
-            <Sun size={15} />
+            <Sun size={14} />
           </button>
           <button
             type="button"
@@ -796,7 +903,7 @@ export default function VillageBuilder({
               villageState.weatherMode === 'twilight' ? 'bg-orange-500 text-white shadow-md' : 'text-slate-400 hover:text-white'
             }`}
           >
-            <Sunset size={15} />
+            <Sunset size={14} />
           </button>
           <button
             type="button"
@@ -806,7 +913,7 @@ export default function VillageBuilder({
               villageState.weatherMode === 'night' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
             }`}
           >
-            <Moon size={15} />
+            <Moon size={14} />
           </button>
           <button
             type="button"
@@ -816,15 +923,11 @@ export default function VillageBuilder({
               villageState.weatherMode === 'rain' ? 'bg-cyan-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
             }`}
           >
-            <CloudRain size={15} />
+            <CloudRain size={14} />
           </button>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-          {/* Hero Voice Shout Audio */}
           <button
             type="button"
+            title="Hero Japanese Voice Shout"
             onClick={() => {
               const shout = animeAudio.playHeroShout(activeHero.id);
               if (shout) {
@@ -836,121 +939,11 @@ export default function VillageBuilder({
                 setTimeout(() => setVoiceShoutBanner(null), 2500);
               }
             }}
-            className="px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/50 text-amber-300 text-[11px] sm:text-xs font-bold transition flex items-center gap-1.5 shadow-sm cursor-pointer"
-            title="Trigger Japanese Voice Shout Audio"
+            className="p-1.5 rounded-xl text-amber-400 hover:text-amber-300 transition cursor-pointer ml-1"
           >
-            <Volume2 size={13} className="text-amber-400 animate-pulse" />
-            <span>Voice Shout</span>
+            <Volume2 size={14} />
           </button>
-
-          {/* Test Base Defense Simulator */}
-          <button
-            type="button"
-            onClick={() => setIsDefenseActive(true)}
-            className="px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl bg-rose-950/80 hover:bg-rose-900 border border-rose-500/60 text-rose-200 text-[11px] sm:text-xs font-bold transition flex items-center gap-1.5 shadow-sm cursor-pointer"
-            title="Defend against an incoming Syndicate assault!"
-          >
-            <Shield size={13} className="text-rose-400" />
-            <span>🚨 Base Defense</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={handleCollectResources}
-            className="px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] sm:text-xs font-bold transition flex items-center gap-1 shadow-sm cursor-pointer"
-          >
-            <span>🌾 Harvest</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={onOpenStory}
-            className="px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl bg-[#1e293b] hover:bg-[#334155] border border-[#334155] text-slate-200 text-[11px] sm:text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
-          >
-            <BookOpen size={13} className="text-amber-400" />
-            <span>Story</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setIsArenaRaidActive(true)}
-            className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-gradient-to-r from-red-600 via-rose-500 to-orange-500 hover:brightness-110 text-white text-[11px] sm:text-xs font-bold flex items-center gap-1.5 shadow-[0_0_20px_rgba(239,68,68,0.5)] transition cursor-pointer"
-          >
-            <Sword size={13} />
-            <span>⚔️ 2.5D Raid!</span>
-          </button>
-
-          {/* User Account / Login & Logout Controls */}
-          {currentUser ? (
-            <div className="flex items-center gap-1.5">
-              <button
-                type="button"
-                onClick={onOpenAuthModal}
-                className="px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl bg-gradient-to-r from-blue-900/80 via-indigo-900/80 to-purple-900/80 hover:brightness-110 border border-blue-400/50 text-white text-[11px] sm:text-xs font-bold transition flex items-center gap-1.5 shadow-md cursor-pointer"
-                title="Switch User / Account Settings"
-              >
-                <div className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center text-[10px]">
-                  👤
-                </div>
-                <span>User: <strong className="text-cyan-300">{currentUser.username.split(' ')[0]}</strong></span>
-                <span className="text-[9px] bg-blue-500/30 text-blue-200 px-1 py-0.5 rounded border border-blue-400/30">
-                  🔄
-                </span>
-              </button>
-
-              {onLogout && (
-                <button
-                  type="button"
-                  onClick={onLogout}
-                  className="px-2.5 py-1.5 sm:py-2 rounded-xl bg-rose-950/70 hover:bg-rose-900 border border-rose-500/50 text-rose-300 hover:text-white text-[11px] sm:text-xs font-bold transition flex items-center gap-1 cursor-pointer shadow-sm"
-                  title="Log Out of your account"
-                >
-                  <LogOut size={12} className="text-rose-400" />
-                  <span className="hidden sm:inline">Logout</span>
-                </button>
-              )}
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={onOpenAuthModal}
-              className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:brightness-110 text-white text-[11px] sm:text-xs font-black transition flex items-center gap-1.5 shadow-[0_0_15px_rgba(59,130,246,0.6)] cursor-pointer animate-pulse"
-              title="Log in to manage your Sanctuary"
-            >
-              <Lock size={13} className="text-yellow-300" />
-              <span>Log In / Sign In</span>
-            </button>
-          )}
         </div>
-      </div>
-
-      {/* Origin Anime Movie Banner */}
-      <div className="p-3.5 rounded-3xl bg-gradient-to-r from-purple-950/80 via-[#0b1329] to-pink-950/80 border border-purple-500/40 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white shadow-lg shrink-0">
-            <Tv size={20} />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-black uppercase tracking-widest text-pink-400 bg-pink-950/80 px-2.5 py-0.5 rounded-full border border-pink-700">
-                PROLOGUE ANIME FILM
-              </span>
-              <span className="text-xs font-bold text-white">How the Heroes Arrived in Tokyo 2026</span>
-            </div>
-            <p className="text-[11px] text-slate-300 mt-0.5">
-              Watch Naruto, Luffy, Ichigo &amp; Asta arrive through the space-time rift and form the Sanctuary Alliance!
-            </p>
-          </div>
-        </div>
-
-        <button
-          type="button"
-          onClick={onOpenStory}
-          className="whitespace-nowrap px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:brightness-110 text-white font-extrabold text-xs flex items-center gap-1.5 shadow-lg shadow-purple-600/30 transition cursor-pointer"
-        >
-          <Play size={13} fill="currentColor" />
-          <span>Play Origin Video</span>
-        </button>
       </div>
 
       {/* SCOUTING SANCTUARY READ-ONLY BANNER */}
@@ -1000,111 +993,6 @@ export default function VillageBuilder({
         </div>
       )}
 
-      {/* 2. MODE NAVIGATION TABS */}
-      <div className="w-full max-w-full overflow-x-auto scrollbar-none flex items-center gap-1.5 bg-[#080d1e] p-1 rounded-2xl border border-[#1e2f54] pb-1.5">
-        <button
-          type="button"
-          onClick={() => {
-            setActiveBuildTab('village');
-            setVillageViewMode('orbit_hub');
-          }}
-          className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 ${
-            activeBuildTab === 'village' && villageViewMode === 'orbit_hub'
-              ? 'bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-slate-950 font-black shadow-[0_0_15px_rgba(245,158,11,0.6)]'
-              : 'text-slate-400 hover:text-white'
-          }`}
-        >
-          <Crown size={13} className="text-yellow-300" />
-          <span>👑 Sanctuary Hub</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            setActiveBuildTab('village');
-            setVillageViewMode('grid');
-          }}
-          className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 ${
-            activeBuildTab === 'village' && villageViewMode === 'grid'
-              ? 'bg-blue-600 text-white shadow-md'
-              : 'text-slate-400 hover:text-white'
-          }`}
-        >
-          <Layers size={13} />
-          <span>🏰 Base Grid</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveBuildTab('attack')}
-          className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 ${
-            activeBuildTab === 'attack' ? 'bg-red-600 text-white shadow-md ring-2 ring-red-400/30' : 'text-slate-400 hover:text-white'
-          }`}
-        >
-          <Sword size={13} className="text-red-300" />
-          <span>Troops & Raid ({totalTroopsCount}/{armyCampCap})</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveBuildTab('heroes')}
-          className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 ${
-            activeBuildTab === 'heroes' ? 'bg-amber-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
-          }`}
-        >
-          <Crown size={13} className="text-yellow-300" />
-          <span>Hero Levels & Roster</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveBuildTab('layouts')}
-          className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 ${
-            activeBuildTab === 'layouts' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
-          }`}
-        >
-          <Layout size={13} />
-          <span>Custom Base Setup</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveBuildTab('roadmap')}
-          className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 ${
-            activeBuildTab === 'roadmap' ? 'bg-purple-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
-          }`}
-        >
-          <Star size={13} className="text-yellow-300" />
-          <span>HQ Level Caps (HQ {villageState.level})</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveBuildTab('guilds')}
-          className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 ${
-            activeBuildTab === 'guilds' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
-          }`}
-        >
-          <Users size={13} className="text-emerald-300" />
-          <span>Sanctuary Guilds</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveBuildTab('shop')}
-          className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
-            activeBuildTab === 'shop' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
-          }`}
-        >
-          🔨 Defense Shop
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveBuildTab('multiplayer')}
-          className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 ${
-            activeBuildTab === 'multiplayer'
-              ? 'bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 text-white shadow-md ring-2 ring-purple-400/40'
-              : 'text-slate-400 hover:text-white'
-          }`}
-        >
-          <Globe size={13} className="text-purple-300" />
-          <span>🌐 Friends &amp; Rivals ({DEFAULT_FRIEND_BASES.length + (villageState.customFriends?.length || 0)})</span>
-        </button>
-      </div>
-
       {/* 3. MAIN INTERACTIVE CONTENT: ISOMETRIC VILLAGE OR SANCTUARY ORBITAL HUB */}
       {activeBuildTab === 'village' && (
         <>
@@ -1119,164 +1007,131 @@ export default function VillageBuilder({
             />
           </div>
 
-          <div className={villageViewMode === 'grid' ? 'flex flex-col lg:flex-row gap-4 items-start w-full' : 'hidden'}>
-            {/* Real 2.5D Isometric Canvas */}
-            <div className="flex-1 min-w-0 w-full rounded-3xl overflow-hidden border-2 border-[#1e3a5f] shadow-2xl relative bg-[#091522]">
-            <canvas
-              ref={canvasRef}
-              width={820}
-              height={440}
-              onClick={handleCanvasClick}
-              onTouchEnd={handleCanvasTouch}
-              className="w-full h-auto block cursor-crosshair select-none touch-manipulation"
-            />
+          <div className={villageViewMode === 'grid' ? 'flex flex-col gap-3 w-full' : 'hidden'}>
+            {/* Real 2.5D Isometric Canvas (Widescreen Full Width) */}
+            <div className="w-full rounded-3xl overflow-hidden border-2 border-[#1e3a5f] shadow-2xl relative bg-[#091522]">
+              <canvas
+                ref={canvasRef}
+                width={820}
+                height={440}
+                onClick={handleCanvasClick}
+                onTouchEnd={handleCanvasTouch}
+                className="w-full h-auto block cursor-crosshair select-none touch-manipulation max-h-[520px] object-cover"
+              />
 
-            {/* In-Canvas Hero Guard Indicator Pill (Responsive hidden on small phones to avoid HUD overlap) */}
-            <div className="hidden sm:flex absolute top-4 left-4 items-center gap-2 px-3 py-1 rounded-full bg-black/70 border border-emerald-500/50 backdrop-blur-md text-[11px] text-emerald-300 font-bold pointer-events-none">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-              <span>{activeHero.name} is on Patrol &bull; Tap Hero to Speak</span>
-            </div>
-
-            {/* Relocation Mode Banner */}
-            {isRelocatingBuildingId && (
-              <div className="absolute top-3 sm:top-4 right-3 sm:right-4 flex items-center gap-2 px-3 sm:px-3.5 py-1.5 rounded-xl bg-amber-500 text-slate-950 text-[11px] sm:text-xs font-black shadow-lg animate-pulse">
-                <Move size={14} />
-                <span>RELOCATING: Tap Green Tile</span>
-                <button
-                  type="button"
-                  onClick={() => setIsRelocatingBuildingId(null)}
-                  className="ml-1 text-red-950 underline hover:text-red-800 font-bold"
-                >
-                  Cancel
-                </button>
+              {/* In-Canvas Hero Guard Indicator Pill */}
+              <div className="absolute top-3 left-3 sm:top-4 sm:left-4 flex items-center gap-2 px-3 py-1 rounded-full bg-black/75 border border-emerald-500/50 backdrop-blur-md text-[11px] text-emerald-300 font-bold pointer-events-none">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                <span>{activeHero.name} on Guard Patrol (Tap to Interact)</span>
               </div>
-            )}
 
-            {/* Bottom Tip (Responsive) */}
-            <div className="hidden sm:block absolute bottom-3 left-4 text-[11px] text-slate-300 bg-black/60 px-3 py-1 rounded-full backdrop-blur-sm pointer-events-none">
-              💡 Tap any building to inspect/upgrade/move &bull; Tap {activeHero.name.split(' ')[0]} to interact
+              {/* Relocation Mode Banner */}
+              {isRelocatingBuildingId && (
+                <div className="absolute top-3 sm:top-4 right-3 sm:right-4 flex items-center gap-2 px-3 sm:px-3.5 py-1.5 rounded-xl bg-amber-500 text-slate-950 text-xs font-black shadow-lg animate-pulse">
+                  <Move size={14} />
+                  <span>RELOCATING: Tap any green tile</span>
+                  <button
+                    type="button"
+                    onClick={() => setIsRelocatingBuildingId(null)}
+                    className="ml-1 text-red-950 underline hover:text-red-800 font-bold cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
+
+              {/* Bottom Tip */}
+              <div className="absolute bottom-3 left-3 sm:left-4 text-[11px] text-slate-300 bg-black/70 px-3 py-1 rounded-full backdrop-blur-sm pointer-events-none border border-white/10 hidden sm:block">
+                💡 Tap any building to inspect/upgrade/move &bull; Tap {activeHero.name.split(' ')[0]} to interact
+              </div>
             </div>
-          </div>
 
-          {/* Right Panel: Selected Building or Active Hero Details */}
-          <div className="w-full lg:w-80 xl:w-96 shrink-0">
+            {/* Bottom Floating Inspector Drawer for Selected Building */}
             {selectedBuilding ? (
-              <div className="bg-[#0b1226]/90 border border-[#1e2a4a] rounded-3xl p-5 shadow-xl backdrop-blur-md flex flex-col gap-3">
-                <div className="flex items-center justify-between border-b border-[#182442] pb-3">
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-3xl">{selectedBuilding.icon}</span>
-                    <div>
-                      <h3 className="text-sm font-bold text-white">{selectedBuilding.name}</h3>
-                      <span className="text-[11px] text-amber-400 font-semibold">Level {selectedBuilding.level}</span>
+              <div className="w-full bg-[#0b1226]/95 border-2 border-amber-500/60 rounded-3xl p-4 sm:p-5 shadow-2xl backdrop-blur-xl flex flex-col sm:flex-row items-center justify-between gap-4 animate-in slide-in-from-bottom-2">
+                <div className="flex items-center gap-3.5 w-full sm:w-auto">
+                  <span className="text-4xl p-2.5 rounded-2xl bg-black/50 border border-white/10 shrink-0">
+                    {selectedBuilding.icon}
+                  </span>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-base font-extrabold text-white">{selectedBuilding.name}</h3>
+                      <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                        Level {selectedBuilding.level}
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-3 text-xs text-slate-300 mt-1">
+                      <span>HP: <strong className="text-white">{selectedBuilding.hp} / {selectedBuilding.maxHp}</strong></span>
+                      {selectedBuilding.attack && (
+                        <span className="text-red-400 font-bold">⚔️ {selectedBuilding.attack} ATK</span>
+                      )}
+                      {selectedBuilding.productionRate && (
+                        <span className="text-emerald-400 font-bold">+{selectedBuilding.productionRate}/hr</span>
+                      )}
+                      <span className="text-slate-400 font-mono">({selectedBuilding.x}, {selectedBuilding.y})</span>
                     </div>
                   </div>
+                </div>
+
+                {/* Owner Actions */}
+                <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                  {isOwner ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => handleUpgradeBuilding(selectedBuilding)}
+                        className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:brightness-110 text-slate-950 font-black text-xs flex items-center justify-center gap-1.5 shadow-md cursor-pointer"
+                      >
+                        <ArrowUpCircle size={15} />
+                        <span>Upgrade (💰 {selectedBuilding.level * 150})</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setIsRelocatingBuildingId(selectedBuilding.id)}
+                        className="px-3.5 py-2.5 rounded-xl bg-[#1e293b] hover:bg-[#334155] border border-[#334155] text-cyan-300 font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
+                      >
+                        <Move size={14} />
+                        <span>Move</span>
+                      </button>
+                    </>
+                  ) : (
+                    <span className="text-xs text-amber-300 font-bold px-3 py-1.5 rounded-xl bg-amber-950/70 border border-amber-500/50">
+                      🔒 Protected Structure
+                    </span>
+                  )}
+
                   <button
                     type="button"
                     onClick={() => setSelectedBuilding(null)}
-                    className="text-xs text-slate-400 hover:text-white"
+                    className="px-3 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-bold border border-white/10 cursor-pointer"
                   >
                     Close
                   </button>
                 </div>
-
-                <div className="space-y-1.5 text-xs">
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Durability (HP):</span>
-                    <span className="font-bold text-white">
-                      {selectedBuilding.hp} / {selectedBuilding.maxHp}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Map Coordinates:</span>
-                    <span className="font-mono text-cyan-300">
-                      ({selectedBuilding.x}, {selectedBuilding.y})
-                    </span>
-                  </div>
-                  {selectedBuilding.productionRate && (
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">Production Rate:</span>
-                      <span className="font-bold text-emerald-400">+{selectedBuilding.productionRate}/hr</span>
-                    </div>
-                  )}
-                  {selectedBuilding.attack && (
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">Firepower:</span>
-                      <span className="font-bold text-red-400">⚔️ {selectedBuilding.attack} DMG</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Action Buttons: Only Available to Sanctuary Owner */}
-                {isOwner ? (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => handleUpgradeBuilding(selectedBuilding)}
-                      className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:brightness-110 text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 shadow-md cursor-pointer"
-                    >
-                      <ArrowUpCircle size={15} />
-                      <span>Upgrade to Level {selectedBuilding.level + 1} (💰 {selectedBuilding.level * 150})</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setIsRelocatingBuildingId(selectedBuilding.id)}
-                      className="w-full py-2.5 px-4 rounded-xl bg-[#1e293b] hover:bg-[#334155] border border-[#334155] text-slate-200 font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
-                    >
-                      <Move size={14} className="text-cyan-400" />
-                      <span>Move to New Grid Tile</span>
-                    </button>
-                  </>
-                ) : (
-                  <div className="p-3.5 rounded-2xl bg-amber-950/40 border border-amber-500/50 flex flex-col items-center gap-1.5 text-center">
-                    <div className="flex items-center gap-1.5 text-amber-300 font-bold text-xs">
-                      <Lock size={14} />
-                      <span>Read-Only Building Inspector</span>
-                    </div>
-                    <p className="text-[11px] text-slate-300">
-                      This structure is protected by <strong>{viewingTargetUser?.name || 'Owner'}</strong>. Only the base owner has permission to upgrade, move, or demolish buildings.
-                    </p>
-                  </div>
-                )}
               </div>
             ) : (
-              /* Active Hero Defender Showcase */
-              <div className="bg-[#0b1226]/90 border border-[#1e2a4a] rounded-3xl p-4 shadow-xl backdrop-blur-md flex flex-col">
-                <div className="relative w-full aspect-[4/5] rounded-2xl overflow-hidden border border-[#243356] shadow-lg mb-3 bg-[#080d1e]">
-                  <img
-                    src={activeHero.image}
-                    alt={activeHero.name}
-                    className="w-full h-full object-cover object-top hover:scale-105 transition duration-500"
-                  />
-                  <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent p-3">
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 uppercase">
-                      ACTIVE HERO DEFENDER
-                    </span>
-                    <h3 className="text-base font-extrabold text-white mt-1">{activeHero.name}</h3>
-                    <p className="text-[11px] text-amber-300">{activeHero.title}</p>
-                  </div>
+              /* Quick Building Bar when no building selected */
+              <div className="w-full flex items-center justify-between p-3 rounded-2xl bg-[#081126]/80 border border-[#1e2f54] text-xs">
+                <div className="flex items-center gap-2 text-slate-300">
+                  <span className="text-amber-400">🛡️</span>
+                  <span>Defenses: <strong>{villageState.buildings.length}</strong> structures active</span>
+                  <span className="text-slate-500">&bull;</span>
+                  <span>Patrol: <strong className="text-emerald-300">{activeHero.name}</strong></span>
                 </div>
-
-                <p className="text-xs text-slate-300 italic mb-2 px-1">
-                  {heroInteractionQuote ? `💬 ${heroInteractionQuote}` : `"${activeHero.quote}"`}
-                </p>
-
-                <div className="space-y-1 text-xs text-slate-300 p-3 rounded-2xl bg-[#080d1e] border border-[#1e2a4a]">
-                  <div className="text-[11px] text-slate-400">
-                    <strong className="text-white">Style:</strong> {activeHero.modernOutfit}
-                  </div>
-                  <div className="text-[11px] text-slate-400 pt-1">
-                    <strong className="text-cyan-400">Skill:</strong> {activeHero.skillName}
-                  </div>
-                  <div className="text-[11px] text-slate-400 pt-1">
-                    <strong className="text-amber-400">Ultimate:</strong> {activeHero.ultimateName}
-                  </div>
-                </div>
+                {isOwner && (
+                  <button
+                    type="button"
+                    onClick={() => setActiveBuildTab('shop')}
+                    className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:brightness-110 text-white font-bold text-xs flex items-center gap-1.5 shadow cursor-pointer"
+                  >
+                    <span>🔨 Construct Defense</span>
+                  </button>
+                )}
               </div>
             )}
           </div>
-        </div>
-      </>
+        </>
       )}
 
       {/* 4. CUSTOM BASE SETUP TAB */}
@@ -2224,6 +2079,105 @@ export default function VillageBuilder({
           </div>
         </div>
       )}
+
+      {/* ======================================================== */}
+      {/* 4. STREAMLINED BOTTOM GAME DOCK (THE 4 CORE ACTION HUBS) */}
+      {/* ======================================================== */}
+      <div className="sticky bottom-2 sm:bottom-4 z-40 w-full max-w-2xl mx-auto px-1 sm:px-2 pt-2">
+        <div className="flex items-center justify-around gap-1 p-1.5 sm:p-2 rounded-2xl sm:rounded-3xl bg-[#081126]/95 border-2 border-[#1e3a6a] shadow-[0_10px_35px_rgba(0,0,0,0.85)] backdrop-blur-xl">
+          {/* 1. ATTACK & RAIDS */}
+          <button
+            type="button"
+            onClick={() => {
+              setActiveBuildTab(activeBuildTab === 'attack' ? 'village' : 'attack');
+              animeAudio.playButtonClick();
+            }}
+            className={`flex-1 py-1.5 sm:py-2 px-1 rounded-xl sm:rounded-2xl flex flex-col items-center gap-0.5 sm:gap-1 transition cursor-pointer ${
+              activeBuildTab === 'attack'
+                ? 'bg-gradient-to-t from-red-600 via-rose-600 to-red-500 text-white shadow-lg ring-1 ring-red-400/50'
+                : 'text-slate-300 hover:text-white hover:bg-white/5'
+            }`}
+          >
+            <div className="relative">
+              <Sword size={17} className={activeBuildTab === 'attack' ? 'text-white' : 'text-red-400'} />
+              {totalTroopsCount > 0 && (
+                <span className="absolute -top-1.5 -right-3 text-[8px] sm:text-[9px] font-black px-1 sm:px-1.5 py-0.2 rounded-full bg-red-500 text-white border border-white/40">
+                  {totalTroopsCount}
+                </span>
+              )}
+            </div>
+            <span className="text-[10px] sm:text-xs font-black tracking-tight sm:tracking-wide">Attack &amp; Raid</span>
+          </button>
+
+          {/* 2. BUILD SHOP */}
+          <button
+            type="button"
+            onClick={() => {
+              setActiveBuildTab(activeBuildTab === 'shop' ? 'village' : 'shop');
+              animeAudio.playButtonClick();
+            }}
+            className={`flex-1 py-1.5 sm:py-2 px-1 rounded-xl sm:rounded-2xl flex flex-col items-center gap-0.5 sm:gap-1 transition cursor-pointer ${
+              activeBuildTab === 'shop'
+                ? 'bg-gradient-to-t from-blue-600 to-cyan-500 text-white shadow-lg ring-1 ring-cyan-400/50'
+                : 'text-slate-300 hover:text-white hover:bg-white/5'
+            }`}
+          >
+            <span className="text-base sm:text-lg">🔨</span>
+            <span className="text-[10px] sm:text-xs font-black tracking-tight sm:tracking-wide">Build Shop</span>
+          </button>
+
+          {/* 3. ARMY & HEROES */}
+          <button
+            type="button"
+            onClick={() => {
+              setActiveBuildTab(activeBuildTab === 'heroes' ? 'village' : 'heroes');
+              animeAudio.playButtonClick();
+            }}
+            className={`flex-1 py-1.5 sm:py-2 px-1 rounded-xl sm:rounded-2xl flex flex-col items-center gap-0.5 sm:gap-1 transition cursor-pointer ${
+              activeBuildTab === 'heroes'
+                ? 'bg-gradient-to-t from-amber-500 to-yellow-400 text-slate-950 shadow-lg font-black ring-1 ring-yellow-300/50'
+                : 'text-slate-300 hover:text-white hover:bg-white/5'
+            }`}
+          >
+            <Crown size={17} className={activeBuildTab === 'heroes' ? 'text-slate-950' : 'text-amber-400'} />
+            <span className="text-[10px] sm:text-xs font-black tracking-tight sm:tracking-wide">Army &amp; Heroes</span>
+          </button>
+
+          {/* 4. FRIENDS & MULTIPLAYER */}
+          <button
+            type="button"
+            onClick={() => {
+              setActiveBuildTab(activeBuildTab === 'multiplayer' ? 'village' : 'multiplayer');
+              animeAudio.playButtonClick();
+            }}
+            className={`flex-1 py-1.5 sm:py-2 px-1 rounded-xl sm:rounded-2xl flex flex-col items-center gap-0.5 sm:gap-1 transition cursor-pointer ${
+              activeBuildTab === 'multiplayer'
+                ? 'bg-gradient-to-t from-purple-600 to-indigo-500 text-white shadow-lg ring-1 ring-purple-400/50'
+                : 'text-slate-300 hover:text-white hover:bg-white/5'
+            }`}
+          >
+            <Globe size={17} className={activeBuildTab === 'multiplayer' ? 'text-white' : 'text-purple-400'} />
+            <span className="text-[10px] sm:text-xs font-black tracking-tight sm:tracking-wide">Friends &amp; Rivals</span>
+          </button>
+
+          {/* 5. HQ PLANS & BLUEPRINTS */}
+          <button
+            type="button"
+            onClick={() => {
+              setActiveBuildTab(activeBuildTab === 'roadmap' ? 'village' : 'roadmap');
+              animeAudio.playButtonClick();
+            }}
+            className={`flex-1 py-1.5 sm:py-2 px-1 rounded-xl sm:rounded-2xl flex flex-col items-center gap-0.5 sm:gap-1 transition cursor-pointer ${
+              activeBuildTab === 'roadmap'
+                ? 'bg-gradient-to-t from-emerald-600 to-teal-500 text-white shadow-lg ring-1 ring-emerald-400/50'
+                : 'text-slate-300 hover:text-white hover:bg-white/5'
+            }`}
+          >
+            <Star size={17} className={activeBuildTab === 'roadmap' ? 'text-white' : 'text-emerald-400'} />
+            <span className="text-[10px] sm:text-xs font-black tracking-tight sm:tracking-wide">HQ Plans</span>
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

@@ -972,96 +972,39 @@ export function drawClashHUD(
 ) {
   ctx.save();
 
-  // 1. TOP LEFT: PLAYER LEVEL & TROPHIES
+  // Subtle Player Level & Active Hero Tag (Top Left of Canvas)
   // Blue Level Shield
   ctx.fillStyle = '#2563eb';
   ctx.beginPath();
-  ctx.moveTo(25, 20);
-  ctx.lineTo(46, 20);
-  ctx.lineTo(46, 40);
-  ctx.lineTo(35.5, 53);
-  ctx.lineTo(25, 40);
+  ctx.moveTo(20, 16);
+  ctx.lineTo(36, 16);
+  ctx.lineTo(36, 32);
+  ctx.lineTo(28, 41);
+  ctx.lineTo(20, 32);
   ctx.closePath();
   ctx.fill();
   ctx.strokeStyle = '#ffffff';
-  ctx.lineWidth = 1.8;
+  ctx.lineWidth = 1.5;
   ctx.stroke();
 
-  ctx.font = 'bold 13px "Segoe UI", sans-serif';
+  ctx.font = 'bold 11px "Segoe UI", sans-serif';
   ctx.fillStyle = '#ffffff';
   ctx.textAlign = 'center';
-  ctx.fillText(`${villageState.level}`, 35.5, 39);
+  ctx.fillText(`${villageState.level}`, 28, 30);
 
   // Player Name & Trophy Plaque
   ctx.textAlign = 'left';
-  ctx.font = 'bold 13.5px "Segoe UI", sans-serif';
+  ctx.font = 'bold 12px "Segoe UI", sans-serif';
   ctx.fillStyle = '#ffffff';
   ctx.shadowColor = 'rgba(0,0,0,0.85)';
-  ctx.shadowBlur = 5;
-  ctx.fillText(activeHeroName, 56, 32);
+  ctx.shadowBlur = 4;
+  ctx.fillText(activeHeroName, 44, 25);
 
   // Golden Trophy Pill
-  ctx.font = '600 11.5px "Segoe UI", sans-serif';
+  ctx.font = '600 10.5px "Segoe UI", sans-serif';
   ctx.fillStyle = '#fbbf24';
-  ctx.fillText('🏆 4,343', 56, 49);
+  ctx.fillText('🏆 4,343', 44, 39);
   ctx.shadowBlur = 0;
-
-  // 2. TOP RIGHT: RESOURCE PILL METERS (Gold, Chakra, Reishi)
-  const drawPillMeter = (
-    rx: number,
-    ry: number,
-    val: number,
-    maxVal: number,
-    icon: string,
-    barColor: string,
-    glowColor: string
-  ) => {
-    const pillW = 145;
-    const pillH = 23;
-
-    // Outer Beveled Container
-    ctx.fillStyle = '#1c1917';
-    ctx.roundRect(rx, ry, pillW, pillH, 12);
-    ctx.fill();
-    ctx.strokeStyle = '#44403c';
-    ctx.lineWidth = 1.6;
-    ctx.stroke();
-
-    // Progress Bar Fill
-    const pct = Math.min(1.0, val / maxVal);
-    if (pct > 0) {
-      ctx.fillStyle = barColor;
-      ctx.roundRect(rx + 2, ry + 2, (pillW - 4) * pct, pillH - 4, 10);
-      ctx.fill();
-    }
-
-    // Number text
-    ctx.font = 'bold 10.5px "Segoe UI", sans-serif';
-    ctx.fillStyle = '#ffffff';
-    ctx.textAlign = 'right';
-    ctx.fillText(`${val.toLocaleString()}`, rx + pillW - 9, ry + 16);
-
-    // Round Icon on Left
-    ctx.fillStyle = glowColor;
-    ctx.beginPath();
-    ctx.arc(rx + 8, ry + pillH / 2, 13.5, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 1.2;
-    ctx.stroke();
-
-    ctx.font = '12px serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(icon, rx + 8, ry + pillH / 2 + 4.5);
-  };
-
-  const rightStart = width - 165;
-  // Gold / Berry Meter
-  drawPillMeter(rightStart, 16, villageState.berries, villageState.maxStorage, '💰', '#eab308', '#ca8a04');
-  // Chakra Meter
-  drawPillMeter(rightStart, 44, villageState.chakra, villageState.maxStorage, '🌀', '#06b6d4', '#0891b2');
-  // Reishi Meter
-  drawPillMeter(rightStart, 72, villageState.reishi, villageState.maxStorage, '🔮', '#a855f7', '#9333ea');
 
   ctx.restore();
 }

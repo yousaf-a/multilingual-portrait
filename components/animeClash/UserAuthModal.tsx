@@ -24,14 +24,16 @@ import {
 } from 'lucide-react';
 
 interface UserAuthModalProps {
-  currentAccount: UserAccount;
+  currentAccount: UserAccount | null;
   onSelectAccount: (accountId: string) => void;
+  onLogout?: () => void;
   onClose: () => void;
 }
 
 export default function UserAuthModal({
   currentAccount,
   onSelectAccount,
+  onLogout,
   onClose
 }: UserAuthModalProps) {
   const [activeTab, setActiveTab] = useState<'switch' | 'register'>('switch');
@@ -110,20 +112,49 @@ export default function UserAuthModal({
           </button>
         </div>
 
-        {/* Current Active Account Bar */}
-        <div className="px-4 sm:px-6 py-2.5 sm:py-3 bg-[#0d172e] border-b border-[#182a4d] flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] sm:text-xs text-slate-400">Logged In:</span>
-            <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full bg-emerald-950/80 border border-emerald-500/60">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <strong className="text-[11px] sm:text-xs font-bold text-white">{currentAccount.username}</strong>
-              <span className="text-[9px] sm:text-[10px] font-mono text-emerald-300">{currentAccount.tag}</span>
+        {/* Current Active Account Bar or Logged Out Bar */}
+        {currentAccount ? (
+          <div className="px-4 sm:px-6 py-2.5 sm:py-3 bg-[#0d172e] border-b border-[#182a4d] flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] sm:text-xs text-slate-400">Logged In:</span>
+              <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full bg-emerald-950/80 border border-emerald-500/60">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <strong className="text-[11px] sm:text-xs font-bold text-white">{currentAccount.username}</strong>
+                <span className="text-[9px] sm:text-[10px] font-mono text-emerald-300">{currentAccount.tag}</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] sm:text-[11px] text-amber-300 font-semibold flex items-center gap-1">
+                <Crown size={12} /> Owner Mode
+              </span>
+              {onLogout && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    animeAudio.playButtonClick();
+                    onLogout();
+                  }}
+                  className="px-2.5 py-1 rounded-xl bg-rose-950/80 hover:bg-rose-900 border border-rose-500/60 text-rose-300 hover:text-white text-[10px] sm:text-[11px] font-bold flex items-center gap-1 cursor-pointer transition shadow-sm"
+                >
+                  <LogOut size={12} className="text-rose-400" />
+                  <span>Log Out</span>
+                </button>
+              )}
             </div>
           </div>
-          <span className="text-[10px] sm:text-[11px] text-amber-300 font-semibold flex items-center gap-1">
-            <Crown size={12} /> Owner Mode
-          </span>
-        </div>
+        ) : (
+          <div className="px-4 sm:px-6 py-2.5 sm:py-3 bg-blue-950/40 border-b border-blue-500/40 flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+              <span className="text-[11px] sm:text-xs text-amber-300 font-bold">
+                Not Logged In &bull; Guest Mode (Read-Only)
+              </span>
+            </div>
+            <span className="text-[10px] text-slate-400">
+              Sign in below to edit or upgrade your sanctuary
+            </span>
+          </div>
+        )}
 
         {/* Tab Switcher */}
         <div className="flex border-b border-[#182a4d] px-3 sm:px-6 pt-2 sm:pt-3 gap-2 bg-[#080d1a] overflow-x-auto scrollbar-none">
@@ -173,7 +204,7 @@ export default function UserAuthModal({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                 {accounts.map((acc) => {
                   const hero = HEROES_CATALOG[acc.avatarHeroId] || HEROES_CATALOG.naruto;
-                  const isCurrent = acc.id === currentAccount.id;
+                  const isCurrent = currentAccount ? acc.id === currentAccount.id : false;
                   const village = getUserVillageState(acc.id);
 
                   return (

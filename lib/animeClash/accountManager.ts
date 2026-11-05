@@ -153,20 +153,37 @@ export function saveAccounts(accounts: UserAccount[]): void {
 }
 
 /**
- * Get active user ID from localStorage
+ * Get active user ID from localStorage (or null if logged out)
  */
-export function getActiveUserId(): string {
+export function getActiveUserId(): string | null {
   if (typeof window === 'undefined') return 'user_naruto';
   try {
     const active = localStorage.getItem(ACTIVE_USER_ID_KEY);
-    return active || 'user_naruto';
+    return active;
   } catch (_) {
-    return 'user_naruto';
+    return null;
   }
 }
 
 /**
- * Set active user ID in localStorage
+ * Clear active user ID from localStorage (Log Out)
+ */
+export function clearActiveUserId(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.removeItem(ACTIVE_USER_ID_KEY);
+  } catch (_) {}
+}
+
+/**
+ * Logout active user
+ */
+export function logoutActiveUser(): void {
+  clearActiveUserId();
+}
+
+/**
+ * Set active user ID in localStorage (Log In)
  */
 export function setActiveUserId(userId: string): void {
   if (typeof window === 'undefined') return;
@@ -176,12 +193,23 @@ export function setActiveUserId(userId: string): void {
 }
 
 /**
- * Get the currently logged-in account object
+ * Get the currently logged-in account object or null if logged out
  */
-export function getActiveAccount(): UserAccount {
+export function getOptionalActiveAccount(): UserAccount | null {
   const accounts = getAllAccounts();
   const activeId = getActiveUserId();
-  return accounts.find((a) => a.id === activeId) || accounts[0] || DEFAULT_ACCOUNTS[0];
+  if (!activeId) return null;
+  return accounts.find((a) => a.id === activeId) || null;
+}
+
+/**
+ * Get the currently logged-in account object (falls back to default if none)
+ */
+export function getActiveAccount(): UserAccount {
+  const optional = getOptionalActiveAccount();
+  if (optional) return optional;
+  const accounts = getAllAccounts();
+  return accounts[0] || DEFAULT_ACCOUNTS[0];
 }
 
 /**

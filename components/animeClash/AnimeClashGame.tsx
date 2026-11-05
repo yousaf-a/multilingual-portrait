@@ -8,7 +8,9 @@ import {
   getActiveAccount,
   setActiveUserId,
   getUserVillageState,
-  saveUserVillageState
+  saveUserVillageState,
+  logoutActiveUser,
+  getOptionalActiveAccount
 } from '@/lib/animeClash/accountManager';
 import VillageBuilder from './VillageBuilder';
 import BattleArena from './BattleArena';
@@ -18,7 +20,7 @@ import AnimeBossFightArena from './AnimeBossFightArena';
 import UserAuthModal from './UserAuthModal';
 
 export default function AnimeClashGame() {
-  const [currentAccount, setCurrentAccount] = useState<UserAccount>(() => getActiveAccount());
+  const [currentAccount, setCurrentAccount] = useState<UserAccount | null>(() => getOptionalActiveAccount() || getActiveAccount());
   const [villageState, setVillageState] = useState<PlayerVillageState>(() =>
     getUserVillageState(getActiveAccount().id)
   );
@@ -31,7 +33,7 @@ export default function AnimeClashGame() {
   // Sync state on load / account change
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const acc = getActiveAccount();
+    const acc = getOptionalActiveAccount() || getActiveAccount();
     setCurrentAccount(acc);
     const loadedState = getUserVillageState(acc.id);
     setVillageState(loadedState);
@@ -59,8 +61,20 @@ export default function AnimeClashGame() {
     setScoutingFriend(null);
   };
 
+  // Explicit User Log Out
+  const handleLogout = () => {
+    logoutActiveUser();
+    setCurrentAccount(null);
+    setIsAuthModalOpen(false);
+  };
+
   // Save changes to current user's isolated village
   const handleUpdateVillage = (newState: PlayerVillageState) => {
+    if (!currentAccount) {
+      alert("⚠️ Login Required: Please log into your account to modify or save your sanctuary.");
+      setIsAuthModalOpen(true);
+      return;
+    }
     if (scoutingFriend) {
       alert("🔒 Read-Only Mode: You cannot modify another player's sanctuary!");
       return;
@@ -124,6 +138,7 @@ export default function AnimeClashGame() {
           onLaunchBattle={() => setGameMode('battle')}
           onOpenStory={() => setGameMode('story_episodes')}
           onOpenAuthModal={() => setIsAuthModalOpen(true)}
+          onLogout={handleLogout}
           onScoutBase={(friend) => setScoutingFriend(friend)}
           onReturnToMyBase={() => setScoutingFriend(null)}
         />
@@ -134,6 +149,7 @@ export default function AnimeClashGame() {
         <UserAuthModal
           currentAccount={currentAccount}
           onSelectAccount={handleSelectAccount}
+          onLogout={handleLogout}
           onClose={() => setIsAuthModalOpen(false)}
         />
       )}

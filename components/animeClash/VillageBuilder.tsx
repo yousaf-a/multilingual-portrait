@@ -81,17 +81,19 @@ import {
   UserPlus,
   Eye,
   Home,
-  User
+  User,
+  LogOut
 } from 'lucide-react';
 
 interface VillageBuilderProps {
   villageState: PlayerVillageState;
-  currentUser?: UserAccount;
+  currentUser?: UserAccount | null;
   viewingTargetUser?: FriendProfile | null;
   onUpdateVillage: (state: PlayerVillageState) => void;
   onLaunchBattle: () => void;
   onOpenStory: () => void;
   onOpenAuthModal?: () => void;
+  onLogout?: () => void;
   onScoutBase?: (target: FriendProfile) => void;
   onReturnToMyBase?: () => void;
 }
@@ -104,11 +106,14 @@ export default function VillageBuilder({
   onLaunchBattle,
   onOpenStory,
   onOpenAuthModal,
+  onLogout,
   onScoutBase,
   onReturnToMyBase
 }: VillageBuilderProps) {
-  // Strict Permission Check: Is current user the owner of this sanctuary?
-  const isOwner = !viewingTargetUser || viewingTargetUser.id === (currentUser?.id || villageState.ownerUserId);
+  // Strict Permission Check: Is current user logged in and owner of this sanctuary?
+  const isOwner = Boolean(
+    currentUser && (!viewingTargetUser || viewingTargetUser.id === (currentUser.id || villageState.ownerUserId))
+  );
 
   const [selectedBuilding, setSelectedBuilding] = useState<BuildingInstance | null>(null);
   const [villageViewMode, setVillageViewMode] = useState<'orbit_hub' | 'grid'>('orbit_hub');
@@ -875,21 +880,47 @@ export default function VillageBuilder({
             <span>⚔️ 2.5D Raid!</span>
           </button>
 
-          {/* User Account / Login Switcher Pill */}
-          <button
-            type="button"
-            onClick={onOpenAuthModal}
-            className="px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl bg-gradient-to-r from-blue-900/80 via-indigo-900/80 to-purple-900/80 hover:brightness-110 border border-blue-400/50 text-white text-[11px] sm:text-xs font-bold transition flex items-center gap-1.5 sm:gap-2 shadow-md cursor-pointer"
-            title="Switch User / Login to a different account"
-          >
-            <div className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center text-[10px]">
-              👤
+          {/* User Account / Login & Logout Controls */}
+          {currentUser ? (
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={onOpenAuthModal}
+                className="px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl bg-gradient-to-r from-blue-900/80 via-indigo-900/80 to-purple-900/80 hover:brightness-110 border border-blue-400/50 text-white text-[11px] sm:text-xs font-bold transition flex items-center gap-1.5 shadow-md cursor-pointer"
+                title="Switch User / Account Settings"
+              >
+                <div className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center text-[10px]">
+                  👤
+                </div>
+                <span>User: <strong className="text-cyan-300">{currentUser.username.split(' ')[0]}</strong></span>
+                <span className="text-[9px] bg-blue-500/30 text-blue-200 px-1 py-0.5 rounded border border-blue-400/30">
+                  🔄
+                </span>
+              </button>
+
+              {onLogout && (
+                <button
+                  type="button"
+                  onClick={onLogout}
+                  className="px-2.5 py-1.5 sm:py-2 rounded-xl bg-rose-950/70 hover:bg-rose-900 border border-rose-500/50 text-rose-300 hover:text-white text-[11px] sm:text-xs font-bold transition flex items-center gap-1 cursor-pointer shadow-sm"
+                  title="Log Out of your account"
+                >
+                  <LogOut size={12} className="text-rose-400" />
+                  <span className="hidden sm:inline">Logout</span>
+                </button>
+              )}
             </div>
-            <span>User: <strong className="text-cyan-300">{currentUser?.username?.split(' ')[0] || villageState.playerName?.split(' ')[0] || 'Player'}</strong></span>
-            <span className="text-[9px] sm:text-[10px] bg-blue-500/30 text-blue-200 px-1.5 py-0.5 rounded border border-blue-400/30">
-              Switch 🔄
-            </span>
-          </button>
+          ) : (
+            <button
+              type="button"
+              onClick={onOpenAuthModal}
+              className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:brightness-110 text-white text-[11px] sm:text-xs font-black transition flex items-center gap-1.5 shadow-[0_0_15px_rgba(59,130,246,0.6)] cursor-pointer animate-pulse"
+              title="Log in to manage your Sanctuary"
+            >
+              <Lock size={13} className="text-yellow-300" />
+              <span>Log In / Sign In</span>
+            </button>
+          )}
         </div>
       </div>
 

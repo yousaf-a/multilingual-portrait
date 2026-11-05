@@ -35,6 +35,7 @@ import {
 } from '@/lib/animeClash/isometricRenderer';
 import AnimeRaidArena from './AnimeRaidArena';
 import BaseDefenseSimulator from './BaseDefenseSimulator';
+import SanctuaryOrbitalHub from './SanctuaryOrbitalHub';
 import { animeAudio } from '@/lib/animeClash/animeAudio';
 import {
   Shield,
@@ -61,7 +62,8 @@ import {
   Moon,
   CloudRain,
   Volume2,
-  Users
+  Users,
+  Layers
 } from 'lucide-react';
 
 interface VillageBuilderProps {
@@ -78,6 +80,7 @@ export default function VillageBuilder({
   onOpenStory
 }: VillageBuilderProps) {
   const [selectedBuilding, setSelectedBuilding] = useState<BuildingInstance | null>(null);
+  const [villageViewMode, setVillageViewMode] = useState<'orbit_hub' | 'grid'>('orbit_hub');
   const [activeBuildTab, setActiveBuildTab] = useState<'village' | 'shop' | 'heroes' | 'layouts' | 'roadmap' | 'attack' | 'guilds'>('village');
   const [isRelocatingBuildingId, setIsRelocatingBuildingId] = useState<string | null>(null);
   const [heroInteractionQuote, setHeroInteractionQuote] = useState<string | null>(null);
@@ -785,12 +788,33 @@ export default function VillageBuilder({
       <div className="flex items-center gap-1.5 bg-[#080d1e] p-1 rounded-2xl border border-[#1e2f54] self-start overflow-x-auto">
         <button
           type="button"
-          onClick={() => setActiveBuildTab('village')}
-          className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
-            activeBuildTab === 'village' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
+          onClick={() => {
+            setActiveBuildTab('village');
+            setVillageViewMode('orbit_hub');
+          }}
+          className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 ${
+            activeBuildTab === 'village' && villageViewMode === 'orbit_hub'
+              ? 'bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-slate-950 font-black shadow-[0_0_15px_rgba(245,158,11,0.6)]'
+              : 'text-slate-400 hover:text-white'
           }`}
         >
-          🏰 Isometric Village
+          <Crown size={13} className="text-yellow-300" />
+          <span>👑 Sanctuary Hub</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setActiveBuildTab('village');
+            setVillageViewMode('grid');
+          }}
+          className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 ${
+            activeBuildTab === 'village' && villageViewMode === 'grid'
+              ? 'bg-blue-600 text-white shadow-md'
+              : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <Layers size={13} />
+          <span>🏰 Base Grid</span>
         </button>
         <button
           type="button"
@@ -853,8 +877,17 @@ export default function VillageBuilder({
         </button>
       </div>
 
-      {/* 3. MAIN INTERACTIVE CONTENT: ISOMETRIC VILLAGE */}
+      {/* 3. MAIN INTERACTIVE CONTENT: ISOMETRIC VILLAGE OR SANCTUARY ORBITAL HUB */}
       {activeBuildTab === 'village' && (
+        villageViewMode === 'orbit_hub' ? (
+          <SanctuaryOrbitalHub
+            villageState={villageState}
+            onUpdateVillage={onUpdateVillage}
+            onLaunch1v1={onLaunchBattle}
+            onLaunchTrials={(_floor) => setIsArenaRaidActive(true)}
+            onSwitchToVillageGrid={() => setVillageViewMode('grid')}
+          />
+        ) : (
         <div className="flex flex-col lg:flex-row gap-4 items-start">
           {/* Real 2.5D Isometric Canvas */}
           <div className="flex-1 w-full rounded-3xl overflow-hidden border-2 border-[#1e3a5f] shadow-2xl relative bg-[#091522]">
@@ -998,6 +1031,7 @@ export default function VillageBuilder({
             )}
           </div>
         </div>
+        )
       )}
 
       {/* 4. CUSTOM BASE SETUP TAB */}

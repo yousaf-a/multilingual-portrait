@@ -6,6 +6,7 @@ import { Play, Pause, RotateCcw, Volume2, VolumeX, Download, ArrowLeft, Video, G
 import { audioController } from '@/lib/audio';
 import ShareGiftModal from '@/components/ShareGiftModal';
 import LiveDuoChat from '@/components/LiveDuoChat';
+import { CelestialMapConfig, drawCelestialStarMap } from '@/lib/celestialStarMap';
 
 interface HatchStroke {
   x1: number;
@@ -44,6 +45,7 @@ interface ScribbleVideoRendererProps {
   titleText: string;
   musicTrack: string;
   customMusicUrl: string | null;
+  celestialConfig?: CelestialMapConfig;
   roomId?: string;
   senderName?: string;
   onBackToEdit: () => void;
@@ -57,6 +59,7 @@ export default function ScribbleVideoRenderer({
   titleText,
   musicTrack,
   customMusicUrl,
+  celestialConfig,
   roomId: propRoomId,
   senderName = 'You',
   onBackToEdit
@@ -732,6 +735,11 @@ export default function ScribbleVideoRenderer({
     ctx.fillRect(0, 0, width, height);
     ctx.restore();
 
+    // 1.5 CELESTIAL STAR MAP LAYER (Astronomical Constellation Night Sky)
+    if (celestialConfig && celestialConfig.enabled) {
+      drawCelestialStarMap(ctx, width, height, celestialConfig, Math.min(1.0, progressRatio * 1.35));
+    }
+
     // Soft atmospheric mist for Prussian Blue watercolor paper
     if (themeStyle === 'prussian_blue' || themeStyle === 'rain_storm') {
       ctx.strokeStyle = 'rgba(2, 132, 199, 0.12)';
@@ -862,7 +870,7 @@ export default function ScribbleVideoRenderer({
       height - 20
     );
     ctx.restore();
-  }, [getThemePalette, themeStyle, titleText, drawLuxuryFountainPen, showArtistHand]);
+  }, [getThemePalette, themeStyle, titleText, drawLuxuryFountainPen, showArtistHand, celestialConfig]);
 
   // Main animation frame loop
   useEffect(() => {

@@ -5,8 +5,10 @@ import PhotoUploader from '@/components/PhotoUploader';
 import CouplePhotoUploader from '@/components/CouplePhotoUploader';
 import ScribbleVideoRenderer from '@/components/ScribbleVideoRenderer';
 import InstagramMusicPicker from '@/components/InstagramMusicPicker';
+import CelestialMapPicker from '@/components/CelestialMapPicker';
 import { getMultilingualList, TranslatedItem } from '@/lib/languages';
 import { MusicTrackItem } from '@/lib/musicTracks';
+import { CelestialMapConfig, DEFAULT_CELESTIAL_CONFIG } from '@/lib/celestialStarMap';
 import {
   Sparkles,
   Music,
@@ -81,6 +83,7 @@ export default function Home() {
   const [musicTrack, setMusicTrack] = useState<string>('romantic_piano');
   const [customAudioUrl, setCustomAudioUrl] = useState<string | null>(null);
   const [customAudioName, setCustomAudioName] = useState<string | null>(null);
+  const [celestialConfig, setCelestialConfig] = useState<CelestialMapConfig>(DEFAULT_CELESTIAL_CONFIG);
 
   const [items, setItems] = useState<TranslatedItem[]>([]);
   const [formErrors, setFormErrors] = useState<{ photo?: string; title?: string; theme?: string }>({});
@@ -394,12 +397,15 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Card 4: Background Music Selection (Optional) */}
+          {/* Card 4: Celestial Star Map Layer (Optional / Anniversary) */}
+          <CelestialMapPicker config={celestialConfig} onChange={setCelestialConfig} />
+
+          {/* Card 5: Background Music Selection (Optional) */}
           <div className="bg-[#0b1226]/90 border border-[#1e2a4a] rounded-3xl p-4 sm:p-6 shadow-xl shadow-black/25 backdrop-blur-md">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2.5">
                 <span className="w-6 h-6 rounded-full bg-[#1b64f2] text-white text-xs font-bold flex items-center justify-center shadow-[0_0_8px_rgba(27,100,242,0.5)]">
-                  4
+                  5
                 </span>
                 <div className="flex items-center gap-2">
                   <Music size={16} className="text-cyan-400" />
@@ -462,6 +468,7 @@ export default function Home() {
           titleText={titleText}
           musicTrack={musicTrack}
           customMusicUrl={customAudioUrl}
+          celestialConfig={celestialConfig}
           onBackToEdit={() => setCurrentView('form')}
         />
       )}

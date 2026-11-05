@@ -82,6 +82,14 @@ export default function BattleArena({
 
   const hero = HEROES_CATALOG[villageState.activeHeroId] || HEROES_CATALOG.naruto;
 
+  const heroImgRef = useRef<HTMLImageElement | null>(null);
+
+  useEffect(() => {
+    const img = new Image();
+    img.src = hero.image;
+    img.onload = () => { heroImgRef.current = img; };
+  }, [hero.image]);
+
   const [heroDeployed, setHeroDeployed] = useState(false);
   const [heroUltimateCharge, setHeroUltimateCharge] = useState(100); // 0 to 100%
   const [ultimateActiveBanner, setUltimateActiveBanner] = useState<string | null>(null);
@@ -413,10 +421,24 @@ export default function BattleArena({
 
         // Draw Unit
         ctx.save();
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.font = unit.isHero ? '28px serif' : '18px serif';
-        ctx.fillText(unit.avatar, unit.x, unit.y);
+        if (unit.isHero && heroImgRef.current && heroImgRef.current.complete) {
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(unit.x, unit.y, 16, 0, Math.PI * 2);
+          ctx.clip();
+          ctx.drawImage(heroImgRef.current, unit.x - 16, unit.y - 16, 32, 32);
+          ctx.restore();
+          ctx.strokeStyle = unit.color;
+          ctx.lineWidth = 2.5;
+          ctx.beginPath();
+          ctx.arc(unit.x, unit.y, 16, 0, Math.PI * 2);
+          ctx.stroke();
+        } else {
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.font = unit.isHero ? '28px serif' : '18px serif';
+          ctx.fillText(unit.avatar, unit.x, unit.y);
+        }
 
         // Name tag
         ctx.font = '9px "Segoe UI", sans-serif';

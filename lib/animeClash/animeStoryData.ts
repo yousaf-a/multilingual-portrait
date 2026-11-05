@@ -6,6 +6,7 @@ export interface AnimeVillain {
   title: string;
   franchise: 'naruto' | 'one_piece' | 'bleach' | 'black_clover';
   avatar: string;
+  image: string;
   modernRole: string;
   hp: number;
   maxHp: number;
@@ -56,6 +57,7 @@ export const ANIME_VILLAINS: Record<string, AnimeVillain> = {
     title: 'The Ghost of the Uchiha / Void Overlord',
     franchise: 'naruto',
     avatar: '👁️',
+    image: '/anime-heroes/madara-boss.jpg',
     modernRole: 'Seized control of the underground bullet train maglev power grids to fuel a global Infinite Tsukuyomi satellite broadcast.',
     hp: 2800,
     maxHp: 2800,
@@ -72,6 +74,7 @@ export const ANIME_VILLAINS: Record<string, AnimeVillain> = {
     title: 'Heavenly Yaksha / Syndicate Puppeteer',
     franchise: 'one_piece',
     avatar: '🦩',
+    image: '/anime-heroes/doflamingo-boss.jpg',
     modernRole: 'Chairman of the global maritime shipping cartel, stringing high-tension monofilament wires across skyscraper canopies.',
     hp: 3100,
     maxHp: 3100,
@@ -88,6 +91,7 @@ export const ANIME_VILLAINS: Record<string, AnimeVillain> = {
     title: 'Architect of Deception / Cyber-Hogyoku Sovereign',
     franchise: 'bleach',
     avatar: '🦋',
+    image: '/anime-heroes/aizen-boss.jpg',
     modernRole: 'Merged the spiritual Hogyoku with the global internet fiber backbone, casting Kyoka Suigetsu through every smartphone screen on Earth.',
     hp: 3400,
     maxHp: 3400,
@@ -104,6 +108,7 @@ export const ANIME_VILLAINS: Record<string, AnimeVillain> = {
     title: 'True Human Sovereign / Soul & Time Dictator',
     franchise: 'black_clover',
     avatar: '⏳',
+    image: '/anime-heroes/lucius-boss.jpg',
     modernRole: 'Using quantum temporal servers to freeze modern humanity in perpetual chronological stasis to achieve "Flawless Peace".',
     hp: 3600,
     maxHp: 3600,
@@ -349,3 +354,4 @@ export const ANIME_EPISODES: AnimeEpisode[] = [
     powerup: HERO_POWERUPS.asta
   }
 ];
+

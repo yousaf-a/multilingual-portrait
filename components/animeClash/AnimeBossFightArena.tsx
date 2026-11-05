@@ -43,12 +43,33 @@ export default function AnimeBossFightArena({
   const [battleLost, setBattleLost] = useState(false);
   const [screenShake, setScreenShake] = useState(false);
 
+  // Preload Real Hero & Boss Artwork Images
+  const heroImgRef = useRef<HTMLImageElement | null>(null);
+  const bossImgRef = useRef<HTMLImageElement | null>(null);
+  const [, setImagesLoadedTick] = useState(0);
+
+  useEffect(() => {
+    const hImg = new Image();
+    hImg.src = hero.image;
+    hImg.onload = () => {
+      heroImgRef.current = hImg;
+      setImagesLoadedTick((t) => t + 1);
+    };
+
+    const bImg = new Image();
+    bImg.src = villain.image;
+    bImg.onload = () => {
+      bossImgRef.current = bImg;
+      setImagesLoadedTick((t) => t + 1);
+    };
+  }, [hero.image, villain.image]);
+
   // Entities Ref
   const combatRef = useRef({
     heroX: 180,
-    heroY: 260,
+    heroY: 230,
     bossX: 620,
-    bossY: 260,
+    bossY: 230,
     heroVelX: 0,
     bossVelX: 0,
     lastBossAttack: Date.now(),
@@ -242,66 +263,101 @@ export default function AnimeBossFightArena({
         ctx.globalAlpha = 1.0;
       }
 
-      // 4. Draw Hero (Left Side)
+      // 4. Draw Hero Character (Real Anime Artwork)
       ctx.save();
       // Drop shadow
-      ctx.fillStyle = 'rgba(0,0,0,0.45)';
+      ctx.fillStyle = 'rgba(0,0,0,0.55)';
       ctx.beginPath();
-      ctx.ellipse(c.heroX, c.heroY + 45, 28, 10, 0, 0, Math.PI * 2);
+      ctx.ellipse(c.heroX, c.heroY + 70, 38, 12, 0, 0, Math.PI * 2);
       ctx.fill();
 
       // Awakened Aura Glow
       if (heroAwakened) {
         const pulse = (Math.sin(now / 150) + 1) / 2;
-        const auraGrad = ctx.createRadialGradient(c.heroX, c.heroY, 10, c.heroX, c.heroY, 65 + pulse * 15);
+        const auraGrad = ctx.createRadialGradient(c.heroX, c.heroY, 15, c.heroX, c.heroY, 80 + pulse * 20);
         auraGrad.addColorStop(0, powerup.auraColor);
-        auraGrad.addColorStop(0.8, 'rgba(255,255,255,0.2)');
+        auraGrad.addColorStop(0.7, 'rgba(255,255,255,0.3)');
         auraGrad.addColorStop(1, 'rgba(0,0,0,0)');
         ctx.fillStyle = auraGrad;
         ctx.beginPath();
-        ctx.arc(c.heroX, c.heroY, 65 + pulse * 15, 0, Math.PI * 2);
+        ctx.arc(c.heroX, c.heroY, 80 + pulse * 20, 0, Math.PI * 2);
         ctx.fill();
       }
 
-      // Hero Sprite
-      ctx.font = heroAwakened ? '48px serif' : '40px serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(hero.avatar, c.heroX, c.heroY);
+      // Real Hero Character Illustration
+      if (heroImgRef.current && heroImgRef.current.complete) {
+        const spriteW = 95;
+        const spriteH = 130;
+        ctx.save();
+        const swayY = Math.sin(now / 400) * 3;
+        ctx.beginPath();
+        ctx.roundRect(c.heroX - spriteW / 2, c.heroY - spriteH / 2 + swayY, spriteW, spriteH, 16);
+        ctx.clip();
+        ctx.drawImage(heroImgRef.current, c.heroX - spriteW / 2, c.heroY - spriteH / 2 + swayY, spriteW, spriteH);
+        ctx.restore();
+
+        // Border ring
+        ctx.strokeStyle = heroAwakened ? powerup.auraColor : hero.color;
+        ctx.lineWidth = heroAwakened ? 3 : 2;
+        ctx.beginPath();
+        ctx.roundRect(c.heroX - 95 / 2, c.heroY - 130 / 2 + Math.sin(now / 400) * 3, 95, 130, 16);
+        ctx.stroke();
+      } else {
+        ctx.font = 'bold 16px sans-serif';
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(hero.name, c.heroX, c.heroY);
+      }
 
       // Hero Name & Mode
       ctx.font = 'bold 12px "Segoe UI", sans-serif';
       ctx.fillStyle = heroAwakened ? powerup.auraColor : '#ffffff';
-      ctx.fillText(heroAwakened ? powerup.formName.split(':')[0] : hero.name.split(' ')[0], c.heroX, c.heroY - 45);
+      ctx.textAlign = 'center';
+      ctx.fillText(heroAwakened ? `★ ${powerup.formName.split(':')[0]} ★` : hero.name.split(' ')[0], c.heroX, c.heroY - 75);
       ctx.restore();
 
-      // 5. Draw Villain Boss (Right Side)
+      // 5. Draw Villain Boss (Real Anime Artwork)
       ctx.save();
       // Drop shadow
-      ctx.fillStyle = 'rgba(0,0,0,0.5)';
+      ctx.fillStyle = 'rgba(0,0,0,0.55)';
       ctx.beginPath();
-      ctx.ellipse(c.bossX, c.bossY + 50, 35, 12, 0, 0, Math.PI * 2);
+      ctx.ellipse(c.bossX, c.bossY + 70, 42, 14, 0, 0, Math.PI * 2);
       ctx.fill();
 
       // Villain Boss Aura
-      const bossAura = ctx.createRadialGradient(c.bossX, c.bossY, 15, c.bossX, c.bossY, 65);
+      const bossAura = ctx.createRadialGradient(c.bossX, c.bossY, 20, c.bossX, c.bossY, 85);
       bossAura.addColorStop(0, villain.color);
+      bossAura.addColorStop(0.8, 'rgba(0,0,0,0.3)');
       bossAura.addColorStop(1, 'rgba(0,0,0,0)');
       ctx.fillStyle = bossAura;
       ctx.beginPath();
-      ctx.arc(c.bossX, c.bossY, 65, 0, Math.PI * 2);
+      ctx.arc(c.bossX, c.bossY, 85, 0, Math.PI * 2);
       ctx.fill();
 
-      // Boss Sprite
-      ctx.font = '48px serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(villain.avatar, c.bossX, c.bossY);
+      // Real Villain Boss Illustration
+      if (bossImgRef.current && bossImgRef.current.complete) {
+        const bossW = 100;
+        const bossH = 135;
+        ctx.save();
+        const swayBoss = Math.sin(now / 450 + 1) * 3;
+        ctx.beginPath();
+        ctx.roundRect(c.bossX - bossW / 2, c.bossY - bossH / 2 + swayBoss, bossW, bossH, 16);
+        ctx.clip();
+        ctx.drawImage(bossImgRef.current, c.bossX - bossW / 2, c.bossY - bossH / 2 + swayBoss, bossW, bossH);
+        ctx.restore();
+
+        // Border ring
+        ctx.strokeStyle = villain.color;
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.roundRect(c.bossX - bossW / 2, c.bossY - bossH / 2 + Math.sin(now / 450 + 1) * 3, bossW, bossH, 16);
+        ctx.stroke();
+      }
 
       // Boss Name
       ctx.font = 'bold 13px "Segoe UI", sans-serif';
       ctx.fillStyle = villain.color;
-      ctx.fillText(villain.name, c.bossX, c.bossY - 52);
+      ctx.textAlign = 'center';
+      ctx.fillText(villain.name, c.bossX, c.bossY - 78);
       ctx.restore();
 
       animRef.current = requestAnimationFrame(render);
@@ -374,12 +430,12 @@ export default function AnimeBossFightArena({
             </div>
             <span className="text-[10px] text-slate-400 block mt-1">{villain.title}</span>
           </div>
-          <div
-            className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl border-2 shadow-lg"
-            style={{ backgroundColor: villain.color + '25', borderColor: villain.color }}
-          >
-            <span>{villain.avatar}</span>
-          </div>
+          <img
+            src={villain.image}
+            alt={villain.name}
+            className="w-14 h-14 rounded-2xl object-cover object-top border-2 shadow-lg"
+            style={{ borderColor: villain.color }}
+          />
         </div>
       </div>
 
@@ -525,3 +581,4 @@ export default function AnimeBossFightArena({
     </div>
   );
 }
+

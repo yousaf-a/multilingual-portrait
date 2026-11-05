@@ -467,3 +467,123 @@ export function drawClashHUD(
   ctx.restore();
 }
 
+/**
+ * 4. Draw Animated 2.5D Hero Patrol Unit on the Village Map
+ */
+export function drawIsoHeroPatrol(
+  ctx: CanvasRenderingContext2D,
+  heroX: number,
+  heroY: number,
+  originX: number,
+  originY: number,
+  heroImage: HTMLImageElement | null,
+  heroName: string,
+  heroColor: string,
+  animTime: number,
+  speechBubbleText: string | null = null,
+  isSelected: boolean = false
+) {
+  const pos = toIso(heroX, heroY, originX, originY);
+  const cx = pos.x;
+  const cy = pos.y + ISO_TILE_H / 2;
+
+  // Walking bob effect
+  const walkBob = Math.abs(Math.sin(animTime * 6)) * 4;
+  const drawY = cy - walkBob;
+
+  ctx.save();
+
+  // 1. Hero Guard Perimeter Circle on the Grass
+  const pulse = (Math.sin(animTime * 2.5) + 1) / 2;
+  const auraR = 38 + pulse * 6;
+  ctx.fillStyle = heroColor + '18';
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, auraR, auraR * 0.5, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = heroColor + '55';
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([4, 4]);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // 2. Drop Shadow under Hero's feet
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+  ctx.beginPath();
+  ctx.ellipse(cx, cy + 2, 16, 7, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 3. Render Hero Character Sprite
+  const spriteW = 34;
+  const spriteH = 46;
+  const spriteTop = drawY - spriteH;
+
+  if (heroImage && heroImage.complete) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.roundRect(cx - spriteW / 2, spriteTop, spriteW, spriteH, 10);
+    ctx.clip();
+    ctx.drawImage(heroImage, cx - spriteW / 2, spriteTop, spriteW, spriteH);
+    ctx.restore();
+
+    // Sprite Border & Aura Glow
+    ctx.strokeStyle = heroColor;
+    ctx.lineWidth = isSelected ? 3 : 2;
+    ctx.shadowColor = heroColor;
+    ctx.shadowBlur = 8;
+    ctx.beginPath();
+    ctx.roundRect(cx - spriteW / 2, spriteTop, spriteW, spriteH, 10);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+  } else {
+    // Stylized Anime Hero Silhouette
+    ctx.fillStyle = heroColor;
+    ctx.beginPath();
+    ctx.roundRect(cx - spriteW / 2, spriteTop, spriteW, spriteH, 10);
+    ctx.fill();
+  }
+
+  // 4. Overhead Badge: Hero Name & Guard Status
+  const badgeY = spriteTop - 10;
+  ctx.font = 'bold 9px "Segoe UI", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillStyle = 'rgba(11, 18, 38, 0.9)';
+  ctx.beginPath();
+  ctx.roundRect(cx - 40, badgeY - 10, 80, 14, 7);
+  ctx.fill();
+  ctx.strokeStyle = heroColor;
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText(`★ ${heroName.split(' ')[0]} (GUARD) ★`, cx, badgeY);
+
+  // 5. Speech Bubble if hero is speaking
+  if (speechBubbleText) {
+    const bubbleW = Math.min(220, speechBubbleText.length * 6 + 28);
+    const bubbleH = 26;
+    const bubbleY = badgeY - 32;
+
+    ctx.fillStyle = '#ffffff';
+    ctx.shadowColor = 'rgba(0,0,0,0.5)';
+    ctx.shadowBlur = 8;
+    ctx.beginPath();
+    ctx.roundRect(cx - bubbleW / 2, bubbleY, bubbleW, bubbleH, 10);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // Small triangle pointer to hero head
+    ctx.beginPath();
+    ctx.moveTo(cx - 5, bubbleY + bubbleH);
+    ctx.lineTo(cx, bubbleY + bubbleH + 6);
+    ctx.lineTo(cx + 5, bubbleY + bubbleH);
+    ctx.fill();
+
+    ctx.font = 'bold 10px "Segoe UI", sans-serif';
+    ctx.fillStyle = '#0f172a';
+    ctx.textAlign = 'center';
+    ctx.fillText(speechBubbleText, cx, bubbleY + 16);
+  }
+
+  ctx.restore();
+}
+

@@ -46,6 +46,11 @@ export default function AnimeEpisodePlayer({
   const [eyeOpenProgress, setEyeOpenProgress] = useState(0);
   const [eyeBlur, setEyeBlur] = useState(16);
 
+  // Typewriter Subtitle Text & Cinematic Flash Cut State
+  const [typedDialogue, setTypedDialogue] = useState('');
+  const [sceneFlash, setSceneFlash] = useState(false);
+  const [cameraZoomIn, setCameraZoomIn] = useState(true);
+
   // In-Depth Character Lore & Secret Dossiers Modal
   const [showDossierModal, setShowDossierModal] = useState(false);
   const [selectedDossierHero, setSelectedDossierHero] = useState<string>('naruto');
@@ -101,25 +106,84 @@ export default function AnimeEpisodePlayer({
     }
   }, [currentSceneIdx, currentScene.visualFocus]);
 
-  // 60FPS Space-Time Void Vortex Canvas Simulation
+  // Typewriter Subtitles & Impact Flash & Camera Drift
   useEffect(() => {
-    if (currentScene.visualFocus !== 'collision_void') return;
+    setTypedDialogue('');
+    setSceneFlash(true);
+    setCameraZoomIn((prev) => !prev);
+    const flashTimer = setTimeout(() => setSceneFlash(false), 180);
+
+    let charIdx = 0;
+    const text = currentScene.text;
+
+    const typeTimer = setInterval(() => {
+      charIdx++;
+      if (charIdx <= text.length) {
+        setTypedDialogue(text.slice(0, charIdx));
+      } else {
+        clearInterval(typeTimer);
+      }
+    }, 22);
+
+    return () => {
+      clearInterval(typeTimer);
+      clearTimeout(flashTimer);
+    };
+  }, [currentSceneIdx, currentScene.text]);
+
+  // 60FPS Universal Anime Cinema FX Engine (Vortex, Neon Rain, Rising Embers)
+  useEffect(() => {
     const canvas = vortexCanvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
     let animId: number;
-    const particles: { angle: number; dist: number; speed: number; radius: number; color: string }[] = [];
+    const isVortex = currentScene.visualFocus === 'collision_void';
+
+    // Vortex particles
+    const vortexParticles: { angle: number; dist: number; speed: number; radius: number; color: string }[] = [];
     const colors = ['#a855f7', '#ec4899', '#06b6d4', '#f59e0b', '#ffffff'];
 
     for (let i = 0; i < 140; i++) {
-      particles.push({
+      vortexParticles.push({
         angle: Math.random() * Math.PI * 2,
         dist: 50 + Math.random() * 320,
         speed: 0.02 + Math.random() * 0.04,
         radius: 1 + Math.random() * 2.5,
         color: colors[Math.floor(Math.random() * colors.length)]
+      });
+    }
+
+    // Atmospheric falling neon rain
+    const rainDrops: { x: number; y: number; length: number; speed: number; opacity: number }[] = [];
+    for (let i = 0; i < 75; i++) {
+      rainDrops.push({
+        x: Math.random() * 800,
+        y: Math.random() * 450,
+        length: 14 + Math.random() * 18,
+        speed: 8 + Math.random() * 12,
+        opacity: 0.2 + Math.random() * 0.4
+      });
+    }
+
+    // Rising elemental power aura embers
+    const embers: { x: number; y: number; vx: number; vy: number; radius: number; alpha: number; color: string }[] = [];
+    const emberColor = currentScene.isVillain
+      ? villain.color
+      : currentScene.visualFocus === 'gojo_shatter'
+      ? '#06b6d4'
+      : powerup.auraColor;
+
+    for (let i = 0; i < 35; i++) {
+      embers.push({
+        x: Math.random() * 800,
+        y: 450 + Math.random() * 40,
+        vx: (Math.random() - 0.5) * 1.5,
+        vy: -1.2 - Math.random() * 2.2,
+        radius: 1 + Math.random() * 2.5,
+        alpha: 0.3 + Math.random() * 0.7,
+        color: emberColor
       });
     }
 
@@ -131,44 +195,86 @@ export default function AnimeEpisodePlayer({
 
       ctx.clearRect(0, 0, w, h);
 
-      // Swirling gravitational distortion rings
-      for (let r = 40; r < 300; r += 50) {
-        ctx.strokeStyle = `rgba(168, 85, 247, ${0.15 - r * 0.0003})`;
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.arc(cx, cy, r, 0, Math.PI * 2);
-        ctx.stroke();
-      }
-
-      // Particles sucked inward
-      particles.forEach((p) => {
-        p.angle += p.speed;
-        p.dist -= 1.2;
-        if (p.dist <= 15) {
-          p.dist = 300 + Math.random() * 80;
+      if (isVortex) {
+        // Draw 60FPS Space-Time Accretion Vortex
+        for (let r = 40; r < 300; r += 50) {
+          ctx.strokeStyle = `rgba(168, 85, 247, ${0.15 - r * 0.0003})`;
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.arc(cx, cy, r, 0, Math.PI * 2);
+          ctx.stroke();
         }
 
-        const px = cx + Math.cos(p.angle) * p.dist;
-        const py = cy + Math.sin(p.angle) * p.dist * 0.6; // Perspective squish
+        vortexParticles.forEach((p) => {
+          p.angle += p.speed;
+          p.dist -= 1.2;
+          if (p.dist <= 15) {
+            p.dist = 300 + Math.random() * 80;
+          }
 
-        ctx.fillStyle = p.color;
-        ctx.shadowColor = p.color;
-        ctx.shadowBlur = 6;
+          const px = cx + Math.cos(p.angle) * p.dist;
+          const py = cy + Math.sin(p.angle) * p.dist * 0.6;
+
+          ctx.fillStyle = p.color;
+          ctx.shadowColor = p.color;
+          ctx.shadowBlur = 6;
+          ctx.beginPath();
+          ctx.arc(px, py, p.radius, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.shadowBlur = 0;
+        });
+
+        const coreGrad = ctx.createRadialGradient(cx, cy, 5, cx, cy, 35);
+        coreGrad.addColorStop(0, '#000000');
+        coreGrad.addColorStop(0.7, '#1e0538');
+        coreGrad.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = coreGrad;
         ctx.beginPath();
-        ctx.arc(px, py, p.radius, 0, Math.PI * 2);
+        ctx.arc(cx, cy, 35, 0, Math.PI * 2);
         ctx.fill();
-        ctx.shadowBlur = 0;
-      });
+      } else {
+        // 1. Draw continuous falling angled anime neon rain
+        ctx.strokeStyle = 'rgba(56, 189, 248, 0.4)';
+        ctx.lineWidth = 1.2;
+        rainDrops.forEach((r) => {
+          ctx.globalAlpha = r.opacity;
+          ctx.beginPath();
+          ctx.moveTo(r.x, r.y);
+          ctx.lineTo(r.x - 3, r.y + r.length);
+          ctx.stroke();
 
-      // Event horizon core
-      const coreGrad = ctx.createRadialGradient(cx, cy, 5, cx, cy, 35);
-      coreGrad.addColorStop(0, '#000000');
-      coreGrad.addColorStop(0.7, '#1e0538');
-      coreGrad.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.fillStyle = coreGrad;
-      ctx.beginPath();
-      ctx.arc(cx, cy, 35, 0, Math.PI * 2);
-      ctx.fill();
+          r.x -= 1.2;
+          r.y += r.speed;
+          if (r.y > h) {
+            r.y = -20;
+            r.x = Math.random() * w + 40;
+          }
+        });
+        ctx.globalAlpha = 1.0;
+
+        // 2. Draw rising magical embers / power aura
+        embers.forEach((em) => {
+          ctx.fillStyle = em.color;
+          ctx.globalAlpha = em.alpha;
+          ctx.shadowColor = em.color;
+          ctx.shadowBlur = 6;
+          ctx.beginPath();
+          ctx.arc(em.x, em.y, em.radius, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.shadowBlur = 0;
+
+          em.x += em.vx;
+          em.y += em.vy;
+          em.alpha -= 0.005;
+
+          if (em.y < 0 || em.alpha <= 0) {
+            em.y = h + Math.random() * 20;
+            em.x = Math.random() * w;
+            em.alpha = 0.4 + Math.random() * 0.6;
+          }
+        });
+        ctx.globalAlpha = 1.0;
+      }
 
       animId = requestAnimationFrame(render);
     };
@@ -178,7 +284,7 @@ export default function AnimeEpisodePlayer({
     return () => {
       cancelAnimationFrame(animId);
     };
-  }, [currentSceneIdx, currentScene.visualFocus]);
+  }, [currentSceneIdx, currentScene.visualFocus, currentScene.isVillain, villain.color, powerup.auraColor]);
 
   const startBgmAudio = () => {
     try {
@@ -491,6 +597,19 @@ export default function AnimeEpisodePlayer({
               </div>
             </div>
 
+            {/* 60FPS Universal Anime Cinema FX Canvas Overlay (Accretion Vortex / Falling Neon Rain / Rising Energy Embers) */}
+            <canvas
+              ref={vortexCanvasRef}
+              width={960}
+              height={540}
+              className="absolute inset-0 w-full h-full pointer-events-none mix-blend-screen z-20"
+            />
+
+            {/* Anime Scene Transition Flash Impact Layer */}
+            {sceneFlash && (
+              <div className="absolute inset-0 bg-white/40 pointer-events-none z-25 transition-opacity duration-150 animate-out fade-out" />
+            )}
+
             {/* DYNAMIC SCENE VISUAL CHOREOGRAPHY */}
             <div className="absolute inset-0 z-0 overflow-hidden flex items-center justify-center">
               {/* SCENE 1: DIMENSIONAL VOID COLLISION & GRAVITATIONAL SUCTION */}
@@ -499,14 +618,11 @@ export default function AnimeEpisodePlayer({
                   <img
                     src="/anime-heroes/dimensional_void_collision.jpg"
                     alt="Dimensional Void Collision"
-                    className="w-full h-full object-cover object-center transform scale-105 animate-pulse"
-                  />
-                  {/* 60FPS Space-Time Accretion Vortex Canvas Overlay */}
-                  <canvas
-                    ref={vortexCanvasRef}
-                    width={800}
-                    height={450}
-                    className="absolute inset-0 w-full h-full pointer-events-none mix-blend-screen"
+                    className="w-full h-full object-cover object-center"
+                    style={{
+                      transform: cameraZoomIn ? 'scale(1.12) translate(-1%, -1%)' : 'scale(1.02) translate(1%, 1%)',
+                      transition: 'transform 6.5s cubic-bezier(0.2, 0.8, 0.4, 1)'
+                    }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/60 pointer-events-none" />
                   <div className="absolute top-14 left-6 px-3.5 py-1.5 rounded-full bg-purple-950/80 border border-purple-500/60 text-purple-200 text-xs font-black tracking-widest flex items-center gap-2 shadow-lg">
@@ -521,8 +637,12 @@ export default function AnimeEpisodePlayer({
                   <img
                     src="/anime-heroes/naruto_awakening_rain.jpg"
                     alt="Naruto Awakening in Rain"
-                    className="w-full h-full object-cover object-center transition-all duration-700"
-                    style={{ filter: `blur(${eyeBlur}px)` }}
+                    className="w-full h-full object-cover object-center"
+                    style={{
+                      filter: `blur(${eyeBlur}px)`,
+                      transform: cameraZoomIn ? 'scale(1.12) translate(-0.8%, -0.8%)' : 'scale(1.02) translate(0.8%, 0.8%)',
+                      transition: 'transform 6.5s cubic-bezier(0.2, 0.8, 0.4, 1), filter 0.7s ease-out'
+                    }}
                   />
 
                   {/* Dynamic Eyelid Shutter Mask Overlay */}
@@ -558,7 +678,11 @@ export default function AnimeEpisodePlayer({
                   <img
                     src="/anime-heroes/gojo_shibuya_awakening.jpg"
                     alt="Satoru Gojo Shibuya Shatter"
-                    className="w-full h-full object-cover object-center transform scale-100 hover:scale-105 transition-all duration-1000"
+                    className="w-full h-full object-cover object-center"
+                    style={{
+                      transform: cameraZoomIn ? 'scale(1.12) translate(-0.8%, -0.8%)' : 'scale(1.02) translate(0.8%, 0.8%)',
+                      transition: 'transform 6.5s cubic-bezier(0.2, 0.8, 0.4, 1)'
+                    }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black via-cyan-950/20 to-black/60 pointer-events-none" />
                   <div className="absolute top-14 left-6 px-3.5 py-1.5 rounded-full bg-cyan-950/90 border border-cyan-400/80 text-cyan-200 text-xs font-black tracking-widest flex items-center gap-2 shadow-[0_0_20px_rgba(6,182,212,0.6)]">
@@ -572,7 +696,11 @@ export default function AnimeEpisodePlayer({
                   <img
                     src="/anime-heroes/villains_syndicate_tokyo.jpg"
                     alt="Evil Syndicate Tokyo Domination"
-                    className="w-full h-full object-cover object-center transform scale-100 hover:scale-105 transition-all duration-1000"
+                    className="w-full h-full object-cover object-center"
+                    style={{
+                      transform: cameraZoomIn ? 'scale(1.12) translate(-0.8%, -0.8%)' : 'scale(1.02) translate(0.8%, 0.8%)',
+                      transition: 'transform 6.5s cubic-bezier(0.2, 0.8, 0.4, 1)'
+                    }}
                   />
                   {/* Dark malevolent red aura gradient */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black via-red-950/20 to-black/60 pointer-events-none" />
@@ -587,7 +715,11 @@ export default function AnimeEpisodePlayer({
                   <img
                     src="/anime-heroes/heroes_assemble_tokyo_tower.jpg"
                     alt="Heroes Assemble Under Tokyo Tower"
-                    className="w-full h-full object-cover object-center transform scale-100 hover:scale-105 transition-all duration-1000"
+                    className="w-full h-full object-cover object-center"
+                    style={{
+                      transform: cameraZoomIn ? 'scale(1.12) translate(-0.8%, -0.8%)' : 'scale(1.02) translate(0.8%, 0.8%)',
+                      transition: 'transform 6.5s cubic-bezier(0.2, 0.8, 0.4, 1)'
+                    }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/60 pointer-events-none" />
                   <div className="absolute top-14 left-6 px-3.5 py-1.5 rounded-full bg-cyan-950/90 border border-cyan-500/70 text-cyan-200 text-xs font-black tracking-widest flex items-center gap-2 shadow-lg">
@@ -604,6 +736,10 @@ export default function AnimeEpisodePlayer({
                       src={HEROES_CATALOG.luffy.image}
                       alt="Monkey D. Luffy"
                       className="relative w-64 h-80 sm:w-80 sm:h-96 object-cover object-top rounded-3xl border-4 border-red-500 shadow-[0_0_35px_rgba(239,68,68,0.5)]"
+                      style={{
+                        transform: cameraZoomIn ? 'scale(1.06) translateY(-4px)' : 'scale(1.0) translateY(4px)',
+                        transition: 'transform 6.5s ease-out'
+                      }}
                     />
                   </div>
                   <div className="mt-3 px-4 py-1 rounded-full bg-black/80 border border-red-500/50 text-red-300 text-xs font-extrabold tracking-wider flex items-center gap-2">
@@ -620,6 +756,10 @@ export default function AnimeEpisodePlayer({
                       src={HEROES_CATALOG.ichigo.image}
                       alt="Ichigo Kurosaki"
                       className="relative w-64 h-80 sm:w-80 sm:h-96 object-cover object-top rounded-3xl border-4 border-indigo-500 shadow-[0_0_35px_rgba(99,102,241,0.5)]"
+                      style={{
+                        transform: cameraZoomIn ? 'scale(1.06) translateY(-4px)' : 'scale(1.0) translateY(4px)',
+                        transition: 'transform 6.5s ease-out'
+                      }}
                     />
                   </div>
                   <div className="mt-3 px-4 py-1 rounded-full bg-black/80 border border-indigo-500/50 text-indigo-300 text-xs font-extrabold tracking-wider flex items-center gap-2">
@@ -636,6 +776,10 @@ export default function AnimeEpisodePlayer({
                       src={HEROES_CATALOG.asta.image}
                       alt="Asta"
                       className="relative w-64 h-80 sm:w-80 sm:h-96 object-cover object-top rounded-3xl border-4 border-emerald-500 shadow-[0_0_35px_rgba(16,185,129,0.5)]"
+                      style={{
+                        transform: cameraZoomIn ? 'scale(1.06) translateY(-4px)' : 'scale(1.0) translateY(4px)',
+                        transition: 'transform 6.5s ease-out'
+                      }}
                     />
                   </div>
                   <div className="mt-3 px-4 py-1 rounded-full bg-black/80 border border-emerald-500/50 text-emerald-300 text-xs font-extrabold tracking-wider flex items-center gap-2">
@@ -655,7 +799,11 @@ export default function AnimeEpisodePlayer({
                       src={villain.image}
                       alt={villain.name}
                       className="relative w-64 h-80 sm:w-80 sm:h-96 object-cover object-top rounded-3xl border-4 shadow-2xl"
-                      style={{ borderColor: villain.color }}
+                      style={{
+                        borderColor: villain.color,
+                        transform: cameraZoomIn ? 'scale(1.06) translateY(-4px)' : 'scale(1.0) translateY(4px)',
+                        transition: 'transform 6.5s ease-out'
+                      }}
                     />
                   </div>
                   <div className="mt-3 px-4 py-1 rounded-full bg-black/80 border border-red-500/50 text-red-400 text-xs font-extrabold tracking-wider">
@@ -674,7 +822,11 @@ export default function AnimeEpisodePlayer({
                       src={hero.image}
                       alt={hero.name}
                       className="relative w-64 h-80 sm:w-80 sm:h-96 object-cover object-top rounded-3xl border-4 shadow-2xl"
-                      style={{ borderColor: powerup.auraColor }}
+                      style={{
+                        borderColor: powerup.auraColor,
+                        transform: cameraZoomIn ? 'scale(1.06) translateY(-4px)' : 'scale(1.0) translateY(4px)',
+                        transition: 'transform 6.5s ease-out'
+                      }}
                     />
                   </div>
                   <div className="mt-3 px-4 py-1 rounded-full bg-black/80 border border-amber-400/50 text-amber-300 text-xs font-extrabold tracking-wider flex items-center gap-1.5">
@@ -705,8 +857,9 @@ export default function AnimeEpisodePlayer({
                 </span>
               </div>
 
-              <p className="text-sm sm:text-base font-medium text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] leading-relaxed italic bg-black/40 p-2.5 rounded-xl border border-white/5">
-                &ldquo;{currentScene.text}&rdquo;
+              <p className="text-sm sm:text-base font-medium text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] leading-relaxed italic bg-black/40 p-2.5 rounded-xl border border-white/5 min-h-[58px]">
+                &ldquo;{typedDialogue}&rdquo;
+                <span className="inline-block w-1.5 h-4 ml-1 bg-amber-400 animate-pulse align-middle" />
               </p>
 
               {/* Video Timeline & Scene Controls Bar */}

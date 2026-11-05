@@ -281,6 +281,202 @@ export const INITIAL_PLAYER_STATE: PlayerVillageState = {
   completedChapters: []
 };
 
+export interface VillageHQPlan {
+  level: number;
+  title: string;
+  maxStorage: number;
+  maxBuildings: number;
+  upgradeCostBerries: number;
+  upgradeCostChakra: number;
+  unlockedFeatures: string[];
+  heroBuffBonus: string;
+}
+
+export const VILLAGE_HQ_LEVEL_PLANS: Record<number, VillageHQPlan> = {
+  1: {
+    level: 1,
+    title: 'Neon Outpost',
+    maxStorage: 2500,
+    maxBuildings: 12,
+    upgradeCostBerries: 0,
+    upgradeCostChakra: 0,
+    unlockedFeatures: ['Command Core', 'Haki Rail Cannon', 'Titanium Wall Tier 1', 'Chakra Turbine'],
+    heroBuffBonus: 'Base hero stats active.'
+  },
+  2: {
+    level: 2,
+    title: 'Fortified Sanctuary',
+    maxStorage: 5000,
+    maxBuildings: 18,
+    upgradeCostBerries: 800,
+    upgradeCostChakra: 500,
+    unlockedFeatures: ['Spiritual Tower', 'Paper-Bomb Traps', 'Storage Expansion (+100%)', 'Wall Tier 2'],
+    heroBuffBonus: '+15% Hero HP & Guard Patrol Aura.'
+  },
+  3: {
+    level: 3,
+    title: 'Dimensional Bastion',
+    maxStorage: 10000,
+    maxBuildings: 24,
+    upgradeCostBerries: 2200,
+    upgradeCostChakra: 1400,
+    unlockedFeatures: ['Heavy Laser Mortar', 'Reishi Siphon Overclock', 'Auto-Repair Shield', 'Wall Tier 3'],
+    heroBuffBonus: '+30% Hero Damage & Ultimate Cooldown -2s.'
+  },
+  4: {
+    level: 4,
+    title: 'Metropolitan Fortress',
+    maxStorage: 25000,
+    maxBuildings: 32,
+    upgradeCostBerries: 5000,
+    upgradeCostChakra: 3200,
+    unlockedFeatures: ['Hero Awakening Shrine', 'Twin Rail Cannons', 'EMP Defense Barrier', 'Wall Tier 4'],
+    heroBuffBonus: '+50% Hero Firepower & Instant Guard Teleport.'
+  },
+  5: {
+    level: 5,
+    title: 'Apex Celestial Citadel',
+    maxStorage: 60000,
+    maxBuildings: 42,
+    upgradeCostBerries: 12000,
+    upgradeCostChakra: 8000,
+    unlockedFeatures: ['Tetra-Dimensional Forcefield', 'Orbital Rail Artillery', 'Infinite Void Trap', 'Master Walls'],
+    heroBuffBonus: '+100% Hero Stats & Permanent Awakening Aura.'
+  }
+};
+
+export interface BaseLayoutPreset {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  tag: string;
+  applyLayout: (currentBuildings: BuildingInstance[]) => BuildingInstance[];
+}
+
+export const BASE_LAYOUT_PRESETS: BaseLayoutPreset[] = [
+  {
+    id: 'trophy_fortress',
+    name: 'Trophy Fortress',
+    description: 'Town Hall centered at (5,5), tightly wrapped in protective titanium walls, flanked by Haki cannons and spiritual towers.',
+    icon: '🛡️',
+    tag: 'Balanced Defense',
+    applyLayout: (buildings) => {
+      const core = buildings.find((b) => b.type === 'command_core');
+      const walls = buildings.filter((b) => b.type === 'defense_wall');
+      const defenses = buildings.filter((b) => b.type === 'haki_cannon' || b.type === 'kido_spire' || b.type === 'paper_mortar');
+      const storages = buildings.filter((b) => b.type === 'berry_treasury' || b.type === 'chakra_turbine' || b.type === 'reishi_siphon');
+
+      const updated: BuildingInstance[] = [];
+      if (core) updated.push({ ...core, x: 5, y: 5 });
+
+      const wallCoords = [{ x: 4, y: 4 }, { x: 5, y: 4 }, { x: 6, y: 4 }, { x: 4, y: 5 }, { x: 6, y: 5 }, { x: 4, y: 6 }, { x: 5, y: 6 }, { x: 6, y: 6 }];
+      walls.forEach((w, idx) => {
+        const coord = wallCoords[idx % wallCoords.length];
+        updated.push({ ...w, x: coord.x, y: coord.y });
+      });
+
+      const defCoords = [{ x: 3, y: 5 }, { x: 7, y: 5 }, { x: 5, y: 3 }, { x: 5, y: 7 }, { x: 3, y: 3 }, { x: 7, y: 7 }];
+      defenses.forEach((d, idx) => {
+        const coord = defCoords[idx % defCoords.length];
+        updated.push({ ...d, x: coord.x, y: coord.y });
+      });
+
+      const storCoords = [{ x: 3, y: 4 }, { x: 7, y: 6 }, { x: 4, y: 3 }, { x: 6, y: 7 }, { x: 2, y: 5 }, { x: 8, y: 5 }];
+      storages.forEach((s, idx) => {
+        const coord = storCoords[idx % storCoords.length];
+        updated.push({ ...s, x: coord.x, y: coord.y });
+      });
+
+      buildings.forEach((b) => {
+        if (!updated.some((u) => u.id === b.id)) updated.push(b);
+      });
+
+      return updated;
+    }
+  },
+  {
+    id: 'vault_sanctuary',
+    name: 'Vault Sanctuary',
+    description: 'Gold & Chakra vaults locked inside heavy core walls, protecting resources from enemy plunderers.',
+    icon: '💰',
+    tag: 'Resource Protection',
+    applyLayout: (buildings) => {
+      const storages = buildings.filter((b) => b.type === 'berry_treasury' || b.type === 'chakra_turbine' || b.type === 'reishi_siphon');
+      const core = buildings.find((b) => b.type === 'command_core');
+      const walls = buildings.filter((b) => b.type === 'defense_wall');
+      const others = buildings.filter((b) => b.type !== 'command_core' && b.type !== 'defense_wall' && !b.type.includes('treasury') && !b.type.includes('turbine') && !b.type.includes('siphon'));
+
+      const updated: BuildingInstance[] = [];
+      if (core) updated.push({ ...core, x: 4, y: 4 });
+
+      const storCoords = [{ x: 5, y: 5 }, { x: 6, y: 5 }, { x: 5, y: 6 }, { x: 6, y: 6 }];
+      storages.forEach((s, idx) => {
+        const coord = storCoords[idx % storCoords.length];
+        updated.push({ ...s, x: coord.x, y: coord.y });
+      });
+
+      const wallCoords = [{ x: 4, y: 5 }, { x: 4, y: 6 }, { x: 7, y: 5 }, { x: 7, y: 6 }, { x: 5, y: 4 }, { x: 6, y: 4 }, { x: 5, y: 7 }, { x: 6, y: 7 }];
+      walls.forEach((w, idx) => {
+        const coord = wallCoords[idx % wallCoords.length];
+        updated.push({ ...w, x: coord.x, y: coord.y });
+      });
+
+      const defCoords = [{ x: 3, y: 3 }, { x: 8, y: 3 }, { x: 3, y: 8 }, { x: 8, y: 8 }, { x: 2, y: 5 }, { x: 9, y: 5 }];
+      others.forEach((o, idx) => {
+        const coord = defCoords[idx % defCoords.length];
+        updated.push({ ...o, x: coord.x, y: coord.y });
+      });
+
+      buildings.forEach((b) => {
+        if (!updated.some((u) => u.id === b.id)) updated.push(b);
+      });
+
+      return updated;
+    }
+  },
+  {
+    id: 'anti_syndicate_cross',
+    name: 'Anti-Syndicate Crossfire',
+    description: 'Cannons and laser mortars placed at 4 cardinal gates, creating overlapping killzones with no blind spots.',
+    icon: '⚔️',
+    tag: 'Aggressive Crossfire',
+    applyLayout: (buildings) => {
+      const core = buildings.find((b) => b.type === 'command_core');
+      const defenses = buildings.filter((b) => b.type === 'haki_cannon' || b.type === 'kido_spire' || b.type === 'paper_mortar');
+      const walls = buildings.filter((b) => b.type === 'defense_wall');
+      const storages = buildings.filter((b) => b.type === 'berry_treasury' || b.type === 'chakra_turbine' || b.type === 'reishi_siphon');
+
+      const updated: BuildingInstance[] = [];
+      if (core) updated.push({ ...core, x: 5, y: 5 });
+
+      const defCoords = [{ x: 2, y: 5 }, { x: 8, y: 5 }, { x: 5, y: 2 }, { x: 5, y: 8 }, { x: 3, y: 3 }, { x: 7, y: 7 }];
+      defenses.forEach((d, idx) => {
+        const coord = defCoords[idx % defCoords.length];
+        updated.push({ ...d, x: coord.x, y: coord.y });
+      });
+
+      const wallCoords = [{ x: 4, y: 5 }, { x: 6, y: 5 }, { x: 5, y: 4 }, { x: 5, y: 6 }, { x: 3, y: 4 }, { x: 7, y: 6 }, { x: 4, y: 7 }, { x: 6, y: 3 }];
+      walls.forEach((w, idx) => {
+        const coord = wallCoords[idx % wallCoords.length];
+        updated.push({ ...w, x: coord.x, y: coord.y });
+      });
+
+      const storCoords = [{ x: 3, y: 6 }, { x: 6, y: 3 }, { x: 7, y: 4 }, { x: 4, y: 7 }, { x: 2, y: 4 }, { x: 8, y: 6 }];
+      storages.forEach((s, idx) => {
+        const coord = storCoords[idx % storCoords.length];
+        updated.push({ ...s, x: coord.x, y: coord.y });
+      });
+
+      buildings.forEach((b) => {
+        if (!updated.some((u) => u.id === b.id)) updated.push(b);
+      });
+
+      return updated;
+    }
+  }
+];
+
 export const STORY_CHAPTERS: StoryChapter[] = [
   {
     id: 'ch_1',

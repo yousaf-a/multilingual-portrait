@@ -187,7 +187,58 @@ export default function AnimeEpisodePlayer({
       });
     }
 
+    // Branching Fractal Lightning Helper
+    const drawFractalLightning = (
+      context: CanvasRenderingContext2D,
+      x1: number,
+      y1: number,
+      x2: number,
+      y2: number,
+      displace: number,
+      color: string,
+      coreColor: string
+    ) => {
+      const drawSegment = (sx1: number, sy1: number, sx2: number, sy2: number, disp: number) => {
+        if (disp < 6) {
+          // Glow pass
+          context.strokeStyle = color;
+          context.lineWidth = 3;
+          context.beginPath();
+          context.moveTo(sx1, sy1);
+          context.lineTo(sx2, sy2);
+          context.stroke();
+          // Core sharp pass
+          context.strokeStyle = coreColor;
+          context.lineWidth = 1.2;
+          context.beginPath();
+          context.moveTo(sx1, sy1);
+          context.lineTo(sx2, sy2);
+          context.stroke();
+          return;
+        }
+        const midX = (sx1 + sx2) / 2 + (Math.random() - 0.5) * disp;
+        const midY = (sy1 + sy2) / 2 + (Math.random() - 0.5) * disp;
+        drawSegment(sx1, sy1, midX, midY, disp / 2);
+        drawSegment(midX, midY, sx2, sy2, disp / 2);
+
+        if (Math.random() < 0.28 && disp > 16) {
+          const branchX = midX + (Math.random() - 0.5) * disp * 1.6;
+          const branchY = midY + (Math.random() - 0.5) * disp * 1.6;
+          drawSegment(midX, midY, branchX, branchY, disp / 2);
+        }
+      };
+
+      drawSegment(x1, y1, x2, y2, displace);
+    };
+
+    let frameCount = 0;
+    const isLuffy = currentScene.visualFocus === 'luffy';
+    const isIchigo = currentScene.visualFocus === 'ichigo';
+    const isAsta = currentScene.visualFocus === 'asta';
+    const isGojo = currentScene.visualFocus === 'gojo_shatter';
+
     const render = () => {
+      frameCount++;
       const w = canvas.width;
       const h = canvas.height;
       const cx = w / 2;
@@ -234,16 +285,16 @@ export default function AnimeEpisodePlayer({
         ctx.fill();
       } else {
         // 1. Draw continuous falling angled anime neon rain
-        ctx.strokeStyle = 'rgba(56, 189, 248, 0.4)';
-        ctx.lineWidth = 1.2;
+        ctx.strokeStyle = 'rgba(56, 189, 248, 0.45)';
+        ctx.lineWidth = 1.3;
         rainDrops.forEach((r) => {
           ctx.globalAlpha = r.opacity;
           ctx.beginPath();
           ctx.moveTo(r.x, r.y);
-          ctx.lineTo(r.x - 3, r.y + r.length);
+          ctx.lineTo(r.x - 3.5, r.y + r.length);
           ctx.stroke();
 
-          r.x -= 1.2;
+          r.x -= 1.4;
           r.y += r.speed;
           if (r.y > h) {
             r.y = -20;
@@ -257,7 +308,7 @@ export default function AnimeEpisodePlayer({
           ctx.fillStyle = em.color;
           ctx.globalAlpha = em.alpha;
           ctx.shadowColor = em.color;
-          ctx.shadowBlur = 6;
+          ctx.shadowBlur = 8;
           ctx.beginPath();
           ctx.arc(em.x, em.y, em.radius, 0, Math.PI * 2);
           ctx.fill();
@@ -274,6 +325,90 @@ export default function AnimeEpisodePlayer({
           }
         });
         ctx.globalAlpha = 1.0;
+
+        // 3. ⚡ PROCEDURAL BRANCHING FRACTAL LIGHTNING (Haki / Reiatsu / Anti-Magic / Infinite Void)
+        const lightningActive = frameCount % 35 < 5;
+        if (lightningActive) {
+          const lColor = isLuffy
+            ? 'rgba(239, 68, 68, 0.95)'
+            : isIchigo
+            ? 'rgba(6, 182, 212, 0.95)'
+            : isAsta
+            ? 'rgba(168, 85, 247, 0.95)'
+            : isGojo
+            ? 'rgba(56, 189, 248, 0.98)'
+            : currentScene.isVillain
+            ? 'rgba(220, 38, 38, 0.95)'
+            : 'rgba(245, 158, 11, 0.9)';
+          const coreColor = '#ffffff';
+
+          ctx.shadowColor = lColor;
+          ctx.shadowBlur = 12;
+
+          // Main lightning arc
+          const startX = cx + (Math.random() - 0.5) * 200;
+          const startY = 30 + Math.random() * 60;
+          const endX = cx + (Math.random() - 0.5) * 350;
+          const endY = h - 60 + Math.random() * 40;
+
+          drawFractalLightning(ctx, startX, startY, endX, endY, 65, lColor, coreColor);
+
+          // Second secondary discharge
+          if (Math.random() < 0.6) {
+            const sx2 = cx + (Math.random() - 0.5) * 260;
+            const sy2 = 120 + Math.random() * 80;
+            const ex2 = cx + (Math.random() - 0.5) * 400;
+            const ey2 = h - 40;
+            drawFractalLightning(ctx, sx2, sy2, ex2, ey2, 45, lColor, coreColor);
+          }
+          ctx.shadowBlur = 0;
+        }
+
+        // 4. 💥 ANIME ACTION SPEED LINES (Intense Focus Flare)
+        if (frameCount % 60 < 20) {
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+          ctx.lineWidth = 1.4;
+          for (let i = 0; i < 24; i++) {
+            const angle = (i / 24) * Math.PI * 2 + frameCount * 0.015;
+            const innerR = 170 + Math.random() * 40;
+            const outerR = Math.max(w, h) * 0.65;
+            ctx.beginPath();
+            ctx.moveTo(cx + Math.cos(angle) * innerR, cy + Math.sin(angle) * innerR);
+            ctx.lineTo(cx + Math.cos(angle) * outerR, cy + Math.sin(angle) * outerR);
+            ctx.stroke();
+          }
+        }
+
+        // 5. 🈲 FLOATING JAPANESE ANIME ONOMATOPOEIA (Sound Effects)
+        const kanjiText = isLuffy
+          ? 'ドォォン!!'
+          : isIchigo
+          ? 'ズバッ!!'
+          : isAsta
+          ? 'バチチチ!!'
+          : isGojo
+          ? '無量空処'
+          : currentScene.isVillain
+          ? 'ゴゴゴ...'
+          : 'ドドド!!';
+
+        const kanjiColor = isLuffy
+          ? 'rgba(239, 68, 68, 0.75)'
+          : isIchigo
+          ? 'rgba(6, 182, 212, 0.75)'
+          : isAsta
+          ? 'rgba(16, 185, 129, 0.75)'
+          : isGojo
+          ? 'rgba(147, 197, 253, 0.85)'
+          : 'rgba(245, 158, 11, 0.75)';
+
+        ctx.font = '900 28px "Arial Black", sans-serif';
+        ctx.fillStyle = kanjiColor;
+        ctx.shadowColor = kanjiColor;
+        ctx.shadowBlur = 10;
+        const kanjiY = 120 + Math.sin(frameCount * 0.05) * 8;
+        ctx.fillText(kanjiText, w - 170, kanjiY);
+        ctx.shadowBlur = 0;
       }
 
       animId = requestAnimationFrame(render);
@@ -576,7 +711,13 @@ export default function AnimeEpisodePlayer({
       {viewMode === 'video' ? (
         <div className="flex flex-col gap-3">
           {/* CinemaScope 16:9 Anime Screen */}
-          <div className="relative w-full aspect-video max-h-[530px] rounded-3xl overflow-hidden border-2 border-[#1e3a6a] shadow-[0_0_45px_rgba(30,58,106,0.6)] bg-black flex flex-col justify-between">
+          <div
+            className="relative w-full aspect-video max-h-[530px] rounded-3xl overflow-hidden border-2 border-[#1e3a6a] shadow-[0_0_45px_rgba(30,58,106,0.6)] bg-black flex flex-col justify-between"
+            style={{
+              transform: sceneFlash ? 'scale(1.01) translate(-2px, 3px)' : 'none',
+              transition: 'transform 0.14s cubic-bezier(0.2, 0.9, 0.4, 1)'
+            }}
+          >
             {/* Top Letterbox Cinema Bar */}
             <div className="z-30 w-full h-11 bg-gradient-to-b from-black via-black/85 to-transparent flex items-center justify-between px-5 text-white">
               <div className="flex items-center gap-2">
@@ -729,109 +870,203 @@ export default function AnimeEpisodePlayer({
                 </div>
               ) : currentScene.visualFocus === 'luffy' ? (
                 /* LUFFY AT YOKOHAMA CONTAINER DOCKS */
-                <div className="relative flex flex-col items-center justify-center animate-in zoom-in-95 duration-700">
-                  <div className="relative">
-                    <div className="absolute -inset-8 rounded-full bg-red-600/40 blur-2xl animate-pulse" />
-                    <img
-                      src={HEROES_CATALOG.luffy.image}
-                      alt="Monkey D. Luffy"
-                      className="relative w-64 h-80 sm:w-80 sm:h-96 object-cover object-top rounded-3xl border-4 border-red-500 shadow-[0_0_35px_rgba(239,68,68,0.5)]"
-                      style={{
-                        transform: cameraZoomIn ? 'scale(1.06) translateY(-4px)' : 'scale(1.0) translateY(4px)',
-                        transition: 'transform 6.5s ease-out'
-                      }}
-                    />
+                <div className="relative w-full h-full overflow-hidden flex items-center justify-center animate-in fade-in duration-700">
+                  {/* Full-bleed 16:9 Cinematic Docks Atmosphere */}
+                  <img
+                    src="/anime-heroes/naruto_awakening_rain.jpg"
+                    alt="Yokohama Docks Horizon"
+                    className="absolute inset-0 w-full h-full object-cover object-bottom"
+                    style={{
+                      filter: 'brightness(0.35) contrast(1.4) hue-rotate(180deg) saturate(1.4)',
+                      transform: cameraZoomIn ? 'scale(1.15) translate(-1%, -1%)' : 'scale(1.02) translate(1%, 1%)',
+                      transition: 'transform 6.5s cubic-bezier(0.2, 0.8, 0.4, 1)'
+                    }}
+                  />
+                  {/* Dynamic Dark Crimson Ocean Fog Overlays */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-red-950/70 via-black/40 to-black/70 pointer-events-none" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-transparent to-black/80 pointer-events-none" />
+
+                  {/* Dynamic Hero Integration (Zero White Card Borders - Pure Character Composite) */}
+                  <div className="relative z-10 flex flex-col items-center justify-end h-full pb-3">
+                    <div className="relative flex items-center justify-center">
+                      <div className="absolute -inset-10 rounded-full bg-red-600/60 blur-3xl animate-pulse" />
+                      <img
+                        src={HEROES_CATALOG.luffy.image}
+                        alt="Monkey D. Luffy"
+                        className="relative max-h-[360px] sm:max-h-[430px] w-auto object-contain mix-blend-multiply drop-shadow-[0_0_45px_rgba(239,68,68,0.95)]"
+                        style={{
+                          filter: 'contrast(1.25) brightness(1.08)',
+                          transform: cameraZoomIn ? 'scale(1.08) translateY(-6px)' : 'scale(1.0) translateY(6px)',
+                          transition: 'transform 6.5s ease-out'
+                        }}
+                      />
+                    </div>
                   </div>
-                  <div className="mt-3 px-4 py-1 rounded-full bg-black/80 border border-red-500/50 text-red-300 text-xs font-extrabold tracking-wider flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
-                    <span>MONKEY D. LUFFY • YOKOHAMA DOCKS (CONQUEROR'S HAKI)</span>
+
+                  {/* Japanese Cinema Title Banner */}
+                  <div className="absolute top-14 left-6 px-3.5 py-1.5 rounded-full bg-red-950/90 border border-red-500/80 text-red-200 text-xs font-black tracking-widest flex items-center gap-2 shadow-[0_0_25px_rgba(239,68,68,0.7)] z-20">
+                    <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping" />
+                    <span>🔥 モンキー・D・ルフィ • YOKOHAMA CONTAINER TERMINAL (CONQUEROR'S HAKI)</span>
                   </div>
                 </div>
               ) : currentScene.visualFocus === 'ichigo' ? (
                 /* ICHIGO IN SHINJUKU FIBER-GRID */
-                <div className="relative flex flex-col items-center justify-center animate-in zoom-in-95 duration-700">
-                  <div className="relative">
-                    <div className="absolute -inset-8 rounded-full bg-indigo-600/40 blur-2xl animate-pulse" />
-                    <img
-                      src={HEROES_CATALOG.ichigo.image}
-                      alt="Ichigo Kurosaki"
-                      className="relative w-64 h-80 sm:w-80 sm:h-96 object-cover object-top rounded-3xl border-4 border-indigo-500 shadow-[0_0_35px_rgba(99,102,241,0.5)]"
-                      style={{
-                        transform: cameraZoomIn ? 'scale(1.06) translateY(-4px)' : 'scale(1.0) translateY(4px)',
-                        transition: 'transform 6.5s ease-out'
-                      }}
-                    />
+                <div className="relative w-full h-full overflow-hidden flex items-center justify-center animate-in fade-in duration-700">
+                  {/* Full-bleed 16:9 Shinjuku Skyline Atmosphere */}
+                  <img
+                    src="/anime-heroes/villains_syndicate_tokyo.jpg"
+                    alt="Shinjuku Fiber Grid Skyline"
+                    className="absolute inset-0 w-full h-full object-cover object-center"
+                    style={{
+                      filter: 'brightness(0.35) contrast(1.4) hue-rotate(215deg) saturate(1.3)',
+                      transform: cameraZoomIn ? 'scale(1.15) translate(-1%, -1%)' : 'scale(1.02) translate(1%, 1%)',
+                      transition: 'transform 6.5s cubic-bezier(0.2, 0.8, 0.4, 1)'
+                    }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-indigo-950/80 via-black/40 to-black/70 pointer-events-none" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-transparent to-black/80 pointer-events-none" />
+
+                  {/* Dynamic Hero Integration */}
+                  <div className="relative z-10 flex flex-col items-center justify-end h-full pb-3">
+                    <div className="relative flex items-center justify-center">
+                      <div className="absolute -inset-10 rounded-full bg-indigo-600/60 blur-3xl animate-pulse" />
+                      <img
+                        src={HEROES_CATALOG.ichigo.image}
+                        alt="Ichigo Kurosaki"
+                        className="relative max-h-[360px] sm:max-h-[430px] w-auto object-contain mix-blend-multiply drop-shadow-[0_0_45px_rgba(99,102,241,0.95)]"
+                        style={{
+                          filter: 'contrast(1.25) brightness(1.08)',
+                          transform: cameraZoomIn ? 'scale(1.08) translateY(-6px)' : 'scale(1.0) translateY(6px)',
+                          transition: 'transform 6.5s ease-out'
+                        }}
+                      />
+                    </div>
                   </div>
-                  <div className="mt-3 px-4 py-1 rounded-full bg-black/80 border border-indigo-500/50 text-indigo-300 text-xs font-extrabold tracking-wider flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-indigo-400 animate-ping" />
-                    <span>ICHIGO KUROSAKI • SHINJUKU FIBER-GRID (REISHI DENSITY)</span>
+
+                  {/* Japanese Cinema Title Banner */}
+                  <div className="absolute top-14 left-6 px-3.5 py-1.5 rounded-full bg-indigo-950/90 border border-indigo-500/80 text-indigo-200 text-xs font-black tracking-widest flex items-center gap-2 shadow-[0_0_25px_rgba(99,102,241,0.7)] z-20">
+                    <span className="w-2.5 h-2.5 rounded-full bg-indigo-400 animate-ping" />
+                    <span>⚡ 黒崎一護 • SHINJUKU FIBER-GRID (REISHI SINGULARITY)</span>
                   </div>
                 </div>
               ) : currentScene.visualFocus === 'asta' ? (
                 /* ASTA IN TOKYO METROPOLITAN PERIMETER */
-                <div className="relative flex flex-col items-center justify-center animate-in zoom-in-95 duration-700">
-                  <div className="relative">
-                    <div className="absolute -inset-8 rounded-full bg-emerald-600/40 blur-2xl animate-pulse" />
-                    <img
-                      src={HEROES_CATALOG.asta.image}
-                      alt="Asta"
-                      className="relative w-64 h-80 sm:w-80 sm:h-96 object-cover object-top rounded-3xl border-4 border-emerald-500 shadow-[0_0_35px_rgba(16,185,129,0.5)]"
-                      style={{
-                        transform: cameraZoomIn ? 'scale(1.06) translateY(-4px)' : 'scale(1.0) translateY(4px)',
-                        transition: 'transform 6.5s ease-out'
-                      }}
-                    />
+                <div className="relative w-full h-full overflow-hidden flex items-center justify-center animate-in fade-in duration-700">
+                  {/* Full-bleed 16:9 Tokyo Outskirts Ruins Atmosphere */}
+                  <img
+                    src="/anime-heroes/dimensional_void_collision.jpg"
+                    alt="Tokyo Perimeter Ruins"
+                    className="absolute inset-0 w-full h-full object-cover object-center"
+                    style={{
+                      filter: 'brightness(0.3) contrast(1.4) hue-rotate(85deg) saturate(1.3)',
+                      transform: cameraZoomIn ? 'scale(1.15) translate(-1%, -1%)' : 'scale(1.02) translate(1%, 1%)',
+                      transition: 'transform 6.5s cubic-bezier(0.2, 0.8, 0.4, 1)'
+                    }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-emerald-950/80 via-black/40 to-black/70 pointer-events-none" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-transparent to-black/80 pointer-events-none" />
+
+                  {/* Dynamic Hero Integration */}
+                  <div className="relative z-10 flex flex-col items-center justify-end h-full pb-3">
+                    <div className="relative flex items-center justify-center">
+                      <div className="absolute -inset-10 rounded-full bg-emerald-600/60 blur-3xl animate-pulse" />
+                      <img
+                        src={HEROES_CATALOG.asta.image}
+                        alt="Asta"
+                        className="relative max-h-[360px] sm:max-h-[430px] w-auto object-contain mix-blend-multiply drop-shadow-[0_0_45px_rgba(16,185,129,0.95)]"
+                        style={{
+                          filter: 'contrast(1.25) brightness(1.08)',
+                          transform: cameraZoomIn ? 'scale(1.08) translateY(-6px)' : 'scale(1.0) translateY(6px)',
+                          transition: 'transform 6.5s ease-out'
+                        }}
+                      />
+                    </div>
                   </div>
-                  <div className="mt-3 px-4 py-1 rounded-full bg-black/80 border border-emerald-500/50 text-emerald-300 text-xs font-extrabold tracking-wider flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                    <span>ASTA • TOKYO OUTSKIRTS (ANTI-MAGIC SINGULARITY)</span>
+
+                  {/* Japanese Cinema Title Banner */}
+                  <div className="absolute top-14 left-6 px-3.5 py-1.5 rounded-full bg-emerald-950/90 border border-emerald-500/80 text-emerald-200 text-xs font-black tracking-widest flex items-center gap-2 shadow-[0_0_25px_rgba(16,185,129,0.7)] z-20">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
+                    <span>⚔️ アスタ • TOKYO METROPOLITAN PERIMETER (ANTI-MAGIC SINGULARITY)</span>
                   </div>
                 </div>
               ) : currentScene.isVillain ? (
-                /* Villain Solo */
-                <div className="relative flex flex-col items-center justify-center animate-in zoom-in-95 duration-700">
-                  <div className="relative">
-                    <div
-                      className="absolute -inset-6 rounded-full blur-2xl opacity-75 animate-pulse"
-                      style={{ backgroundColor: villain.color }}
-                    />
-                    <img
-                      src={villain.image}
-                      alt={villain.name}
-                      className="relative w-64 h-80 sm:w-80 sm:h-96 object-cover object-top rounded-3xl border-4 shadow-2xl"
-                      style={{
-                        borderColor: villain.color,
-                        transform: cameraZoomIn ? 'scale(1.06) translateY(-4px)' : 'scale(1.0) translateY(4px)',
-                        transition: 'transform 6.5s ease-out'
-                      }}
-                    />
+                /* Villain Solo Full-Bleed 16:9 */
+                <div className="relative w-full h-full overflow-hidden flex items-center justify-center animate-in fade-in duration-700">
+                  <img
+                    src="/anime-heroes/villains_syndicate_tokyo.jpg"
+                    alt="Evil Syndicate Tokyo"
+                    className="absolute inset-0 w-full h-full object-cover object-center"
+                    style={{
+                      filter: 'brightness(0.35) contrast(1.4) saturate(1.2)',
+                      transform: cameraZoomIn ? 'scale(1.15) translate(-1%, -1%)' : 'scale(1.02) translate(1%, 1%)',
+                      transition: 'transform 6.5s cubic-bezier(0.2, 0.8, 0.4, 1)'
+                    }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-red-950/80 via-black/40 to-black/70 pointer-events-none" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-transparent to-black/80 pointer-events-none" />
+
+                  <div className="relative z-10 flex flex-col items-center justify-end h-full pb-3">
+                    <div className="relative flex items-center justify-center">
+                      <div
+                        className="absolute -inset-10 rounded-full blur-3xl opacity-80 animate-pulse"
+                        style={{ backgroundColor: villain.color }}
+                      />
+                      <img
+                        src={villain.image}
+                        alt={villain.name}
+                        className="relative max-h-[360px] sm:max-h-[430px] w-auto object-contain mix-blend-multiply drop-shadow-[0_0_45px_rgba(0,0,0,0.9)]"
+                        style={{
+                          filter: 'contrast(1.2) brightness(1.05)',
+                          transform: cameraZoomIn ? 'scale(1.08) translateY(-6px)' : 'scale(1.0) translateY(6px)',
+                          transition: 'transform 6.5s ease-out'
+                        }}
+                      />
+                    </div>
                   </div>
-                  <div className="mt-3 px-4 py-1 rounded-full bg-black/80 border border-red-500/50 text-red-400 text-xs font-extrabold tracking-wider">
-                    ⚠️ {villain.title.toUpperCase()}
+
+                  <div className="absolute top-14 left-6 px-3.5 py-1.5 rounded-full bg-red-950/95 border border-red-500/80 text-red-200 text-xs font-black tracking-widest flex items-center gap-2 shadow-[0_0_25px_rgba(220,38,38,0.7)] z-20">
+                    <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping" />
+                    <span>⚠️ 凶悪シンジケート • {villain.title.toUpperCase()}</span>
                   </div>
                 </div>
               ) : (
-                /* Hero Solo */
-                <div className="relative flex flex-col items-center justify-center animate-in zoom-in-95 duration-700">
-                  <div className="relative">
-                    <div
-                      className="absolute -inset-6 rounded-full blur-2xl opacity-80 animate-pulse"
-                      style={{ backgroundColor: powerup.auraColor }}
-                    />
-                    <img
-                      src={hero.image}
-                      alt={hero.name}
-                      className="relative w-64 h-80 sm:w-80 sm:h-96 object-cover object-top rounded-3xl border-4 shadow-2xl"
-                      style={{
-                        borderColor: powerup.auraColor,
-                        transform: cameraZoomIn ? 'scale(1.06) translateY(-4px)' : 'scale(1.0) translateY(4px)',
-                        transition: 'transform 6.5s ease-out'
-                      }}
-                    />
+                /* Hero Solo Full-Bleed 16:9 */
+                <div className="relative w-full h-full overflow-hidden flex items-center justify-center animate-in fade-in duration-700">
+                  <img
+                    src="/anime-heroes/naruto_awakening_rain.jpg"
+                    alt="Tokyo Sanctuary"
+                    className="absolute inset-0 w-full h-full object-cover object-center"
+                    style={{
+                      filter: 'brightness(0.35) contrast(1.3) saturate(1.2)',
+                      transform: cameraZoomIn ? 'scale(1.15) translate(-1%, -1%)' : 'scale(1.02) translate(1%, 1%)',
+                      transition: 'transform 6.5s cubic-bezier(0.2, 0.8, 0.4, 1)'
+                    }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-amber-950/80 via-black/40 to-black/70 pointer-events-none" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-transparent to-black/80 pointer-events-none" />
+
+                  <div className="relative z-10 flex flex-col items-center justify-end h-full pb-3">
+                    <div className="relative flex items-center justify-center">
+                      <div
+                        className="absolute -inset-10 rounded-full blur-3xl opacity-80 animate-pulse"
+                        style={{ backgroundColor: powerup.auraColor }}
+                      />
+                      <img
+                        src={hero.image}
+                        alt={hero.name}
+                        className="relative max-h-[360px] sm:max-h-[430px] w-auto object-contain mix-blend-multiply drop-shadow-[0_0_45px_rgba(245,158,11,0.9)]"
+                        style={{
+                          filter: 'contrast(1.2) brightness(1.05)',
+                          transform: cameraZoomIn ? 'scale(1.08) translateY(-6px)' : 'scale(1.0) translateY(6px)',
+                          transition: 'transform 6.5s ease-out'
+                        }}
+                      />
+                    </div>
                   </div>
-                  <div className="mt-3 px-4 py-1 rounded-full bg-black/80 border border-amber-400/50 text-amber-300 text-xs font-extrabold tracking-wider flex items-center gap-1.5">
+
+                  <div className="absolute top-14 left-6 px-3.5 py-1.5 rounded-full bg-amber-950/95 border border-amber-400/80 text-amber-200 text-xs font-black tracking-widest flex items-center gap-1.5 shadow-[0_0_25px_rgba(245,158,11,0.7)] z-20">
                     <Sparkles size={12} className="text-yellow-400" />
-                    <span>{powerup.formName.toUpperCase()}</span>
+                    <span>✦ {hero.name.toUpperCase()} • {powerup.formName.toUpperCase()} ✦</span>
                   </div>
                 </div>
               )}

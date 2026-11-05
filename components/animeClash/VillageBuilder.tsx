@@ -7,7 +7,9 @@ import {
   BuildingType,
   HeroData,
   WeatherTimeMode,
-  SanctuaryGuild
+  SanctuaryGuild,
+  FriendProfile,
+  RaidBattleReport
 } from '@/lib/animeClash/types';
 import {
   HEROES_CATALOG,
@@ -17,6 +19,10 @@ import {
   BaseLayoutPreset,
   SANCTUARY_GUILDS,
   ANIME_VOICE_SHOUTS,
+  DEFAULT_FRIEND_BASES,
+  HERO_UNLOCK_HQ_REQUIREMENTS,
+  exportSanctuaryCode,
+  importSanctuaryCode,
   getMaxBuildingLevelForHQ,
   getMaxHeroLevelForHQ,
   getArmyCampCapForHQ,
@@ -63,7 +69,14 @@ import {
   CloudRain,
   Volume2,
   Users,
-  Layers
+  Layers,
+  Globe,
+  Share2,
+  Copy,
+  Check,
+  Lock,
+  Unlock,
+  UserPlus
 } from 'lucide-react';
 
 interface VillageBuilderProps {
@@ -81,11 +94,15 @@ export default function VillageBuilder({
 }: VillageBuilderProps) {
   const [selectedBuilding, setSelectedBuilding] = useState<BuildingInstance | null>(null);
   const [villageViewMode, setVillageViewMode] = useState<'orbit_hub' | 'grid'>('orbit_hub');
-  const [activeBuildTab, setActiveBuildTab] = useState<'village' | 'shop' | 'heroes' | 'layouts' | 'roadmap' | 'attack' | 'guilds'>('village');
+  const [activeBuildTab, setActiveBuildTab] = useState<'village' | 'shop' | 'heroes' | 'layouts' | 'roadmap' | 'attack' | 'guilds' | 'multiplayer'>('village');
   const [isRelocatingBuildingId, setIsRelocatingBuildingId] = useState<string | null>(null);
   const [heroInteractionQuote, setHeroInteractionQuote] = useState<string | null>(null);
   const [isRaiding, setIsRaiding] = useState(false);
   const [isArenaRaidActive, setIsArenaRaidActive] = useState(false);
+  const [selectedRaidFriend, setSelectedRaidFriend] = useState<FriendProfile | null>(null);
+  const [heroUnlockCelebration, setHeroUnlockCelebration] = useState<HeroData | null>(null);
+  const [copiedCodeToast, setCopiedCodeToast] = useState(false);
+  const [importFriendCodeInput, setImportFriendCodeInput] = useState('');
   const [isDefenseActive, setIsDefenseActive] = useState(false);
   const [voiceShoutBanner, setVoiceShoutBanner] = useState<{ kanji: string; romaji: string; trans: string } | null>(null);
   const [raidResult, setRaidResult] = useState<{
@@ -514,12 +531,36 @@ export default function VillageBuilder({
       return;
     }
 
+    const nextLevel = villageState.level + 1;
+    let newlyUnlockedHero: HeroData | null = null;
+    const currentUnlocked = villageState.unlockedHeroes || ['naruto'];
+
+    if (nextLevel === 2 && !currentUnlocked.includes('luffy')) {
+      newlyUnlockedHero = HEROES_CATALOG.luffy;
+    } else if (nextLevel === 3 && !currentUnlocked.includes('ichigo')) {
+      newlyUnlockedHero = HEROES_CATALOG.ichigo;
+    } else if (nextLevel === 4 && !currentUnlocked.includes('asta')) {
+      newlyUnlockedHero = HEROES_CATALOG.asta;
+    } else if (nextLevel === 5 && !currentUnlocked.includes('gojo')) {
+      newlyUnlockedHero = HEROES_CATALOG.gojo;
+    }
+
+    const updatedUnlocked = newlyUnlockedHero
+      ? [...currentUnlocked, newlyUnlockedHero.id]
+      : currentUnlocked;
+
+    if (newlyUnlockedHero) {
+      setHeroUnlockCelebration(newlyUnlockedHero);
+      animeAudio.playHeroShout(newlyUnlockedHero.id);
+    }
+
     onUpdateVillage({
       ...villageState,
-      level: villageState.level + 1,
+      level: nextLevel,
       berries: villageState.berries - nextHQPlan.upgradeCostBerries,
       chakra: villageState.chakra - nextHQPlan.upgradeCostChakra,
-      maxStorage: nextHQPlan.maxStorage
+      maxStorage: nextHQPlan.maxStorage,
+      unlockedHeroes: updatedUnlocked
     });
   };
 
@@ -591,19 +632,38 @@ export default function VillageBuilder({
 
   return (
     <div className="w-full max-w-5xl flex flex-col gap-4 my-4">
-      {/* 2.5D Real-Time Troop Marching Raid Arena Modal */}
+      {/* 2.5D Real-Time Troop Marching Raid Arena Modal (Multiplayer & Syndicate) */}
       {isArenaRaidActive && (
         <AnimeRaidArena
           villageState={villageState}
-          onFinishRaid={(lootBerries, lootChakra) => {
+          targetFriend={selectedRaidFriend}
+          onFinishRaid={(lootBerries, lootChakra, targetName, stars) => {
+            const report: RaidBattleReport = {
+              id: `rep_${Date.now()}`,
+              timestamp: Date.now(),
+              attackerName: villageState.playerName || 'Marou (Me)',
+              defenderName: targetName || 'Rival Sanctuary',
+              stars: stars || 0,
+              destructionPct: stars === 3 ? 100 : stars === 2 ? 75 : 45,
+              lootStolenBerries: lootBerries,
+              lootStolenChakra: lootChakra,
+              trophiesDelta: (stars || 0) > 0 ? 32 : -18,
+              isDefense: false
+            };
+
             onUpdateVillage({
               ...villageState,
               berries: Math.min(villageState.maxStorage, villageState.berries + lootBerries),
-              chakra: Math.min(villageState.maxStorage, villageState.chakra + lootChakra)
+              chakra: Math.min(villageState.maxStorage, villageState.chakra + lootChakra),
+              battleReports: [report, ...(villageState.battleReports || [])].slice(0, 15)
             });
             setIsArenaRaidActive(false);
+            setSelectedRaidFriend(null);
           }}
-          onClose={() => setIsArenaRaidActive(false)}
+          onClose={() => {
+            setIsArenaRaidActive(false);
+            setSelectedRaidFriend(null);
+          }}
         />
       )}
 
@@ -888,6 +948,18 @@ export default function VillageBuilder({
         >
           🔨 Defense Shop
         </button>
+        <button
+          type="button"
+          onClick={() => setActiveBuildTab('multiplayer')}
+          className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 ${
+            activeBuildTab === 'multiplayer'
+              ? 'bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 text-white shadow-md ring-2 ring-purple-400/40'
+              : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <Globe size={13} className="text-purple-300" />
+          <span>🌐 Friends &amp; Rivals ({DEFAULT_FRIEND_BASES.length + (villageState.customFriends?.length || 0)})</span>
+        </button>
       </div>
 
       {/* 3. MAIN INTERACTIVE CONTENT: ISOMETRIC VILLAGE OR SANCTUARY ORBITAL HUB */}
@@ -900,6 +972,7 @@ export default function VillageBuilder({
               onLaunch1v1={onLaunchBattle}
               onLaunchTrials={(_floor) => setIsArenaRaidActive(true)}
               onSwitchToVillageGrid={() => setVillageViewMode('grid')}
+              onOpenMultiplayer={() => setActiveBuildTab('multiplayer')}
             />
           </div>
 
@@ -1392,18 +1465,19 @@ export default function VillageBuilder({
                         Assign as Patrol Guard
                       </button>
                     ) : (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          onUpdateVillage({
-                            ...villageState,
-                            unlockedHeroes: [...villageState.unlockedHeroes, hero.id]
-                          })
-                        }
-                        className="w-full py-1.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs transition cursor-pointer"
-                      >
-                        Recruit Hero (⭐ Free)
-                      </button>
+                      <div className="p-2.5 rounded-xl bg-black/60 border border-slate-700 text-center flex flex-col gap-1.5">
+                        <span className="text-[11px] font-bold text-amber-400 flex items-center justify-center gap-1">
+                          <Lock size={12} />
+                          <span>Requires Town Hall HQ Lv {HERO_UNLOCK_HQ_REQUIREMENTS[hero.id]?.hqLevel || 1}</span>
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setActiveBuildTab('roadmap')}
+                          className="w-full py-1 rounded-lg bg-purple-700 hover:bg-purple-600 text-white text-[10px] font-bold cursor-pointer transition shadow"
+                        >
+                          Upgrade HQ to Unlock
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -1687,6 +1761,292 @@ export default function VillageBuilder({
                 </div>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {/* 9. FRIENDS & MULTIPLAYER RIVALS TAB */}
+      {activeBuildTab === 'multiplayer' && (
+        <div className="flex flex-col gap-4 animate-in fade-in">
+          {/* Header */}
+          <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-3xl bg-[#0b1226]/90 border border-purple-500/50 shadow-xl">
+            <div>
+              <h3 className="text-base font-extrabold text-white flex items-center gap-2">
+                <Globe size={18} className="text-purple-400" />
+                <span>Multiplayer Base Raids &amp; Friend Sanctuaries</span>
+              </h3>
+              <p className="text-xs text-slate-300 mt-0.5">
+                Share your base with friends, raid your friend&apos;s custom base defenses, and duel their defending hero in 1v1 combat!
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setActiveBuildTab('village')}
+              className="text-xs text-slate-300 hover:text-white px-3 py-1.5 rounded-xl bg-[#1e293b]"
+            >
+              Return to Map
+            </button>
+          </div>
+
+          {/* 1. Share My Base & Import Friend Code Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* My Sanctuary Profile & Base Code Card */}
+            <div className="p-4 rounded-3xl bg-gradient-to-br from-[#121c38] to-[#070d1e] border border-cyan-500/40 shadow-lg flex flex-col justify-between">
+              <div>
+                <span className="text-[10px] font-mono uppercase tracking-widest text-cyan-400 font-bold block mb-1">
+                  MY SANCTUARY PROFILE
+                </span>
+                <div className="flex items-center justify-between">
+                  <h4 className="text-base font-black text-white flex items-center gap-2">
+                    <span>👑</span>
+                    <span>{villageState.playerName || 'Marou (Me)'}</span>
+                  </h4>
+                  <span className="text-xs font-mono text-cyan-300 bg-cyan-950/80 px-2.5 py-0.5 rounded-full border border-cyan-800">
+                    {villageState.sanctuaryTag || '#SANCTUARY-MAROU-1'}
+                  </span>
+                </div>
+                <div className="mt-2 text-xs text-slate-300 flex items-center gap-3">
+                  <span>HQ Tier: <strong className="text-white">Level {villageState.level}</strong></span>
+                  <span>Defending Hero: <strong className="text-amber-300">{activeHero.name}</strong></span>
+                  <span>Walls: <strong className="text-slate-200">{villageState.buildings.filter(b => b.type === 'defense_wall').length}</strong></span>
+                </div>
+                <p className="text-[11px] text-slate-400 mt-2">
+                  Send your Sanctuary Code to your friend! When they import it on their device, your exact base layout and defending hero will appear for them to attack.
+                </p>
+              </div>
+
+              <div className="mt-4 flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const code = exportSanctuaryCode(villageState);
+                    navigator.clipboard.writeText(code);
+                    setCopiedCodeToast(true);
+                    setTimeout(() => setCopiedCodeToast(false), 3000);
+                  }}
+                  className="flex-1 py-2.5 rounded-2xl bg-cyan-600 hover:bg-cyan-500 text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-lg transition cursor-pointer"
+                >
+                  {copiedCodeToast ? <Check size={14} className="text-emerald-300" /> : <Copy size={14} />}
+                  <span>{copiedCodeToast ? 'Base Code Copied to Clipboard!' : '📋 Copy My Base Share Code'}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Import Friend's Sanctuary Code Card */}
+            <div className="p-4 rounded-3xl bg-gradient-to-br from-[#1a1033] to-[#0d091e] border border-purple-500/40 shadow-lg flex flex-col justify-between">
+              <div>
+                <span className="text-[10px] font-mono uppercase tracking-widest text-purple-400 font-bold block mb-1">
+                  IMPORT FRIEND&apos;S SANCTUARY
+                </span>
+                <h4 className="text-base font-black text-white flex items-center gap-2">
+                  <UserPlus size={16} className="text-purple-400" />
+                  <span>Add Friend by Base Code</span>
+                </h4>
+                <p className="text-[11px] text-slate-300 mt-1">
+                  Did your friend give you their base code? Paste it below to add their sanctuary directly into your rival raid targets!
+                </p>
+                <input
+                  type="text"
+                  placeholder="Paste friend's Base Code here (e.g. BASE-eyJ...)"
+                  value={importFriendCodeInput}
+                  onChange={(e) => setImportFriendCodeInput(e.target.value)}
+                  className="w-full mt-3 bg-black/60 border border-purple-400/50 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-purple-300"
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (!importFriendCodeInput.trim()) return;
+                  const imported = importSanctuaryCode(importFriendCodeInput);
+                  if (imported) {
+                    const existing = villageState.customFriends || [];
+                    onUpdateVillage({
+                      ...villageState,
+                      customFriends: [imported, ...existing]
+                    });
+                    setImportFriendCodeInput('');
+                    alert(`🎉 Successfully added ${imported.name} to your Rival Bases! You can now raid their village.`);
+                  } else {
+                    alert('Invalid Base Code! Please verify the code string.');
+                  }
+                }}
+                className="mt-3 w-full py-2.5 rounded-2xl bg-purple-600 hover:bg-purple-500 text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-lg transition cursor-pointer"
+              >
+                <Plus size={14} />
+                <span>📥 Import Friend&apos;s Base</span>
+              </button>
+            </div>
+          </div>
+
+          {/* 2. Rival Friend Sanctuaries to Raid */}
+          <div className="p-5 rounded-3xl bg-[#0b1226]/90 border border-[#1e2a4a] shadow-xl flex flex-col gap-3">
+            <div className="flex items-center justify-between border-b border-[#182442] pb-3">
+              <div>
+                <h4 className="text-sm font-extrabold text-white flex items-center gap-2">
+                  <Sword size={16} className="text-red-400" />
+                  <span>Rival Sanctuaries (Friends Ready for Raid)</span>
+                </h4>
+                <span className="text-[11px] text-slate-400">
+                  Select a friend&apos;s base below to attack their real building layouts and duel their defending hero!
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[...(villageState.customFriends || []), ...DEFAULT_FRIEND_BASES].map((friend) => {
+                const hero = HEROES_CATALOG[friend.activeHeroId] || HEROES_CATALOG.naruto;
+                return (
+                  <div
+                    key={friend.id}
+                    className="p-4 rounded-2xl bg-gradient-to-b from-[#101b33] to-[#070c19] border border-[#203666] hover:border-purple-400/60 transition shadow-md flex flex-col justify-between"
+                  >
+                    <div>
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-2xl p-1.5 rounded-xl bg-black/40 border border-white/10">
+                            {hero.avatar}
+                          </span>
+                          <div>
+                            <h5 className="text-xs font-black text-white">{friend.name}</h5>
+                            <span className="text-[10px] font-mono text-purple-300">{friend.tag}</span>
+                          </div>
+                        </div>
+                        <span className="text-[10px] font-bold text-amber-300 bg-amber-950/70 border border-amber-500/40 px-2 py-0.5 rounded-full">
+                          HQ Lv {friend.level}
+                        </span>
+                      </div>
+
+                      <div className="p-2.5 rounded-xl bg-black/40 border border-white/5 space-y-1 text-[11px] text-slate-300 mb-3">
+                        <div className="flex justify-between">
+                          <span className="text-slate-400">Defending Hero:</span>
+                          <span className="font-bold text-amber-300">{hero.name} (Lv {friend.heroLevel})</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-400">Buildings:</span>
+                          <span className="font-bold text-white">{friend.buildings.length} structures</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-400">Available Loot:</span>
+                          <span className="font-bold text-emerald-300">💰 {friend.berriesLoot} &bull; 🌀 {friend.chakraLoot}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedRaidFriend(friend);
+                        setIsArenaRaidActive(true);
+                      }}
+                      className="w-full py-2 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:brightness-110 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-md transition cursor-pointer"
+                    >
+                      <Sword size={14} />
+                      <span>⚔️ Raid {friend.name.split(' ')[0]}&apos;s Base!</span>
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 3. Multiplayer Defense Battle Log */}
+          <div className="p-5 rounded-3xl bg-[#0b1226]/90 border border-[#1e2a4a] shadow-xl flex flex-col gap-3">
+            <h4 className="text-sm font-extrabold text-white flex items-center gap-2">
+              <Shield size={16} className="text-blue-400" />
+              <span>Multiplayer Defense &amp; Raid History</span>
+            </h4>
+
+            {(villageState.battleReports && villageState.battleReports.length > 0) ? (
+              <div className="space-y-2">
+                {villageState.battleReports.map((rep) => (
+                  <div
+                    key={rep.id}
+                    className="p-3 rounded-2xl bg-black/40 border border-slate-800 flex items-center justify-between text-xs"
+                  >
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-white">
+                          ⚔️ {rep.attackerName} vs {rep.defenderName}
+                        </span>
+                        <span className="text-[10px] text-amber-300 font-bold">
+                          {rep.stars >= 3 ? '⭐⭐⭐ 3-STAR' : rep.stars >= 2 ? '⭐⭐ 2-STAR' : rep.stars >= 1 ? '⭐ 1-STAR' : 'FAILED DEFENSE'}
+                        </span>
+                      </div>
+                      <span className="text-[11px] text-slate-400">
+                        {rep.destructionPct}% Destruction &bull; Plunder: +{rep.lootStolenBerries} 💰 +{rep.lootStolenChakra} 🌀
+                      </span>
+                    </div>
+
+                    <span className="font-black text-amber-400">
+                      {rep.trophiesDelta > 0 ? `+${rep.trophiesDelta}` : rep.trophiesDelta} 🏆
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-slate-400 italic">
+                No recent raids logged yet. Raid a friend&apos;s base above to start logging multiplayer battles!
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* 10. EPIC NEW HERO UNLOCKED CELEBRATION MODAL */}
+      {heroUnlockCelebration && (
+        <div className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4 backdrop-blur-md animate-in zoom-in-95">
+          <div className="relative w-full max-w-md bg-gradient-to-b from-[#181130] via-[#0e0a24] to-[#060410] border-2 border-amber-400 rounded-3xl p-6 shadow-[0_0_60px_rgba(245,158,11,0.6)] flex flex-col items-center text-center">
+            <span className="text-3xl animate-bounce mb-1">🎉</span>
+            <span className="text-xs font-mono font-black uppercase tracking-widest text-amber-400 bg-amber-950/80 px-3 py-1 rounded-full border border-amber-500/50">
+              TOWN HALL HQ LEVEL {villageState.level} REACHED!
+            </span>
+
+            <h2 className="text-xl font-black text-white mt-2">NEW HERO UNLOCKED!</h2>
+            <p className="text-xs text-amber-200 mt-0.5">{heroUnlockCelebration.title}</p>
+
+            {/* Hero Portrait in Flaming Elemental Ring */}
+            <div className="relative w-36 h-36 my-4 rounded-full overflow-hidden border-4 border-amber-400 shadow-[0_0_35px_rgba(245,158,11,0.8)]">
+              <img
+                src={heroUnlockCelebration.image}
+                alt={heroUnlockCelebration.name}
+                className="w-full h-full object-cover object-top scale-110"
+              />
+            </div>
+
+            <h3 className="text-lg font-black text-white">{heroUnlockCelebration.name}</h3>
+            <p className="text-xs text-slate-300 italic max-w-xs mt-1">
+              &ldquo;{heroUnlockCelebration.quote}&rdquo;
+            </p>
+
+            <div className="w-full p-3 rounded-2xl bg-black/50 border border-white/10 my-3 text-left space-y-1 text-xs">
+              <div>
+                <strong className="text-cyan-400">Skill:</strong> {heroUnlockCelebration.skillName}
+              </div>
+              <div>
+                <strong className="text-amber-400">Ultimate:</strong> {heroUnlockCelebration.ultimateName}
+              </div>
+            </div>
+
+            <div className="w-full flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  onUpdateVillage({ ...villageState, activeHeroId: heroUnlockCelebration.id });
+                  setHeroUnlockCelebration(null);
+                }}
+                className="w-full py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-slate-950 font-black text-xs shadow-lg hover:brightness-110 cursor-pointer"
+              >
+                ★ Assign as Active Patrol Guard ★
+              </button>
+              <button
+                type="button"
+                onClick={() => setHeroUnlockCelebration(null)}
+                className="w-full py-2 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs cursor-pointer"
+              >
+                Keep Current Defender &amp; Continue
+              </button>
+            </div>
           </div>
         </div>
       )}

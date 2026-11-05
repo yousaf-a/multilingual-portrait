@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { PlayerVillageState, HeroData } from '@/lib/animeClash/types';
-import { HEROES_CATALOG, TROOPS_CATALOG } from '@/lib/animeClash/gameData';
+import { PlayerVillageState, HeroData, FriendProfile } from '@/lib/animeClash/types';
+import { HEROES_CATALOG, TROOPS_CATALOG, DEFAULT_FRIEND_BASES } from '@/lib/animeClash/gameData';
 import { toIso, ISO_TILE_W, ISO_TILE_H, draw3DBox } from '@/lib/animeClash/isometricRenderer';
 import { animeAudio } from '@/lib/animeClash/animeAudio';
-import { Sword, ArrowLeft, Trophy, Zap, Shield, Sparkles } from 'lucide-react';
+import { Sword, ArrowLeft, Trophy, Zap, Shield, Sparkles, Users, RefreshCw } from 'lucide-react';
 
 interface RaidBuilding {
   id: string;
@@ -34,6 +34,23 @@ interface RaidUnit {
   range: number;
   projectileType: 'shuriken' | 'fist' | 'getsuga' | 'magic';
   color: string;
+  isHero?: boolean;
+}
+
+interface DefendingHero {
+  id: string;
+  name: string;
+  heroId: string;
+  avatar: string;
+  x: number;
+  y: number;
+  hp: number;
+  maxHp: number;
+  attack: number;
+  range: number;
+  color: string;
+  defeated: boolean;
+  quote: string;
 }
 
 interface Projectile {
@@ -48,33 +65,73 @@ interface Projectile {
 
 interface AnimeRaidArenaProps {
   villageState: PlayerVillageState;
-  onFinishRaid: (lootBerries: number, lootChakra: number) => void;
+  targetFriend?: FriendProfile | null;
+  onFinishRaid: (lootBerries: number, lootChakra: number, targetName?: string, stars?: number) => void;
   onClose: () => void;
 }
 
 export default function AnimeRaidArena({
   villageState,
+  targetFriend: initialTargetFriend,
   onFinishRaid,
   onClose
 }: AnimeRaidArenaProps) {
   const activeHero = HEROES_CATALOG[villageState.activeHeroId] || HEROES_CATALOG.naruto;
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  // Enemy Syndicate Outpost Buildings
-  const [enemyBuildings, setEnemyBuildings] = useState<RaidBuilding[]>([
-    { id: 'b_core', name: 'Syndicate Command HQ', type: 'core', x: 5, y: 5, hp: 1600, maxHp: 1600, destroyed: false, color: '#dc2626' },
-    { id: 'b_can1', name: 'Syndicate Rail Turret', type: 'cannon', x: 3, y: 5, hp: 650, maxHp: 650, destroyed: false, color: '#991b1b' },
-    { id: 'b_can2', name: 'Syndicate Rail Turret', type: 'cannon', x: 7, y: 5, hp: 650, maxHp: 650, destroyed: false, color: '#991b1b' },
-    { id: 'b_stor1', name: 'Stolen Berry Vault', type: 'storage', x: 5, y: 3, hp: 550, maxHp: 550, destroyed: false, color: '#f59e0b' },
-    { id: 'b_stor2', name: 'Plundered Chakra Vat', type: 'storage', x: 5, y: 7, hp: 550, maxHp: 550, destroyed: false, color: '#06b6d4' },
-    // Protective Walls
-    { id: 'w1', name: 'Iron Wall', type: 'wall', x: 4, y: 4, hp: 500, maxHp: 500, destroyed: false, color: '#475569' },
-    { id: 'w2', name: 'Iron Wall', type: 'wall', x: 5, y: 4, hp: 500, maxHp: 500, destroyed: false, color: '#475569' },
-    { id: 'w3', name: 'Iron Wall', type: 'wall', x: 6, y: 4, hp: 500, maxHp: 500, destroyed: false, color: '#475569' },
-    { id: 'w4', name: 'Iron Wall', type: 'wall', x: 4, y: 6, hp: 500, maxHp: 500, destroyed: false, color: '#475569' },
-    { id: 'w5', name: 'Iron Wall', type: 'wall', x: 5, y: 6, hp: 500, maxHp: 500, destroyed: false, color: '#475569' },
-    { id: 'w6', name: 'Iron Wall', type: 'wall', x: 6, y: 6, hp: 500, maxHp: 500, destroyed: false, color: '#475569' }
-  ]);
+  // Available Targets (Default friends + custom imported friends + syndicate outpost)
+  const allFriendTargets: FriendProfile[] = [
+    ...(villageState.customFriends || []),
+    ...DEFAULT_FRIEND_BASES
+  ];
+
+  const [selectedTarget, setSelectedTarget] = useState<FriendProfile>(
+    initialTargetFriend || allFriendTargets[0]
+  );
+
+  // Helper to build enemy buildings from a FriendProfile
+  const buildEnemyBuildingsFromProfile = (target: FriendProfile): RaidBuilding[] => {
+    return target.buildings.map((b) => ({
+      id: b.id,
+      name: b.name,
+      type: b.type === 'command_core' ? 'core' : b.type === 'defense_wall' ? 'wall' : b.type.includes('cannon') || b.type.includes('mortar') ? 'cannon' : 'storage',
+      x: b.x,
+      y: b.y,
+      hp: b.hp || (b.type === 'command_core' ? 1800 : b.type === 'defense_wall' ? 850 : 650),
+      maxHp: b.maxHp || (b.type === 'command_core' ? 1800 : b.type === 'defense_wall' ? 850 : 650),
+      destroyed: false,
+      color: b.color || '#dc2626'
+    }));
+  };
+
+  const buildDefendingHeroFromProfile = (target: FriendProfile): DefendingHero => {
+    const heroInfo = HEROES_CATALOG[target.activeHeroId] || HEROES_CATALOG.luffy;
+    const coreBuilding = target.buildings.find((b) => b.type === 'command_core');
+    const heroHp = (target.heroLevel || 1) * 350 + 850;
+    return {
+      id: `def_hero_${target.id}`,
+      name: `${target.name.split(' ')[0]}'s ${heroInfo.name}`,
+      heroId: heroInfo.id,
+      avatar: heroInfo.avatar,
+      x: coreBuilding ? coreBuilding.x : 5,
+      y: coreBuilding ? coreBuilding.y + 1 : 6,
+      hp: heroHp,
+      maxHp: heroHp,
+      attack: (target.heroLevel || 1) * 25 + 65,
+      range: 2.5,
+      color: heroInfo.color,
+      defeated: false,
+      quote: heroInfo.quote
+    };
+  };
+
+  const [enemyBuildings, setEnemyBuildings] = useState<RaidBuilding[]>(() =>
+    buildEnemyBuildingsFromProfile(selectedTarget)
+  );
+
+  const [defendingHero, setDefendingHero] = useState<DefendingHero>(() =>
+    buildDefendingHeroFromProfile(selectedTarget)
+  );
 
   const [deployedUnits, setDeployedUnits] = useState<RaidUnit[]>([]);
   const [projectiles, setProjectiles] = useState<Projectile[]>([]);
@@ -87,14 +144,36 @@ export default function AnimeRaidArena({
   const [lootEarned, setLootEarned] = useState({ berries: 0, chakra: 0 });
   const [destructionPct, setDestructionPct] = useState(0);
   const [battleFinished, setBattleFinished] = useState(false);
+  const [heroClashActive, setHeroClashActive] = useState(false);
 
   // References for Animation Loop
   const buildingsRef = useRef(enemyBuildings);
   buildingsRef.current = enemyBuildings;
+  const defHeroRef = useRef(defendingHero);
+  defHeroRef.current = defendingHero;
   const unitsRef = useRef(deployedUnits);
   unitsRef.current = deployedUnits;
   const projsRef = useRef(projectiles);
   projsRef.current = projectiles;
+
+  // Change Target Base
+  const handleSelectRival = (target: FriendProfile) => {
+    if (deployedUnits.length > 0) {
+      if (!confirm('Switching rival bases will retreat current deployed troops. Continue?')) return;
+    }
+    setSelectedTarget(target);
+    const newBuildings = buildEnemyBuildingsFromProfile(target);
+    const newHero = buildDefendingHeroFromProfile(target);
+    setEnemyBuildings(newBuildings);
+    setDefendingHero(newHero);
+    setDeployedUnits([]);
+    setProjectiles([]);
+    setHeroDeployed(false);
+    setLootEarned({ berries: 0, chakra: 0 });
+    setDestructionPct(0);
+    setBattleFinished(false);
+    setHeroClashActive(false);
+  };
 
   // Real-time Battle Physics Loop (60FPS)
   useEffect(() => {
@@ -118,8 +197,8 @@ export default function AnimeRaidArena({
 
       ctx.clearRect(0, 0, w, h);
 
-      // 1. Draw Enemy Outpost Wasteland Grass
-      ctx.fillStyle = '#1c1917';
+      // 1. Draw Rival Sanctuary Grassy Clearing
+      ctx.fillStyle = '#111827';
       ctx.fillRect(0, 0, w, h);
 
       // Red Outer Deployment Boundary Line
@@ -127,7 +206,7 @@ export default function AnimeRaidArena({
         for (let gx = 0; gx < 11; gx++) {
           const p = toIso(gx, gy, originX, originY);
           const isEdge = gx === 0 || gx === 10 || gy === 0 || gy === 10;
-          ctx.fillStyle = isEdge ? '#450a0a' : (gx + gy) % 2 === 0 ? '#292524' : '#1c1917';
+          ctx.fillStyle = isEdge ? '#3b0764' : (gx + gy) % 2 === 0 ? '#1f2937' : '#111827';
 
           ctx.beginPath();
           ctx.moveTo(p.x, p.y);
@@ -137,7 +216,7 @@ export default function AnimeRaidArena({
           ctx.closePath();
           ctx.fill();
 
-          ctx.strokeStyle = isEdge ? 'rgba(239, 68, 68, 0.4)' : 'rgba(255, 255, 255, 0.05)';
+          ctx.strokeStyle = isEdge ? 'rgba(192, 132, 252, 0.4)' : 'rgba(255, 255, 255, 0.05)';
           ctx.lineWidth = 0.5;
           ctx.stroke();
         }
@@ -147,35 +226,90 @@ export default function AnimeRaidArena({
       const curUnits = [...unitsRef.current];
       const curBuildings = [...buildingsRef.current];
       const curProjs = [...projsRef.current];
+      const dHero = defHeroRef.current;
 
+      let isClashing = false;
+
+      // Attacking units action
       curUnits.forEach((unit) => {
-        // Find closest alive building
-        const aliveTargets = curBuildings.filter((b) => !b.destroyed);
-        if (aliveTargets.length === 0) return;
+        // If defending hero is alive and unit is hero, prioritize 1v1 duel!
+        let targetX = 0;
+        let targetY = 0;
+        let isAttackingHero = false;
 
-        aliveTargets.sort((a, b) => {
-          const distA = Math.hypot(a.x - unit.x, a.y - unit.y);
-          const distB = Math.hypot(b.x - unit.x, b.y - unit.y);
-          return distA - distB;
-        });
+        const distToDefHero = dHero && !dHero.defeated ? Math.hypot(dHero.x - unit.x, dHero.y - unit.y) : 999;
 
-        const target = aliveTargets[0];
-        const dist = Math.hypot(target.x - unit.x, target.y - unit.y);
+        if (dHero && !dHero.defeated && (unit.isHero || distToDefHero < 2.5)) {
+          targetX = dHero.x;
+          targetY = dHero.y;
+          isAttackingHero = true;
+          if (unit.isHero && distToDefHero < 3.0) isClashing = true;
+        } else {
+          // Target closest alive building
+          const aliveTargets = curBuildings.filter((b) => !b.destroyed);
+          if (aliveTargets.length === 0) return;
+
+          aliveTargets.sort((a, b) => {
+            const distA = Math.hypot(a.x - unit.x, a.y - unit.y);
+            const distB = Math.hypot(b.x - unit.x, b.y - unit.y);
+            return distA - distB;
+          });
+
+          const target = aliveTargets[0];
+          targetX = target.x;
+          targetY = target.y;
+        }
+
+        const dist = Math.hypot(targetX - unit.x, targetY - unit.y);
 
         if (dist > unit.range) {
           // Walk toward target
-          const angle = Math.atan2(target.y - unit.y, target.x - unit.x);
+          const angle = Math.atan2(targetY - unit.y, targetX - unit.x);
           unit.x += Math.cos(angle) * unit.speed * dt;
           unit.y += Math.sin(angle) * unit.speed * dt;
         } else {
           // In range: attack!
-          if (Math.random() < 0.04) {
-            target.hp -= unit.attack;
-            animeAudio.playCombatSFX(unit.projectileType === 'shuriken' ? 'shuriken' : unit.projectileType === 'getsuga' ? 'sword' : 'spell');
+          if (Math.random() < 0.05) {
+            if (isAttackingHero && dHero && !dHero.defeated) {
+              dHero.hp -= unit.attack;
+              animeAudio.playCombatSFX('sword');
+
+              if (dHero.hp <= 0) {
+                dHero.defeated = true;
+                dHero.hp = 0;
+                setLootEarned((prev) => ({
+                  berries: prev.berries + 500,
+                  chakra: prev.chakra + 350
+                }));
+                animeAudio.playHeroShout(activeHero.id);
+              }
+            } else {
+              const target = curBuildings.find((b) => !b.destroyed && Math.hypot(b.x - unit.x, b.y - unit.y) <= unit.range + 0.5);
+              if (target) {
+                target.hp -= unit.attack;
+                animeAudio.playCombatSFX(unit.projectileType === 'shuriken' ? 'shuriken' : unit.projectileType === 'getsuga' ? 'sword' : 'spell');
+
+                if (target.hp <= 0) {
+                  target.destroyed = true;
+                  target.hp = 0;
+                  if (target.type === 'storage') {
+                    setLootEarned((prev) => ({
+                      berries: prev.berries + Math.round(selectedTarget.berriesLoot * 0.4),
+                      chakra: prev.chakra + Math.round(selectedTarget.chakraLoot * 0.4)
+                    }));
+                  } else if (target.type === 'core') {
+                    setLootEarned((prev) => ({
+                      berries: prev.berries + Math.round(selectedTarget.berriesLoot * 0.6),
+                      chakra: prev.chakra + Math.round(selectedTarget.chakraLoot * 0.6)
+                    }));
+                  }
+                }
+              }
+            }
 
             // Spawn projectile
             const startPos = toIso(unit.x, unit.y, originX, originY);
-            const endPos = toIso(target.x, target.y, originX, originY);
+            const endPos = toIso(targetX, targetY, originX, originY);
             curProjs.push({
               x: startPos.x,
               y: startPos.y,
@@ -185,26 +319,34 @@ export default function AnimeRaidArena({
               progress: 0,
               color: unit.color
             });
-
-            if (target.hp <= 0) {
-              target.destroyed = true;
-              target.hp = 0;
-              // Loot
-              if (target.type === 'storage') {
-                setLootEarned((prev) => ({
-                  berries: prev.berries + 450,
-                  chakra: prev.chakra + 350
-                }));
-              } else if (target.type === 'core') {
-                setLootEarned((prev) => ({
-                  berries: prev.berries + 600,
-                  chakra: prev.chakra + 500
-                }));
-              }
-            }
           }
         }
       });
+
+      // Defending Hero AI action
+      if (dHero && !dHero.defeated && curUnits.length > 0) {
+        // Target nearest attacking unit
+        curUnits.sort((a, b) => Math.hypot(a.x - dHero.x, a.y - dHero.y) - Math.hypot(b.x - dHero.x, b.y - dHero.y));
+        const nearUnit = curUnits[0];
+        const dist = Math.hypot(nearUnit.x - dHero.x, nearUnit.y - dHero.y);
+
+        if (dist > dHero.range) {
+          const angle = Math.atan2(nearUnit.y - dHero.y, nearUnit.x - dHero.x);
+          dHero.x += Math.cos(angle) * 1.8 * dt;
+          dHero.y += Math.sin(angle) * 1.8 * dt;
+        } else {
+          if (Math.random() < 0.04) {
+            nearUnit.hp -= dHero.attack;
+            animeAudio.playCombatSFX('cannon');
+            if (nearUnit.hp <= 0) {
+              const uIdx = curUnits.indexOf(nearUnit);
+              if (uIdx !== -1) curUnits.splice(uIdx, 1);
+            }
+          }
+        }
+      }
+
+      setHeroClashActive(isClashing);
 
       // 3. Update & Draw Projectiles
       for (let i = curProjs.length - 1; i >= 0; i--) {
@@ -234,18 +376,18 @@ export default function AnimeRaidArena({
         const cy = p.y + ISO_TILE_H / 2;
 
         if (b.destroyed) {
-          // Destroyed Rubble
           draw3DBox(ctx, cx, cy, 26, 14, 4, '#292524', '#1c1917', '#44403c');
           ctx.fillStyle = '#ef4444';
           ctx.font = 'bold 9px sans-serif';
           ctx.textAlign = 'center';
           ctx.fillText('💥 RUINS', cx, cy - 8);
         } else {
-          // Alive Building
           if (b.type === 'core') {
             draw3DBox(ctx, cx, cy, 40, 22, 24, '#7f1d1d', '#450a0a', '#b91c1c');
             ctx.fillStyle = '#f87171';
-            ctx.fillText('🏛️ HQ', cx, cy - 28);
+            ctx.font = 'bold 9px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('🏯 CITADEL', cx, cy - 28);
           } else if (b.type === 'cannon') {
             draw3DBox(ctx, cx, cy, 28, 16, 12, '#334155', '#1e293b', '#475569');
             ctx.fillStyle = '#dc2626';
@@ -253,6 +395,8 @@ export default function AnimeRaidArena({
           } else if (b.type === 'storage') {
             draw3DBox(ctx, cx, cy, 30, 18, 10, '#b45309', '#78350f', '#d97706');
             ctx.fillStyle = '#fbbf24';
+            ctx.font = 'bold 8.5px sans-serif';
+            ctx.textAlign = 'center';
             ctx.fillText('💰 VAULT', cx, cy - 14);
           } else {
             draw3DBox(ctx, cx, cy, 22, 14, 16, '#475569', '#334155', '#64748b');
@@ -267,7 +411,50 @@ export default function AnimeRaidArena({
         }
       });
 
-      // 5. Draw Deployed Units
+      // 5. Draw Defending Hero (Friend's Champion)
+      if (dHero && !dHero.defeated) {
+        const hp = toIso(dHero.x, dHero.y, originX, originY);
+        const hcx = hp.x;
+        const hcy = hp.y + ISO_TILE_H / 2;
+
+        // Flaming Aura Circle
+        ctx.fillStyle = dHero.color + '26';
+        ctx.beginPath();
+        ctx.ellipse(hcx, hcy, 24, 12, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = dHero.color;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Hero Avatar Token
+        ctx.fillStyle = '#0f172a';
+        ctx.beginPath();
+        ctx.arc(hcx, hcy - 20, 16, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#fbbf24';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.font = '16px serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(dHero.avatar, hcx, hcy - 14);
+
+        // Defending Hero Tag & HP Bar
+        const heroHpPct = Math.max(0, dHero.hp / dHero.maxHp);
+        ctx.fillStyle = 'rgba(0,0,0,0.85)';
+        ctx.fillRect(hcx - 28, hcy - 44, 56, 12);
+        ctx.strokeStyle = '#fbbf24';
+        ctx.strokeRect(hcx - 28, hcy - 44, 56, 12);
+        ctx.fillStyle = '#ef4444';
+        ctx.fillRect(hcx - 26, hcy - 42, 52 * heroHpPct, 8);
+
+        ctx.font = 'bold 7.5px sans-serif';
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'center';
+        ctx.fillText(`DEFENDER ${Math.round(dHero.hp)}`, hcx, hcy - 35);
+      }
+
+      // 6. Draw Attacking Units & Attacking Hero
       curUnits.forEach((u) => {
         const p = toIso(u.x, u.y, originX, originY);
         const cx = p.x;
@@ -278,56 +465,88 @@ export default function AnimeRaidArena({
         ctx.ellipse(cx, cy + 2, 10, 5, 0, 0, Math.PI * 2);
         ctx.fill();
 
-        ctx.font = '16px serif';
-        ctx.textAlign = 'center';
-        ctx.fillText(u.icon, cx, cy - 6);
+        if (u.isHero) {
+          // Attacking Hero Token
+          ctx.fillStyle = u.color;
+          ctx.beginPath();
+          ctx.arc(cx, cy - 18, 14, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 2;
+          ctx.stroke();
 
-        // Unit HP
+          ctx.font = '14px serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(u.icon, cx, cy - 13);
+        } else {
+          // Troop Unit Token
+          ctx.fillStyle = u.color;
+          ctx.beginPath();
+          ctx.arc(cx, cy - 10, 8, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.font = '10px serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(u.icon, cx, cy - 7);
+        }
+
+        // Unit Health Bar
+        const pct = Math.max(0, u.hp / u.maxHp);
+        ctx.fillStyle = 'rgba(0,0,0,0.6)';
+        ctx.fillRect(cx - 10, cy - (u.isHero ? 34 : 22), 20, 3);
         ctx.fillStyle = '#22c55e';
-        ctx.fillRect(cx - 8, cy - 22, 16, 2.5);
+        ctx.fillRect(cx - 10, cy - (u.isHero ? 34 : 22), 20 * pct, 3);
       });
 
-      // Calculate Destruction
-      const totalB = curBuildings.length;
-      const destroyedB = curBuildings.filter((b) => b.destroyed).length;
-      const pct = Math.round((destroyedB / totalB) * 100);
-      setDestructionPct(pct);
+      // 7. Calculate Destruction & Stars
+      const nonWallBuildings = curBuildings.filter((b) => b.type !== 'wall');
+      const destroyedCount = nonWallBuildings.filter((b) => b.destroyed).length;
+      const totalDestructible = Math.max(1, nonWallBuildings.length);
+      const curPct = Math.round((destroyedCount / totalDestructible) * 100);
+      setDestructionPct(curPct);
 
-      if (destroyedB === totalB && !battleFinished) {
+      if (curPct >= 100 && !battleFinished) {
         setBattleFinished(true);
       }
 
       setDeployedUnits(curUnits);
       setEnemyBuildings(curBuildings);
-      setProjectiles(curProjs);
+      setDefendingHero({ ...dHero });
 
       animId = requestAnimationFrame(render);
     };
 
-    render();
+    animId = requestAnimationFrame(render);
+    return () => cancelAnimationFrame(animId);
+  }, [selectedTarget, battleFinished]);
 
-    return () => {
-      cancelAnimationFrame(animId);
-    };
-  }, [battleFinished]);
-
-  // Deploy Troop onto Perimeter
+  // Handle Deploy on Canvas
   const handleDeployOnCanvas = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (battleFinished) return;
+
     const canvas = canvasRef.current;
     if (!canvas) return;
+
     const rect = canvas.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    const clickY = e.clientY - rect.top;
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const clickX = (e.clientX - rect.left) * scaleX;
+    const clickY = (e.clientY - rect.top) * scaleY;
 
     const originX = canvas.width / 2;
     const originY = 60;
 
-    // Convert screen to isometric grid
     const dx = clickX - originX;
     const dy = clickY - originY;
-    const gx = Math.max(0, Math.min(10, Math.floor((dx / (ISO_TILE_W / 2) + dy / (ISO_TILE_H / 2)) / 2)));
-    const gy = Math.max(0, Math.min(10, Math.floor((dy / (ISO_TILE_H / 2) - dx / (ISO_TILE_W / 2)) / 2)));
+    const gx = Math.floor((dx / (ISO_TILE_W / 2) + dy / (ISO_TILE_H / 2)) / 2);
+    const gy = Math.floor((dy / (ISO_TILE_H / 2) - dx / (ISO_TILE_W / 2)) / 2);
+
+    // Deployment only allowed in outer rim
+    const isPerimeter = gx <= 1 || gx >= 9 || gy <= 1 || gy >= 9;
+    if (!isPerimeter) {
+      alert('⚠️ Deployment restricted! Deploy troops along the outer boundary tiles.');
+      return;
+    }
 
     if (selectedDeployTroop === 'hero') {
       if (heroDeployed) return;
@@ -335,20 +554,21 @@ export default function AnimeRaidArena({
       animeAudio.playHeroShout(activeHero.id);
 
       const heroUnit: RaidUnit = {
-        id: `hero_${Date.now()}`,
-        troopId: activeHero.id,
+        id: 'hero_unit',
+        troopId: 'hero',
         name: activeHero.name,
         icon: activeHero.avatar,
         x: gx,
         y: gy,
         targetId: null,
-        hp: activeHero.hp * 1.5,
-        maxHp: activeHero.hp * 1.5,
-        attack: activeHero.attack * 1.4,
-        speed: 2.2,
+        hp: activeHero.hp,
+        maxHp: activeHero.maxHp,
+        attack: activeHero.attack,
+        speed: activeHero.speed * 0.75,
         range: activeHero.range,
         projectileType: activeHero.id === 'naruto' ? 'shuriken' : activeHero.id === 'luffy' ? 'fist' : activeHero.id === 'ichigo' ? 'getsuga' : 'magic',
-        color: activeHero.color
+        color: activeHero.color,
+        isHero: true
       };
 
       setDeployedUnits((prev) => [...prev, heroUnit]);
@@ -365,7 +585,7 @@ export default function AnimeRaidArena({
       }));
 
       const newUnit: RaidUnit = {
-        id: `unit_${Date.now()}`,
+        id: `unit_${Date.now()}_${Math.random()}`,
         troopId: troopData.id,
         name: troopData.name,
         icon: troopData.icon,
@@ -386,14 +606,15 @@ export default function AnimeRaidArena({
   };
 
   const handleFinishAndCollect = () => {
-    onFinishRaid(lootEarned.berries, lootEarned.chakra);
+    const stars = destructionPct >= 100 ? 3 : destructionPct >= 70 ? 2 : destructionPct >= 40 ? 1 : 0;
+    onFinishRaid(lootEarned.berries, lootEarned.chakra, selectedTarget.name, stars);
   };
 
   return (
     <div className="w-full max-w-5xl flex flex-col gap-4 my-3 animate-in fade-in">
-      {/* 1. TOP COMBAT BAR */}
-      <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-3xl bg-[#0b1226]/95 border border-red-500/50 shadow-2xl">
-        <div className="flex items-center gap-3">
+      {/* 1. TOP COMBAT BAR & RIVAL SWITCHER */}
+      <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-3xl bg-[#0b1226]/95 border border-purple-500/50 shadow-2xl">
+        <div className="flex flex-wrap items-center gap-3">
           <button
             type="button"
             onClick={onClose}
@@ -402,42 +623,79 @@ export default function AnimeRaidArena({
             <ArrowLeft size={14} />
             <span>Retreat to Base</span>
           </button>
+
           <div>
             <h3 className="text-sm font-extrabold text-white flex items-center gap-2">
               <Sword size={16} className="text-red-500" />
-              <span>Syndicate Outpost Assault</span>
+              <span>Multiplayer Raid: {selectedTarget.name}</span>
             </h3>
-            <span className="text-xs text-red-400 font-bold">
-              Destruction: {destructionPct}% &bull; {destructionPct >= 100 ? '⭐⭐⭐ 3-STAR VICTORY' : destructionPct >= 70 ? '⭐⭐ 2-STAR' : '⭐ 1-STAR'}
+            <span className="text-xs text-amber-400 font-bold">
+              Destruction: {destructionPct}% &bull;{' '}
+              {destructionPct >= 100
+                ? '⭐⭐⭐ 3-STAR VICTORY'
+                : destructionPct >= 70
+                ? '⭐⭐ 2-STAR'
+                : destructionPct >= 40
+                ? '⭐ 1-STAR'
+                : '0-STAR'}
             </span>
           </div>
         </div>
 
-        {/* Real-time Loot Counters */}
-        <div className="flex items-center gap-3">
-          <div className="px-3 py-1.5 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold text-xs">
-            💰 +{lootEarned.berries} Berries
-          </div>
-          <div className="px-3 py-1.5 rounded-xl bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 font-bold text-xs">
-            🌀 +{lootEarned.chakra} Chakra
+        {/* Rival Base Matchmaking Selector */}
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] font-mono text-slate-400 hidden sm:inline">RIVAL:</span>
+          <select
+            value={selectedTarget.id}
+            onChange={(e) => {
+              const found = allFriendTargets.find((f) => f.id === e.target.value);
+              if (found) handleSelectRival(found);
+            }}
+            disabled={deployedUnits.length > 0}
+            className="bg-[#1e293b] border border-purple-400/50 text-white text-xs font-bold rounded-xl px-3 py-1.5 focus:outline-none cursor-pointer"
+          >
+            {allFriendTargets.map((f) => (
+              <option key={f.id} value={f.id}>
+                {f.name} (HQ {f.level} &bull; 🏆 {f.trophies})
+              </option>
+            ))}
+          </select>
+
+          {/* Real-time Loot Counters */}
+          <div className="flex items-center gap-2">
+            <div className="px-3 py-1 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold text-xs">
+              💰 +{lootEarned.berries}
+            </div>
+            <div className="px-3 py-1 rounded-xl bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 font-bold text-xs">
+              🌀 +{lootEarned.chakra}
+            </div>
           </div>
         </div>
       </div>
 
       {/* 2. REAL-TIME 2.5D RAID CANVAS */}
-      <div className="relative w-full rounded-3xl overflow-hidden border-2 border-red-950 shadow-2xl bg-black">
+      <div className="relative w-full rounded-3xl overflow-hidden border-2 border-purple-900/60 shadow-2xl bg-black">
         <canvas
           ref={canvasRef}
           width={840}
           height={460}
           onClick={handleDeployOnCanvas}
-          className="w-full h-auto block cursor-crosshair"
+          className="w-full h-auto block cursor-crosshair select-none"
         />
 
         {/* Deployment Instruction Banner */}
-        <div className="absolute top-3 left-4 px-3 py-1 rounded-full bg-black/80 border border-red-500/40 text-[11px] text-red-200 font-bold pointer-events-none">
-          📍 TAP RED OUTER PERIMETER TILES TO DEPLOY TROOPS
+        <div className="absolute top-3 left-4 px-3 py-1 rounded-full bg-black/80 border border-purple-500/50 text-[11px] text-purple-200 font-bold pointer-events-none flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-purple-400 animate-ping" />
+          <span>TAP PURPLE OUTER PERIMETER TILES TO DEPLOY ATTACKERS</span>
         </div>
+
+        {/* Hero 1v1 Clash Banner */}
+        {heroClashActive && (
+          <div className="absolute top-3 right-4 px-3.5 py-1.5 rounded-2xl bg-gradient-to-r from-red-600 via-amber-500 to-red-600 border border-amber-300 text-slate-950 font-black text-xs shadow-lg animate-pulse flex items-center gap-1.5">
+            <Sword size={14} className="text-white animate-spin" />
+            <span>⚔️ HERO 1v1 CLASH ACTIVE!</span>
+          </div>
+        )}
 
         {/* Victory Popup */}
         {battleFinished && (
@@ -446,7 +704,7 @@ export default function AnimeRaidArena({
             <h2 className="text-2xl font-black text-white">100% BASE ANNIHILATION!</h2>
             <div className="text-amber-400 text-xl font-bold my-1">⭐⭐⭐ 3-STAR VICTORY</div>
             <p className="text-sm text-slate-300 max-w-md mt-1">
-              The Syndicate compound was completely flattened by {activeHero.name} and your allied strike force!
+              You completely flattened {selectedTarget.name}&apos;s sanctuary and defeated their defending champion!
             </p>
 
             <div className="flex items-center gap-4 my-4">
@@ -455,6 +713,9 @@ export default function AnimeRaidArena({
               </div>
               <div className="p-3 rounded-2xl bg-cyan-500/20 border border-cyan-500 text-cyan-300 font-black text-base">
                 🌀 +{lootEarned.chakra} Chakra Secured
+              </div>
+              <div className="p-3 rounded-2xl bg-purple-500/20 border border-purple-500 text-purple-300 font-black text-base">
+                🏆 +32 Trophies
               </div>
             </div>
 
@@ -469,7 +730,7 @@ export default function AnimeRaidArena({
         )}
       </div>
 
-      {/* 3. TROOP DEPLOYMENT SELECTOR BAR */}
+      {/* 3. TROOP & HERO DEPLOYMENT BAR */}
       <div className="flex flex-wrap items-center gap-3 p-3.5 rounded-3xl bg-[#0b1226]/95 border border-[#1e2a4a]">
         <span className="text-xs font-mono font-bold text-slate-400 uppercase ml-1">DEPLOY UNIT:</span>
 
@@ -516,8 +777,16 @@ export default function AnimeRaidArena({
             </button>
           );
         })}
+
+        {/* End Raid Button if user wants to retreat with partial stars */}
+        <button
+          type="button"
+          onClick={handleFinishAndCollect}
+          className="ml-auto px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-xs text-slate-300 font-bold cursor-pointer"
+        >
+          End Battle &amp; Claim Plunder
+        </button>
       </div>
     </div>
   );
 }
-

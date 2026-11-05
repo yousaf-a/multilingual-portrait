@@ -31,6 +31,7 @@ interface SanctuaryOrbitalHubProps {
   onLaunch1v1: () => void;
   onLaunchTrials: (floor: number) => void;
   onSwitchToVillageGrid: () => void;
+  onOpenMultiplayer?: () => void;
 }
 
 interface QuestItem {
@@ -73,7 +74,8 @@ export default function SanctuaryOrbitalHub({
   onUpdateVillage,
   onLaunch1v1,
   onLaunchTrials,
-  onSwitchToVillageGrid
+  onSwitchToVillageGrid,
+  onOpenMultiplayer
 }: SanctuaryOrbitalHubProps) {
   const activeHero = HEROES_CATALOG[villageState.activeHeroId] || HEROES_CATALOG.naruto;
 
@@ -773,16 +775,29 @@ export default function SanctuaryOrbitalHub({
                       >
                         Scout Base
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setActiveModal(null);
-                          onLaunch1v1();
-                        }}
-                        className="px-3 py-2 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:brightness-110 text-white text-xs font-bold shadow-md cursor-pointer"
-                      >
-                        Spar 1v1
-                      </button>
+                      {onOpenMultiplayer ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActiveModal(null);
+                            onOpenMultiplayer();
+                          }}
+                          className="px-3 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:brightness-110 text-white text-xs font-bold shadow-md cursor-pointer"
+                        >
+                          ⚔️ Raid Base
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActiveModal(null);
+                            onLaunch1v1();
+                          }}
+                          className="px-3 py-2 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:brightness-110 text-white text-xs font-bold shadow-md cursor-pointer"
+                        >
+                          Spar 1v1
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}

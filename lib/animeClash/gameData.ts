@@ -1,6 +1,6 @@
 // Anime Clash: Neo-Village Chronicles - Game Data Catalog
 
-import { HeroData, TroopData, BuildingInstance, StoryChapter, PlayerVillageState, SanctuaryGuild } from './types';
+import { HeroData, TroopData, BuildingInstance, StoryChapter, PlayerVillageState, SanctuaryGuild, FriendProfile } from './types';
 
 export const HEROES_CATALOG: Record<string, HeroData> = {
   naruto: {
@@ -90,7 +90,37 @@ export const HEROES_CATALOG: Record<string, HeroData> = {
     ultimateCooldown: 15,
     color: '#047857',
     accentColor: '#34d399'
+  },
+  gojo: {
+    id: 'gojo',
+    name: 'Satoru Gojo',
+    title: 'The Honored One / Limitless Six Eyes',
+    franchise: 'naruto',
+    avatar: '🤞',
+    image: '/anime-heroes/gojo_shibuya_awakening.jpg',
+    hp: 1550,
+    maxHp: 1550,
+    attack: 145,
+    range: 3.2,
+    speed: 3.6,
+    quote: "Throughout heaven and earth, I alone am the honored one. Don't worry, you guys can catch your breath. I'm the strongest, after all.",
+    modernOutfit: 'Obsidian High-Collar Cyber Trench, Blindfold Goggles, Carbon Boots',
+    skillName: 'Cursed Technique: Blue & Red Collapse',
+    skillDesc: 'Creates gravity singularities that crush multiple defenses at once.',
+    ultimateName: 'Domain Expansion: Infinite Void',
+    ultimateDesc: 'Overwhelms all enemy defenses in a 7-tile radius with infinite knowledge, freezing them for 6 seconds.',
+    ultimateCooldown: 18,
+    color: '#06b6d4',
+    accentColor: '#38bdf8'
   }
+};
+
+export const HERO_UNLOCK_HQ_REQUIREMENTS: Record<string, { hqLevel: number; heroName: string; anime: string; perk: string }> = {
+  naruto: { hqLevel: 1, heroName: 'Naruto Uzumaki', anime: 'Naruto Shippuden', perk: 'Starter Defender / Multi-Shadow Clone' },
+  luffy: { hqLevel: 2, heroName: 'Monkey D. Luffy', anime: 'One Piece', perk: 'Unlocks at Town Hall HQ 2 / Gum-Gum Red Hawk' },
+  ichigo: { hqLevel: 3, heroName: 'Ichigo Kurosaki', anime: 'Bleach', perk: 'Unlocks at Town Hall HQ 3 / Bankai Getsuga Tensho' },
+  asta: { hqLevel: 4, heroName: 'Asta', anime: 'Black Clover', perk: 'Unlocks at Town Hall HQ 4 / Black Meteorite Anti-Magic' },
+  gojo: { hqLevel: 5, heroName: 'Satoru Gojo', anime: 'Jujutsu Kaisen', perk: 'Unlocks at Town Hall HQ 5 / Infinite Void Domain' }
 };
 
 export const TROOPS_CATALOG: TroopData[] = [
@@ -276,15 +306,158 @@ export const INITIAL_PLAYER_STATE: PlayerVillageState = {
   reishi: 400,
   maxStorage: 2500,
   buildings: INITIAL_VILLAGE_BUILDINGS,
-  unlockedHeroes: ['naruto', 'luffy', 'ichigo', 'asta'],
+  unlockedHeroes: ['naruto'],
   activeHeroId: 'naruto',
   completedChapters: [],
-  heroLevels: { naruto: 1, luffy: 1, ichigo: 1, asta: 1 },
+  heroLevels: { naruto: 1 },
   trainedTroops: { konoha_ninja: 8, strawhat_brawler: 4, shinigami_patrol: 4, black_bulls_mage: 2 },
   weatherMode: 'night',
   activeGuildId: 'hidden_leaf',
-  guildContribution: 120
+  guildContribution: 120,
+  playerName: 'Marou (Me)',
+  sanctuaryTag: '#SANCTUARY-MAROU-1'
 };
+
+export const DEFAULT_FRIEND_BASES: FriendProfile[] = [
+  {
+    id: 'friend_kenji',
+    name: 'Kenji (Straw Hat Corsair)',
+    tag: '#CORSAIR-7721',
+    level: 3,
+    trophies: 4210,
+    activeHeroId: 'luffy',
+    heroLevel: 3,
+    berriesLoot: 1400,
+    chakraLoot: 950,
+    buildings: [
+      { id: 'k_core', type: 'command_core', name: 'Straw Hat Pagoda HQ', level: 3, x: 5, y: 5, hp: 1800, maxHp: 1800, color: '#dc2626', icon: '🏯' },
+      { id: 'k_can1', type: 'haki_cannon', name: 'Haki Rail Turret', level: 2, x: 3, y: 5, hp: 750, maxHp: 750, attack: 65, range: 5.5, color: '#ef4444', icon: '💣' },
+      { id: 'k_can2', type: 'haki_cannon', name: 'Haki Rail Turret', level: 2, x: 7, y: 5, hp: 750, maxHp: 750, attack: 65, range: 5.5, color: '#ef4444', icon: '💣' },
+      { id: 'k_mor1', type: 'paper_mortar', name: 'Pirate Bomb Mortar', level: 2, x: 5, y: 3, hp: 600, maxHp: 600, attack: 75, range: 6.5, color: '#f59e0b', icon: '💥' },
+      { id: 'k_stor1', type: 'berry_treasury', name: 'Grand Pirate Vault', level: 3, x: 4, y: 4, hp: 700, maxHp: 700, productionRate: 120, color: '#f59e0b', icon: '💰' },
+      { id: 'k_stor2', type: 'chakra_turbine', name: 'Chakra Distillery', level: 2, x: 6, y: 4, hp: 650, maxHp: 650, productionRate: 90, color: '#06b6d4', icon: '🌀' },
+      { id: 'k_w1', type: 'defense_wall', name: 'Titanium Wall', level: 2, x: 3, y: 4, hp: 900, maxHp: 900, color: '#475569', icon: '🧱' },
+      { id: 'k_w2', type: 'defense_wall', name: 'Titanium Wall', level: 2, x: 4, y: 3, hp: 900, maxHp: 900, color: '#475569', icon: '🧱' },
+      { id: 'k_w3', type: 'defense_wall', name: 'Titanium Wall', level: 2, x: 6, y: 3, hp: 900, maxHp: 900, color: '#475569', icon: '🧱' },
+      { id: 'k_w4', type: 'defense_wall', name: 'Titanium Wall', level: 2, x: 7, y: 4, hp: 900, maxHp: 900, color: '#475569', icon: '🧱' },
+      { id: 'k_w5', type: 'defense_wall', name: 'Titanium Wall', level: 2, x: 3, y: 6, hp: 900, maxHp: 900, color: '#475569', icon: '🧱' },
+      { id: 'k_w6', type: 'defense_wall', name: 'Titanium Wall', level: 2, x: 7, y: 6, hp: 900, maxHp: 900, color: '#475569', icon: '🧱' }
+    ]
+  },
+  {
+    id: 'friend_ren',
+    name: 'Ren (Soul Reaper Division)',
+    tag: '#SHINIGAMI-3309',
+    level: 3,
+    trophies: 4480,
+    activeHeroId: 'ichigo',
+    heroLevel: 3,
+    berriesLoot: 1100,
+    chakraLoot: 1600,
+    buildings: [
+      { id: 'r_core', type: 'command_core', name: 'Soul Society Pagoda HQ', level: 3, x: 5, y: 5, hp: 1900, maxHp: 1900, color: '#1e1b4b', icon: '🏯' },
+      { id: 'r_sip1', type: 'reishi_siphon', name: 'Reishi Monolith', level: 3, x: 5, y: 3, hp: 700, maxHp: 700, color: '#a855f7', icon: '🔮' },
+      { id: 'r_sip2', type: 'reishi_siphon', name: 'Reishi Monolith', level: 2, x: 5, y: 7, hp: 650, maxHp: 650, color: '#a855f7', icon: '🔮' },
+      { id: 'r_can1', type: 'haki_cannon', name: 'Getsuga Rail Cannon', level: 3, x: 3, y: 5, hp: 800, maxHp: 800, attack: 70, range: 6.0, color: '#ef4444', icon: '💣' },
+      { id: 'r_can2', type: 'haki_cannon', name: 'Getsuga Rail Cannon', level: 3, x: 7, y: 5, hp: 800, maxHp: 800, attack: 70, range: 6.0, color: '#ef4444', icon: '💣' },
+      { id: 'r_w1', type: 'defense_wall', name: 'Spirit Barrier Wall', level: 3, x: 4, y: 4, hp: 1100, maxHp: 1100, color: '#6366f1', icon: '🧱' },
+      { id: 'r_w2', type: 'defense_wall', name: 'Spirit Barrier Wall', level: 3, x: 6, y: 4, hp: 1100, maxHp: 1100, color: '#6366f1', icon: '🧱' },
+      { id: 'r_w3', type: 'defense_wall', name: 'Spirit Barrier Wall', level: 3, x: 4, y: 6, hp: 1100, maxHp: 1100, color: '#6366f1', icon: '🧱' },
+      { id: 'r_w4', type: 'defense_wall', name: 'Spirit Barrier Wall', level: 3, x: 6, y: 6, hp: 1100, maxHp: 1100, color: '#6366f1', icon: '🧱' }
+    ]
+  },
+  {
+    id: 'friend_yuno',
+    name: 'Yuno (Anti-Magic Spire)',
+    tag: '#CLOVER-8812',
+    level: 4,
+    trophies: 4620,
+    activeHeroId: 'asta',
+    heroLevel: 4,
+    berriesLoot: 1800,
+    chakraLoot: 1400,
+    buildings: [
+      { id: 'y_core', type: 'command_core', name: 'Black Bulls Spire HQ', level: 4, x: 5, y: 5, hp: 2200, maxHp: 2200, color: '#047857', icon: '🏯' },
+      { id: 'y_can1', type: 'haki_cannon', name: 'Anti-Magic Cannon', level: 3, x: 3, y: 3, hp: 850, maxHp: 850, attack: 75, range: 6.0, color: '#ef4444', icon: '💣' },
+      { id: 'y_can2', type: 'haki_cannon', name: 'Anti-Magic Cannon', level: 3, x: 7, y: 3, hp: 850, maxHp: 850, attack: 75, range: 6.0, color: '#ef4444', icon: '💣' },
+      { id: 'y_can3', type: 'haki_cannon', name: 'Anti-Magic Cannon', level: 3, x: 3, y: 7, hp: 850, maxHp: 850, attack: 75, range: 6.0, color: '#ef4444', icon: '💣' },
+      { id: 'y_can4', type: 'haki_cannon', name: 'Anti-Magic Cannon', level: 3, x: 7, y: 7, hp: 850, maxHp: 850, attack: 75, range: 6.0, color: '#ef4444', icon: '💣' },
+      { id: 'y_mor1', type: 'paper_mortar', name: 'Black Fire Mortar', level: 3, x: 5, y: 2, hp: 700, maxHp: 700, attack: 85, range: 7.0, color: '#f59e0b', icon: '💥' }
+    ]
+  }
+];
+
+export function exportSanctuaryCode(village: PlayerVillageState): string {
+  const payload = {
+    n: village.playerName || 'Marou',
+    t: village.sanctuaryTag || '#SANCTUARY-1',
+    l: village.level,
+    h: village.activeHeroId,
+    hl: village.heroLevels?.[village.activeHeroId] || 1,
+    b: village.buildings.map((b) => ({
+      i: b.id,
+      t: b.type,
+      n: b.name,
+      l: b.level,
+      x: b.x,
+      y: b.y,
+      h: b.hp,
+      m: b.maxHp,
+      a: b.attack,
+      r: b.range,
+      c: b.color,
+      ic: b.icon
+    }))
+  };
+  try {
+    return 'BASE-' + btoa(JSON.stringify(payload));
+  } catch (_) {
+    return 'BASE-' + JSON.stringify(payload);
+  }
+}
+
+export function importSanctuaryCode(codeString: string): FriendProfile | null {
+  try {
+    let clean = codeString.trim();
+    if (clean.startsWith('BASE-')) clean = clean.slice(5);
+    let parsed: any;
+    try {
+      parsed = JSON.parse(atob(clean));
+    } catch (_) {
+      parsed = JSON.parse(clean);
+    }
+    if (!parsed || !parsed.b || !Array.isArray(parsed.b)) return null;
+
+    return {
+      id: `custom_${Date.now()}`,
+      name: parsed.n || 'Imported Friend',
+      tag: parsed.t || '#FRIEND-CODE',
+      level: parsed.l || 1,
+      trophies: 4000 + Math.floor(Math.random() * 500),
+      activeHeroId: parsed.h || 'naruto',
+      heroLevel: parsed.hl || 1,
+      berriesLoot: (parsed.l || 1) * 450,
+      chakraLoot: (parsed.l || 1) * 350,
+      isCustom: true,
+      buildings: parsed.b.map((b: any) => ({
+        id: b.i || `b_${Math.random()}`,
+        type: b.t || 'command_core',
+        name: b.n || 'Building',
+        level: b.l || 1,
+        x: b.x ?? 5,
+        y: b.y ?? 5,
+        hp: b.h || 800,
+        maxHp: b.m || 800,
+        attack: b.a,
+        range: b.r,
+        color: b.c || '#475569',
+        icon: b.ic || '🧱'
+      }))
+    };
+  } catch (_) {
+    return null;
+  }
+}
 
 export const SANCTUARY_GUILDS: SanctuaryGuild[] = [
   {
@@ -401,7 +574,7 @@ export const VILLAGE_HQ_LEVEL_PLANS: Record<number, VillageHQPlan> = {
     armyCampCapacity: 30,
     upgradeCostBerries: 0,
     upgradeCostChakra: 0,
-    unlockedFeatures: ['Command Core', 'Haki Rail Cannon', 'Titanium Wall Tier 1', 'Chakra Turbine', 'Max Hero Lv 5'],
+    unlockedFeatures: ['Command Core', 'Haki Rail Cannon', 'Titanium Wall Tier 1', 'Chakra Turbine', '👑 Starter Hero: Naruto Uzumaki', 'Max Hero Lv 5'],
     heroBuffBonus: 'Base hero stats active.'
   },
   2: {
@@ -414,7 +587,7 @@ export const VILLAGE_HQ_LEVEL_PLANS: Record<number, VillageHQPlan> = {
     armyCampCapacity: 50,
     upgradeCostBerries: 800,
     upgradeCostChakra: 500,
-    unlockedFeatures: ['Spiritual Tower', 'Paper-Bomb Traps', 'Storage Expansion (+100%)', 'Wall Tier 2', 'Max Hero Lv 10'],
+    unlockedFeatures: ['👑 UNLOCK HERO: Monkey D. Luffy (One Piece)', 'Spiritual Tower', 'Paper-Bomb Traps', 'Storage Expansion (+100%)', 'Wall Tier 2', 'Max Hero Lv 10'],
     heroBuffBonus: '+15% Hero HP & Guard Patrol Aura.'
   },
   3: {
@@ -427,20 +600,20 @@ export const VILLAGE_HQ_LEVEL_PLANS: Record<number, VillageHQPlan> = {
     armyCampCapacity: 80,
     upgradeCostBerries: 2200,
     upgradeCostChakra: 1400,
-    unlockedFeatures: ['Heavy Laser Mortar', 'Reishi Siphon Overclock', 'Auto-Repair Shield', 'Wall Tier 3', 'Max Hero Lv 15'],
+    unlockedFeatures: ['👑 UNLOCK HERO: Ichigo Kurosaki (Bleach)', 'Heavy Laser Mortar', 'Reishi Siphon Overclock', 'Auto-Repair Shield', 'Wall Tier 3', 'Max Hero Lv 15'],
     heroBuffBonus: '+30% Hero Damage & Ultimate Cooldown -2s.'
   },
   4: {
     level: 4,
     title: 'Metropolitan Fortress',
-    maxStorage: 25000,
+    maxStorage: 2500,
     maxBuildings: 32,
     maxHeroLevel: 20,
     maxBuildingLevel: 7,
     armyCampCapacity: 120,
     upgradeCostBerries: 5000,
     upgradeCostChakra: 3200,
-    unlockedFeatures: ['Hero Awakening Shrine', 'Twin Rail Cannons', 'EMP Defense Barrier', 'Wall Tier 4', 'Max Hero Lv 20'],
+    unlockedFeatures: ['👑 UNLOCK HERO: Asta (Black Clover)', 'Hero Awakening Shrine', 'Twin Rail Cannons', 'EMP Defense Barrier', 'Wall Tier 4', 'Max Hero Lv 20'],
     heroBuffBonus: '+50% Hero Firepower & Instant Guard Teleport.'
   },
   5: {
@@ -453,7 +626,7 @@ export const VILLAGE_HQ_LEVEL_PLANS: Record<number, VillageHQPlan> = {
     armyCampCapacity: 180,
     upgradeCostBerries: 12000,
     upgradeCostChakra: 8000,
-    unlockedFeatures: ['Tetra-Dimensional Forcefield', 'Orbital Rail Artillery', 'Infinite Void Trap', 'Master Walls', 'Max Hero Lv 30'],
+    unlockedFeatures: ['👑 UNLOCK HERO: Satoru Gojo (Jujutsu Kaisen)', 'Tetra-Dimensional Forcefield', 'Orbital Rail Artillery', 'Infinite Void Trap', 'Master Walls', 'Max Hero Lv 30'],
     heroBuffBonus: '+100% Hero Stats & Permanent Awakening Aura.'
   }
 };

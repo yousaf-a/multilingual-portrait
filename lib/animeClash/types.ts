@@ -106,6 +106,33 @@ export interface SanctuaryGuild {
   leader: string;
 }
 
+export interface FriendProfile {
+  id: string;
+  name: string;
+  tag: string;
+  level: number;
+  trophies: number;
+  activeHeroId: string;
+  heroLevel: number;
+  berriesLoot: number;
+  chakraLoot: number;
+  buildings: BuildingInstance[];
+  isCustom?: boolean;
+}
+
+export interface RaidBattleReport {
+  id: string;
+  timestamp: number;
+  attackerName: string;
+  defenderName: string;
+  stars: number;
+  destructionPct: number;
+  lootStolenBerries: number;
+  lootStolenChakra: number;
+  trophiesDelta: number;
+  isDefense: boolean;
+}
+
 export interface PlayerVillageState {
   level: number;
   berries: number;
@@ -121,5 +148,11 @@ export interface PlayerVillageState {
   weatherMode?: WeatherTimeMode;
   activeGuildId?: string;
   guildContribution?: number;
+  playerName?: string;
+  sanctuaryTag?: string;
+  customFriends?: FriendProfile[];
+  battleReports?: RaidBattleReport[];
+  profileSlots?: Record<string, PlayerVillageState>;
+  activeProfileKey?: string;
 }
 

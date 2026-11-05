@@ -44,6 +44,7 @@ import {
 import AnimeRaidArena from './AnimeRaidArena';
 import BaseDefenseSimulator from './BaseDefenseSimulator';
 import SanctuaryOrbitalHub from './SanctuaryOrbitalHub';
+import Hero360Showcase from './Hero360Showcase';
 import { animeAudio } from '@/lib/animeClash/animeAudio';
 import {
   Shield,
@@ -82,7 +83,8 @@ import {
   Eye,
   Home,
   User,
-  LogOut
+  LogOut,
+  Compass
 } from 'lucide-react';
 
 interface VillageBuilderProps {
@@ -127,6 +129,8 @@ export default function VillageBuilder({
   const [copiedCodeToast, setCopiedCodeToast] = useState(false);
   const [importFriendCodeInput, setImportFriendCodeInput] = useState('');
   const [isDefenseActive, setIsDefenseActive] = useState(false);
+  const [show360Showcase, setShow360Showcase] = useState(false);
+  const [showcaseHeroId, setShowcaseHeroId] = useState('naruto');
   const [voiceShoutBanner, setVoiceShoutBanner] = useState<{ kanji: string; romaji: string; trans: string } | null>(null);
   const [raidResult, setRaidResult] = useState<{
     stars: number;
@@ -796,6 +800,16 @@ export default function VillageBuilder({
         />
       )}
 
+      {/* 360° Interactive Hero Dojo & Turntable Showcase Modal */}
+      {show360Showcase && (
+        <Hero360Showcase
+          initialHeroId={showcaseHeroId}
+          villageState={villageState}
+          onUpdateVillage={onUpdateVillage}
+          onClose={() => setShow360Showcase(false)}
+        />
+      )}
+
       {/* Voice Shout Japanese Kanji Banner Overlay */}
       {voiceShoutBanner && (
         <div className="fixed top-12 left-1/2 -translate-x-1/2 z-50 pointer-events-none animate-in fade-in zoom-in duration-300">
@@ -973,6 +987,20 @@ export default function VillageBuilder({
             <Layers size={14} />
             <span>🏰 Base Grid & Build</span>
           </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setShowcaseHeroId(activeHero.id);
+              setShow360Showcase(true);
+              animeAudio.playButtonClick();
+            }}
+            className="px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 hover:bg-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.3)] hover:scale-[1.02]"
+            title="Inspect all heroes in interactive 360 degree turntable with multiple animated poses"
+          >
+            <Compass size={14} className="text-cyan-400 animate-spin" style={{ animationDuration: '10s' }} />
+            <span>🌀 360° Hero Dojo</span>
+          </button>
         </div>
 
         {/* Dynamic Weather & Time Atmosphere Switcher */}
@@ -1111,10 +1139,25 @@ export default function VillageBuilder({
                 className="w-full h-auto block cursor-crosshair select-none touch-manipulation max-h-[520px] object-cover"
               />
 
-              {/* In-Canvas Hero Guard Indicator Pill */}
-              <div className="absolute top-3 left-3 sm:top-4 sm:left-4 flex items-center gap-2 px-3 py-1 rounded-full bg-black/75 border border-emerald-500/50 backdrop-blur-md text-[11px] text-emerald-300 font-bold pointer-events-none">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                <span>{activeHero.name} on Guard Patrol (Tap to Interact)</span>
+              {/* In-Canvas Hero Guard Indicator & 360 Dojo Pill */}
+              <div className="absolute top-3 left-3 sm:top-4 sm:left-4 flex items-center gap-2 z-10">
+                <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-black/75 border border-emerald-500/50 backdrop-blur-md text-[11px] text-emerald-300 font-bold pointer-events-none">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                  <span>{activeHero.name} on Guard Patrol</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowcaseHeroId(activeHero.id);
+                    setShow360Showcase(true);
+                    animeAudio.playButtonClick();
+                  }}
+                  className="px-3 py-1 rounded-full bg-cyan-600/80 hover:bg-cyan-500 text-white border border-cyan-400/50 backdrop-blur-md text-[11px] font-bold cursor-pointer shadow flex items-center gap-1 transition"
+                  title="Inspect hero in 360° turntable with animated poses"
+                >
+                  <Compass size={12} />
+                  <span>360° Dojo</span>
+                </button>
               </div>
 
               {/* Relocation Mode Banner */}
@@ -1470,13 +1513,27 @@ export default function VillageBuilder({
                 Level up anime heroes with resources. Hero level cap is bound by Town Hall HQ Level {villageState.level} (Max Hero Lv {getMaxHeroLevelForHQ(villageState.level)}).
               </p>
             </div>
-            <button
-              type="button"
-              onClick={() => setActiveBuildTab('village')}
-              className="text-xs text-slate-300 hover:text-white px-3 py-1.5 rounded-xl bg-[#1e293b]"
-            >
-              Return to Map
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowcaseHeroId(activeHero.id);
+                  setShow360Showcase(true);
+                  animeAudio.playButtonClick();
+                }}
+                className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:brightness-110 text-white font-bold text-xs flex items-center gap-1.5 shadow-[0_0_15px_rgba(6,182,212,0.4)] cursor-pointer transition"
+              >
+                <Compass size={14} className="text-cyan-200" />
+                <span>🌀 360° Dojo &amp; Poses</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveBuildTab('village')}
+                className="text-xs text-slate-300 hover:text-white px-3 py-1.5 rounded-xl bg-[#1e293b]"
+              >
+                Return to Map
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -1571,6 +1628,20 @@ export default function VillageBuilder({
                         🔒 Max Lv {maxHeroLevel} for HQ {villageState.level} (Upgrade HQ)
                       </div>
                     )}
+
+                    {/* 360° Dojo View & Poses Button */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowcaseHeroId(hero.id);
+                        setShow360Showcase(true);
+                        animeAudio.playButtonClick();
+                      }}
+                      className="w-full py-1.5 rounded-xl bg-gradient-to-r from-cyan-600/25 to-blue-600/25 hover:from-cyan-600/40 hover:to-blue-600/40 text-cyan-300 font-bold text-xs border border-cyan-500/30 flex items-center justify-center gap-1.5 transition cursor-pointer shadow-sm"
+                    >
+                      <Compass size={13} className="text-cyan-400" />
+                      <span>360° View &amp; Poses</span>
+                    </button>
 
                     {/* Active Guard Status */}
                     {isActive ? (

@@ -1,6 +1,14 @@
 // Anime Clash: Neo-Village Chronicles - Core Types
 
-export type AnimeFranchise = 'naruto' | 'one_piece' | 'bleach' | 'black_clover';
+export type AnimeFranchise =
+  | 'naruto'
+  | 'one_piece'
+  | 'bleach'
+  | 'black_clover'
+  | 'solo_leveling'
+  | 'demon_slayer'
+  | 'jujutsu_kaisen'
+  | 'attack_on_titan';
 
 export interface HeroData {
   id: string;

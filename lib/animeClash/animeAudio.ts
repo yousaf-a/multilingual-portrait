@@ -149,6 +149,42 @@ class AnimeAudioManager {
       } else if (heroId === 'gojo') {
         utterance.pitch = 0.9;
         utterance.rate = 0.95;
+      } else if (heroId === 'minato') {
+        utterance.pitch = 1.1;
+        utterance.rate = 1.12;
+      } else if (heroId === 'zoro') {
+        utterance.pitch = 0.76;
+        utterance.rate = 0.94;
+      } else if (heroId === 'sung_jinwoo') {
+        utterance.pitch = 0.78;
+        utterance.rate = 0.92;
+      } else if (heroId === 'igris') {
+        utterance.pitch = 0.65;
+        utterance.rate = 0.85;
+      } else if (heroId === 'sanemi') {
+        utterance.pitch = 1.18;
+        utterance.rate = 1.22;
+      } else if (heroId === 'hitsugaya') {
+        utterance.pitch = 1.2;
+        utterance.rate = 1.05;
+      } else if (heroId === 'kenpachi') {
+        utterance.pitch = 0.7;
+        utterance.rate = 0.96;
+      } else if (heroId === 'inosuke') {
+        utterance.pitch = 1.32;
+        utterance.rate = 1.25;
+      } else if (heroId === 'tsunade') {
+        utterance.pitch = 1.1;
+        utterance.rate = 0.98;
+      } else if (heroId === 'yoruichi') {
+        utterance.pitch = 1.16;
+        utterance.rate = 1.12;
+      } else if (heroId === 'boa_hancock') {
+        utterance.pitch = 1.22;
+        utterance.rate = 0.94;
+      } else if (heroId === 'mikasa') {
+        utterance.pitch = 1.04;
+        utterance.rate = 0.95;
       } else {
         utterance.pitch = 1.0;
         utterance.rate = 1.0;

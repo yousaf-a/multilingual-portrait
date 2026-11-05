@@ -537,6 +537,30 @@ export default function BattleArena({
             </button>
           </div>
         )}
+
+        {/* Cinematic Anime Hero Cut-In Overlay during Ultimate */}
+        {ultimateActiveBanner && (
+          <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/75 to-transparent flex items-center px-6 sm:px-12 pointer-events-none animate-in fade-in zoom-in duration-300">
+            <div className="flex items-center gap-4 sm:gap-6">
+              <img
+                src={hero.image}
+                alt={hero.name}
+                className="w-24 sm:w-32 h-36 sm:h-44 rounded-2xl object-cover object-top border-4 border-amber-400 shadow-[0_0_35px_rgba(251,191,36,0.85)]"
+              />
+              <div>
+                <span className="text-[11px] font-extrabold text-amber-400 tracking-widest uppercase block">
+                  ★ SPECIAL ANIME ULTIMATE ★
+                </span>
+                <h2 className="text-2xl sm:text-3xl font-black text-white italic drop-shadow-[0_0_15px_rgba(255,255,255,0.8)]">
+                  {hero.ultimateName}!
+                </h2>
+                <p className="text-xs sm:text-sm text-amber-200 mt-1 italic font-medium max-w-sm">
+                  &ldquo;{hero.quote}&rdquo;
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Troop & Hero Deployment Bar */}
@@ -546,7 +570,7 @@ export default function BattleArena({
           type="button"
           disabled={heroDeployed}
           onClick={() => setSelectedDeployTroop('hero')}
-          className={`flex items-center gap-2 p-2 rounded-xl border transition ${
+          className={`flex items-center gap-2.5 p-2 rounded-xl border transition ${
             selectedDeployTroop === 'hero'
               ? 'border-amber-400 bg-[#1e293b]'
               : heroDeployed
@@ -554,7 +578,12 @@ export default function BattleArena({
               : 'border-[#22335c] bg-[#080d1e] cursor-pointer'
           }`}
         >
-          <span className="text-2xl">{hero.avatar}</span>
+          <img
+            src={hero.image}
+            alt={hero.name}
+            className="w-9 h-9 rounded-xl object-cover object-top border"
+            style={{ borderColor: hero.color }}
+          />
           <div className="text-left text-xs">
             <div className="font-bold text-white">{hero.name.split(' ')[0]}</div>
             <div className="text-[10px] text-amber-400">{heroDeployed ? 'DEPLOYED' : 'HERO UNIT'}</div>
@@ -596,3 +625,4 @@ export default function BattleArena({
     </div>
   );
 }
+

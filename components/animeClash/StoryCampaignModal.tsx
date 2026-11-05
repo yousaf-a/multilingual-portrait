@@ -108,7 +108,20 @@ export default function StoryCampaignModal({
           {/* Dialogue Box */}
           <div className="flex flex-col gap-3 my-2 p-4 rounded-3xl bg-[#0b1633] border-2 border-[#1e3a6a] shadow-xl">
             <div className="flex items-center gap-3">
-              <span className="text-3xl p-1 bg-[#182b54] rounded-xl">{currentDialog.avatar}</span>
+              {(() => {
+                const speakerHero = Object.values(HEROES_CATALOG).find((h) =>
+                  h.name.toLowerCase().includes(currentDialog.speaker.toLowerCase().split(' ')[0])
+                );
+                return speakerHero ? (
+                  <img
+                    src={speakerHero.image}
+                    alt={speakerHero.name}
+                    className="w-12 h-14 rounded-xl object-cover object-top border-2 border-amber-400 shadow-md shrink-0"
+                  />
+                ) : (
+                  <span className="text-3xl p-1 bg-[#182b54] rounded-xl shrink-0">{currentDialog.avatar}</span>
+                );
+              })()}
               <div>
                 <span className="text-xs font-bold text-amber-400 block">{currentDialog.speaker}</span>
                 <span className="text-[10px] text-slate-400 uppercase font-mono">{currentDialog.franchise.replace('_', ' ')}</span>
@@ -156,3 +169,4 @@ export default function StoryCampaignModal({
     </div>
   );
 }
+

@@ -8,6 +8,7 @@ export interface HeroData {
   title: string;
   franchise: AnimeFranchise;
   avatar: string;
+  image: string;
   hp: number;
   maxHp: number;
   attack: number;
@@ -101,3 +102,4 @@ export interface PlayerVillageState {
   activeHeroId: string;
   completedChapters: string[];
 }
+

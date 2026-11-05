@@ -9,6 +9,7 @@ export const HEROES_CATALOG: Record<string, HeroData> = {
     title: 'Seventh Hokage / Will of Fire',
     franchise: 'naruto',
     avatar: '🍥',
+    image: '/anime-heroes/naruto-tactical.png',
     hp: 950,
     maxHp: 950,
     attack: 85,
@@ -30,6 +31,7 @@ export const HEROES_CATALOG: Record<string, HeroData> = {
     title: 'Future King of the Pirates / Gear Master',
     franchise: 'one_piece',
     avatar: '🍖',
+    image: '/anime-heroes/luffy-tactical.jpg',
     hp: 1250,
     maxHp: 1250,
     attack: 90,
@@ -51,6 +53,7 @@ export const HEROES_CATALOG: Record<string, HeroData> = {
     title: 'Substitute Shinigami / Moon Cutter',
     franchise: 'bleach',
     avatar: '⚔️',
+    image: '/anime-heroes/ichigo-tactical.jpg',
     hp: 800,
     maxHp: 800,
     attack: 120,
@@ -72,6 +75,7 @@ export const HEROES_CATALOG: Record<string, HeroData> = {
     title: 'Black Bulls Anti-Magic Knight',
     franchise: 'black_clover',
     avatar: '🍀',
+    image: '/anime-heroes/asta-tactical.jpg',
     hp: 1100,
     maxHp: 1100,
     attack: 95,
@@ -425,3 +429,4 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     enemyBasePreset: 'cyber_clover_citadel'
   }
 ];
+

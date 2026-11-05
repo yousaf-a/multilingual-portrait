@@ -164,6 +164,7 @@ export interface PlayerVillageState {
   trophies?: number;
   customFriends?: FriendProfile[];
   battleReports?: RaidBattleReport[];
+  lastHarvestTime?: number;
   profileSlots?: Record<string, PlayerVillageState>;
   activeProfileKey?: string;
   ownerUserId?: string;

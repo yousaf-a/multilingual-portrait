@@ -135,6 +135,16 @@ export default function VillageBuilder({
     chakraLooted: number;
     log: string[];
   } | null>(null);
+  const [harvestToast, setHarvestToast] = useState<string | null>(null);
+  const [currentTime, setCurrentTime] = useState(Date.now());
+
+  // 1-second interval to update live countdown and real-time resource accrual
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(Date.now());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const animRef = useRef<number | null>(null);
@@ -376,24 +386,65 @@ export default function VillageBuilder({
     }
   };
 
-  // Collect passive resources
-  const handleCollectResources = () => {
-    let addBerries = 0;
-    let addChakra = 0;
-    let addReishi = 0;
+  // Strict Harvest Cooldown & Collector Capacity Limits
+  const HARVEST_COOLDOWN_SECONDS = 45; // 45 seconds time period between harvests
+  const lastHarvest = villageState.lastHarvestTime || (currentTime - 45000);
+  const elapsedSeconds = Math.max(0, (currentTime - lastHarvest) / 1000);
+  const cooldownRemaining = Math.max(0, Math.ceil(HARVEST_COOLDOWN_SECONDS - elapsedSeconds));
 
-    villageState.buildings.forEach((b) => {
-      if (b.type === 'berry_treasury') addBerries += (b.productionRate || 20) * 2;
-      if (b.type === 'chakra_turbine') addChakra += (b.productionRate || 15) * 2;
-      if (b.type === 'reishi_siphon') addReishi += (b.productionRate || 12) * 2;
-    });
+  // Calculate accumulated resources based on elapsed seconds and building rates
+  let accruedBerries = 0;
+  let accruedChakra = 0;
+  let accruedReishi = 0;
+
+  villageState.buildings.forEach((b) => {
+    const ratePerSec = ((b.productionRate || 20) * 1.5) / 60; // Production per second
+    const collectorCap = Math.round((b.productionRate || 20) * 8); // Capacity limit of uncollected loot
+    const generated = Math.min(collectorCap, Math.floor(elapsedSeconds * ratePerSec));
+
+    if (b.type === 'berry_treasury') accruedBerries += generated;
+    if (b.type === 'chakra_turbine') accruedChakra += generated;
+    if (b.type === 'reishi_siphon') accruedReishi += generated;
+  });
+
+  const totalAccrued = accruedBerries + accruedChakra + accruedReishi;
+  const isStorageFull =
+    villageState.berries >= villageState.maxStorage &&
+    villageState.chakra >= villageState.maxStorage &&
+    villageState.reishi >= villageState.maxStorage;
+
+  // Collect passive resources with cooldown, collector cap, and storage limit
+  const handleCollectResources = () => {
+    if (cooldownRemaining > 0) {
+      alert(`⏳ Collectors are still gathering! Next harvest available in ${cooldownRemaining}s.`);
+      return;
+    }
+
+    if (isStorageFull) {
+      alert(`⚠️ Storage Full! Your vaults are at maximum capacity (${villageState.maxStorage.toLocaleString()}). Upgrade your Town Hall HQ or spend resources before harvesting!`);
+      return;
+    }
+
+    if (totalAccrued < 1) {
+      alert('🌾 Collectors have not accumulated resources yet. Please wait a few moments!');
+      return;
+    }
+
+    const newBerries = Math.min(villageState.maxStorage, villageState.berries + accruedBerries);
+    const newChakra = Math.min(villageState.maxStorage, villageState.chakra + accruedChakra);
+    const newReishi = Math.min(villageState.maxStorage, villageState.reishi + accruedReishi);
 
     onUpdateVillage({
       ...villageState,
-      berries: Math.min(villageState.maxStorage, villageState.berries + addBerries),
-      chakra: Math.min(villageState.maxStorage, villageState.chakra + addChakra),
-      reishi: Math.min(villageState.maxStorage, villageState.reishi + addReishi)
+      berries: newBerries,
+      chakra: newChakra,
+      reishi: newReishi,
+      lastHarvestTime: Date.now()
     });
+
+    animeAudio.playButtonClick();
+    setHarvestToast(`+${accruedBerries} 💰  +${accruedChakra} 🌀  +${accruedReishi} 🔮`);
+    setTimeout(() => setHarvestToast(null), 3500);
   };
 
   // Upgrade building (Capped by Town Hall HQ Level)
@@ -759,6 +810,20 @@ export default function VillageBuilder({
         </div>
       )}
 
+      {/* Harvest Accrual Floating Toast */}
+      {harvestToast && (
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 pointer-events-none animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className="px-6 py-2.5 rounded-2xl bg-emerald-950/95 border-2 border-emerald-400 shadow-[0_0_35px_rgba(16,185,129,0.8)] text-center backdrop-blur-md">
+            <div className="text-xs font-black uppercase text-emerald-300 tracking-wider">
+              🌾 Harvest Successful!
+            </div>
+            <div className="text-sm font-black text-white mt-0.5">
+              {harvestToast}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 1. TOP HEADER & ACTION BAR */}
       <div className="flex flex-wrap items-center justify-between gap-2.5 p-3 sm:p-4 rounded-3xl bg-[#0b1226]/95 border border-[#1e2a4a] shadow-xl backdrop-blur-md">
         {/* Left: Active Hero Avatar & Player Profile */}
@@ -836,14 +901,40 @@ export default function VillageBuilder({
             </span>
           </div>
 
-          {/* Quick Harvest Button */}
+          {/* Quick Harvest Button with Cooldown & Capacity Limiter */}
           <button
             type="button"
             onClick={handleCollectResources}
-            className="px-3 py-1.5 sm:py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:brightness-110 text-white text-xs font-bold transition flex items-center gap-1 shadow-md cursor-pointer"
-            title="Collect all generated resources"
+            disabled={cooldownRemaining > 0 || isStorageFull || totalAccrued < 1}
+            className={`px-3 py-1.5 sm:py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-md ${
+              isStorageFull
+                ? 'bg-rose-950/70 border border-rose-500/50 text-rose-300 cursor-not-allowed opacity-85'
+                : cooldownRemaining > 0
+                ? 'bg-slate-800/90 border border-slate-700 text-slate-400 cursor-not-allowed'
+                : totalAccrued > 0
+                ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:brightness-110 text-white shadow-[0_0_15px_rgba(16,185,129,0.4)] animate-pulse cursor-pointer'
+                : 'bg-slate-800 text-slate-500 cursor-not-allowed'
+            }`}
+            title={
+              isStorageFull
+                ? `Storage Full (${villageState.maxStorage.toLocaleString()})! Upgrade HQ or spend resources.`
+                : cooldownRemaining > 0
+                ? `Gathering resources... Next harvest ready in ${cooldownRemaining}s.`
+                : totalAccrued > 0
+                ? `Ready to harvest: +${accruedBerries} Berries, +${accruedChakra} Chakra, +${accruedReishi} Reishi`
+                : 'Gathering resources...'
+            }
           >
-            <span>🌾 Harvest</span>
+            <span>🌾</span>
+            <span>
+              {isStorageFull
+                ? 'Full'
+                : cooldownRemaining > 0
+                ? `⏳ ${cooldownRemaining}s`
+                : totalAccrued > 0
+                ? `Harvest (+${totalAccrued})`
+                : 'Gathering...'}
+            </span>
           </button>
         </div>
       </div>

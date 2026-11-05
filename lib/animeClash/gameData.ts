@@ -325,7 +325,8 @@ export const INITIAL_PLAYER_STATE: PlayerVillageState = {
   activeGuildId: 'hidden_leaf',
   guildContribution: 120,
   playerName: 'Marou (Me)',
-  sanctuaryTag: '#SANCTUARY-MAROU-1'
+  sanctuaryTag: '#SANCTUARY-MAROU-1',
+  lastHarvestTime: 0
 };
 
 export const DEFAULT_FRIEND_BASES: FriendProfile[] = [

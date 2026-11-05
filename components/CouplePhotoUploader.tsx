@@ -74,7 +74,30 @@ const PRESETS = [
     leftName: 'Her (Gaze)',
     rightName: 'Him (Gaze)',
     suggestedNames: 'Sophia & Lucas',
-    styleInstruction: 'Style: Ultra-realistic cinematic couple photography, natural skin texture, detailed eyes, soft dramatic lighting, professional editorial portrait, shallow depth of field, warm earthy tones. Close-up intimate couple looking ahead, faces touching tenderly.'
+    styleInstruction: 'Style: Ultra-realistic cinematic couple photography, natural skin texture, detailed eyes, soft dramatic lighting, professional editorial portrait, shallow depth of field, warm earthy tones. Close-up intimate couple looking ahead, faces touching cheek-to-cheek.',
+    masterPrompt: `Use the two uploaded images (Image 1 and Image 2) as strict identity references.
+
+Transform the two individuals into a single aesthetically composed, intimate cinematic couple portrait. Bring both individuals together naturally in an ultra close-up composition.
+
+**Composition & Pose:**
+- Person 1 (from Image 1) on the left and Person 2 (from Image 2) on the right, faces physically touching cheek-to-cheek.
+- Both individuals are gazing directly forward into the camera lens with calm, magnetic, deeply intimate expressions.
+- Ultra close-up framing where both faces fill 90% of the canvas.
+- Heads aligned at equal eye level, creating a striking, unified couple symmetry.
+
+**Identity Preservation (Strict Face-Swap Accuracy):**
+- Person 1 must retain the exact authentic facial features, eye color, eyebrow shape, nose structure, lip contours, face shape, skin tone, and complexion from Image 1.
+- Person 2 must retain the exact authentic facial features, eye color, eyebrow shape, nose structure, lip contours, face shape, skin tone, and complexion from Image 2.
+- Crucial: Do NOT morph or blend their facial features together. Each half of the composition must remain 100% identifiable as the specific real person.
+
+**Artistic Direction & Style:**
+- Style: Ultra-realistic cinematic couple photography, shot on 85mm portrait lens, f/1.4 aperture.
+- Dramatic editorial chiaroscuro studio lighting with soft warm rim light and subtle shadows accentuating facial depth.
+- Natural skin texture showing fine pores, delicate skin tones, realistic moisture and catchlights in eyes.
+- Cohesive high-end photography. NOT two images pasted together.
+- No borders, no collage, no split screen line, no extra people, no text, no watermark.
+
+Output: One cohesive photorealistic cinematic couple portrait featuring both individuals.`
   },
   {
     id: 'split_face_2',
@@ -91,7 +114,29 @@ const PRESETS = [
     leftName: 'Him (Closed)',
     rightName: 'Her (Closed)',
     suggestedNames: 'Maya & Ethan',
-    styleInstruction: 'Style: Ultra-realistic cinematic couple photography, natural skin texture, detailed eyes, soft dramatic lighting, professional editorial portrait, shallow depth of field, warm earthy tones. Serene, peaceful close-up couple portrait, eyes closed in an intimate loving embrace.'
+    styleInstruction: 'Style: Ultra-realistic cinematic couple photography, natural skin texture, detailed eyes, soft dramatic lighting, professional editorial portrait, shallow depth of field, warm earthy tones. Serene, peaceful close-up couple portrait, eyes closed in an intimate loving embrace.',
+    masterPrompt: `Use the two uploaded images (Image 1 and Image 2) as strict identity references.
+
+Transform the two individuals into a single aesthetically composed, deeply peaceful and intimate couple portrait.
+
+**Composition & Pose:**
+- Person 1 (from Image 1) on the left and Person 2 (from Image 2) on the right, resting cheek-to-cheek and forehead-to-forehead in an intimate embrace.
+- Both individuals have their eyes gently closed in serene romantic bliss, wearing subtle, peaceful smiles.
+- Ultra close-up framing capturing the tenderness, warmth, and quiet romance between them.
+- Harmonious, balanced positioning with their faces occupying the majority of the frame.
+
+**Identity Preservation (Strict Face-Swap Accuracy):**
+- Person 1 must retain the exact closed-eyelid shape, lash length, brow shape, nose bridge, cheekbones, lips, jawline, skin tone, and recognizable likeness from Image 1.
+- Person 2 must retain the exact closed-eyelid shape, lash length, brow shape, nose bridge, cheekbones, lips, jawline, skin tone, and recognizable likeness from Image 2.
+- Strict identity retention: Do NOT blend their features or alter their distinctive ethnic and facial characteristics.
+
+**Artistic Direction & Style:**
+- Style: Ultra-realistic cinematic couple photography with soft golden-hour dramatic lighting.
+- Natural skin textures, warm earthy tones, delicate highlights on cheekbones, and soft creamy bokeh in background.
+- High-end professional editorial couple photography.
+- Single unified image. No borders, no collage, no split lines, no text, no watermark.
+
+Output: One cohesive photorealistic serene couple portrait featuring both individuals.`
   },
   {
     id: 'side_by_side_1',
@@ -108,7 +153,31 @@ const PRESETS = [
     leftName: 'Boy (Silver Hair)',
     rightName: 'Girl (Silver Hair)',
     suggestedNames: 'Ren & Mia',
-    styleInstruction: 'Style: Highly detailed hand-drawn graphite pencil illustration, romantic anime-inspired couple portrait, realistic facial resemblance to both references, delicate pencil strokes, intricate hair details, expressive eyes, soft cross-hatching, monochrome shading on textured sketchbook paper. Posed shoulder-to-shoulder, heads leaning gently close.'
+    styleInstruction: 'Style: Highly detailed hand-drawn graphite pencil illustration, romantic anime-inspired couple portrait, realistic facial resemblance to both references, delicate pencil strokes, intricate hair details, expressive eyes, soft cross-hatching, monochrome shading on textured sketchbook paper. Posed shoulder-to-shoulder, heads leaning gently close.',
+    masterPrompt: `Use the two uploaded images (Image 1 and Image 2) as strict facial identity and likeness references.
+
+Transform the two individuals into a single aesthetically composed romantic anime couple portrait, posed naturally shoulder-to-shoulder on textured sketchbook paper.
+
+**Composition & Pose:**
+- Person 1 (from Image 1) is positioned on the left side, leaning tenderly towards Person 2.
+- Person 2 (from Image 2) is positioned on the right side, leaning close, shoulders touching intimately.
+- Heads are tilted gently towards one another, creating an intimate, close-up couple portrait filling the frame.
+- Natural, subtle romantic expressions with soft gaze towards the viewer.
+- Balanced composition with both faces clearly and fully visible.
+
+**Identity Preservation (Strict Face-Swap Accuracy):**
+- Person 1 must retain the exact facial structure, eye shape, nose bridge, lips, jawline, skin tone, and hairstyle from Image 1, translated into high-end anime aesthetic.
+- Person 2 must retain the exact facial structure, eye shape, nose bridge, lips, jawline, skin tone, and hairstyle from Image 2, translated into high-end anime aesthetic.
+- Do NOT blend their faces together, do NOT swap identities, and do NOT alter their recognizable characteristics.
+
+**Artistic Direction & Style:**
+- Style: Highly detailed hand-drawn graphite pencil illustration on off-white cold-press sketchbook paper.
+- Manga-inspired romantic aesthetic, delicate sharp pencil linework, intricate hair strands, expressive eyes with subtle graphite highlights.
+- Fine cross-hatching, stippling, and soft monochrome charcoal shading.
+- Single cohesive artwork drawn on one page. NOT two photos pasted together.
+- No borders, no collage, no split screen, no extra people, no text, no watermark.
+
+Output: One cohesive hand-drawn anime pencil sketch portrait featuring both individuals.`
   },
   {
     id: 'side_by_side_2',
@@ -125,7 +194,30 @@ const PRESETS = [
     leftName: 'Girl (Long Hair)',
     rightName: 'Boy (Smile)',
     suggestedNames: 'Kael & Aria',
-    styleInstruction: 'Style: Highly detailed hand-drawn graphite pencil illustration, romantic anime-inspired couple portrait, realistic facial resemblance to both references, delicate pencil strokes, intricate hair details, expressive eyes, soft cross-hatching, monochrome shading on textured sketchbook paper. Leaning back-to-back smiling, heads close together.'
+    styleInstruction: 'Style: Highly detailed hand-drawn graphite pencil illustration, romantic anime-inspired couple portrait, realistic facial resemblance to both references, delicate pencil strokes, intricate hair details, expressive eyes, soft cross-hatching, monochrome shading on textured sketchbook paper. Leaning back-to-back smiling, heads close together.',
+    masterPrompt: `Use the two uploaded images (Image 1 and Image 2) as strict facial identity and likeness references.
+
+Transform the two individuals into a single aesthetically composed romantic anime couple portrait, posed affectionately leaning back-to-back.
+
+**Composition & Pose:**
+- Person 1 (from Image 1) on the left and Person 2 (from Image 2) on the right, leaning back-to-back with backs touching intimately.
+- Heads turned slightly towards each other and facing the camera with warm, radiant smiles.
+- Intimate medium-close composition where both faces occupy the center of the frame.
+- Cheerful, playful, romantic vibe showing deep connection and love.
+
+**Identity Preservation (Strict Face-Swap Accuracy):**
+- Person 1 must retain the exact facial contours, eye shape, smile, nose, skin tone, and hairstyle recognizable from Image 1.
+- Person 2 must retain the exact facial contours, eye shape, smile, nose, skin tone, and hairstyle recognizable from Image 2.
+- Perfect likeness and facial recognition for both people; do NOT blend faces or swap characteristics.
+
+**Artistic Direction & Style:**
+- Style: Highly detailed traditional graphite pencil sketch on textured sketchbook paper.
+- Delicate pencil strokes, detailed hair texture with soft pencil highlights, realistic facial resemblance rendered with romantic anime charm.
+- Intricate pencil cross-hatching on clothing (striped shirt / casual hoodie), gentle graphite tonal gradients.
+- Cohesive, beautifully integrated couple illustration on a single paper sheet.
+- No borders, no split lines, no collage, no text, no watermark.
+
+Output: One cohesive hand-drawn anime couple sketch portrait featuring both individuals.`
   }
 ];
 
@@ -162,7 +254,7 @@ export default function CouplePhotoUploader({
   const currentPreset = PRESETS.find((p) => p.id === activePresetId) || PRESETS[0];
 
   const getFullMasterPrompt = (preset: (typeof PRESETS)[0]) => {
-    return `${MASTER_BASE_PROMPT}\n\n${preset.styleInstruction}`;
+    return preset.masterPrompt || `${MASTER_BASE_PROMPT}\n\n${preset.styleInstruction}`;
   };
 
   const copyCurrentPrompt = () => {
@@ -1009,20 +1101,38 @@ export default function CouplePhotoUploader({
             </div>
 
             {/* Active Style Instruction preview */}
-            <div className="p-2.5 rounded-xl bg-[#050816] border border-[#182647] font-mono text-[10px] leading-relaxed text-slate-300">
-              <div className="flex items-center justify-between mb-1 pb-1 border-b border-[#14203d]">
+            <div className="p-3 rounded-xl bg-[#050816] border border-[#182647] font-mono text-[10px] leading-relaxed text-slate-300 flex flex-col gap-2">
+              <div className="flex items-center justify-between pb-1.5 border-b border-[#14203d]">
                 <span className="text-cyan-400 font-bold">
-                  {currentPreset.category}: {currentPreset.name}
+                  {currentPreset.category} &rarr; {currentPreset.name}
                 </span>
-                <span className="text-[9px] text-slate-500 font-normal">Active Reference Prompt</span>
+                <span className="text-[9px] text-amber-400 font-semibold px-1.5 py-0.5 rounded bg-amber-950/60 border border-amber-500/30">
+                  Custom Face-Swap Master Prompt
+                </span>
               </div>
-              <p className="text-amber-300/90 font-medium mt-1">
-                {currentPreset.styleInstruction}
-              </p>
+
+              {/* Scrollable Full Master Prompt View */}
+              <div className="max-h-48 overflow-y-auto pr-1 text-slate-300 space-y-2 select-all bg-[#030612] p-2.5 rounded-lg border border-[#101b33]">
+                <pre className="whitespace-pre-wrap font-sans text-[11px] leading-relaxed text-slate-200">
+                  {getFullMasterPrompt(currentPreset)}
+                </pre>
+              </div>
+
+              <div className="flex items-center justify-between pt-1 text-[10px] text-slate-400">
+                <span>🎯 Preserves exact facial identity, eye contours, skin tone &amp; jawline</span>
+                <button
+                  type="button"
+                  onClick={copyCurrentPrompt}
+                  className="text-cyan-400 hover:text-cyan-300 font-semibold flex items-center gap-1 cursor-pointer"
+                >
+                  <Copy size={11} />
+                  <span>{copiedPrompt ? 'Copied to Clipboard!' : 'Copy Entire Master Prompt'}</span>
+                </button>
+              </div>
             </div>
 
             <p className="text-[10px] text-slate-400 leading-snug">
-              💡 <span className="text-slate-300 font-semibold">Workflow:</span> Attach your 2 uploaded photos as <span className="text-cyan-300">Image 1</span> and <span className="text-pink-300">Image 2</span> in Midjourney, FLUX, ChatGPT, or Gemini, then click <span className="text-cyan-300 font-semibold">Copy Prompt</span>. It strictly preserves both facial identities without blending faces or swapping features.
+              💡 <span className="text-slate-300 font-semibold">Viral Couple Transformation Workflow:</span> Attach your 2 uploaded photos as <span className="text-cyan-300 font-medium">Image 1</span> (Partner 1) and <span className="text-pink-300 font-medium">Image 2</span> (Partner 2) in Midjourney, FLUX.1, or ChatGPT/DALL-E 3, then paste this prompt. It transforms the couple into the exact reference pose with strict face-swap identity preservation.
             </p>
           </div>
         )}

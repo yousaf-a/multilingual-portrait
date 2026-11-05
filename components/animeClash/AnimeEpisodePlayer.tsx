@@ -18,8 +18,8 @@ import {
   ArrowLeft,
   Tv,
   BookOpen,
-  Shield,
-  Zap
+  Zap,
+  Eye
 } from 'lucide-react';
 
 interface AnimeEpisodePlayerProps {
@@ -40,6 +40,10 @@ export default function AnimeEpisodePlayer({
   const [isAudioMuted, setIsAudioMuted] = useState(true);
   const [countdown, setCountdown] = useState<number | null>(null);
 
+  // Eye opening animation state: 0 = closed, 0.35 = squint/flutter, 1.0 = wide open
+  const [eyeOpenProgress, setEyeOpenProgress] = useState(0);
+  const [eyeBlur, setEyeBlur] = useState(16);
+
   const episode = ANIME_EPISODES[selectedEpIndex] || ANIME_EPISODES[0];
   const isPrologue = episode.episodeNumber === 0;
 
@@ -50,9 +54,125 @@ export default function AnimeEpisodePlayer({
   const currentScene = episode.scenes[currentSceneIdx] || episode.scenes[0];
   const isFinalScene = currentSceneIdx === episode.scenes.length - 1;
 
-  // Web Audio API Synthesizer for Anime Cinematic BGM & Sound FX
+  // Web Audio API Synthesizer for Anime Cinematic BGM, Heartbeats & Sound FX
   const audioCtxRef = useRef<AudioContext | null>(null);
   const bgmOscNodesRef = useRef<{ osc: OscillatorNode; gain: GainNode }[]>([]);
+
+  // 60FPS Canvas Vortex Ref
+  const vortexCanvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  // Eye Awakening Choreography
+  useEffect(() => {
+    if (currentScene.visualFocus === 'naruto_eyes') {
+      setEyeOpenProgress(0);
+      setEyeBlur(20);
+
+      const t1 = setTimeout(() => {
+        setEyeOpenProgress(0.35);
+        setEyeBlur(12);
+        playHeartbeatSound();
+      }, 700);
+
+      const t2 = setTimeout(() => {
+        setEyeOpenProgress(0.15);
+        setEyeBlur(15);
+      }, 1600);
+
+      const t3 = setTimeout(() => {
+        setEyeOpenProgress(1.0);
+        setEyeBlur(0);
+        playHeartbeatSound();
+      }, 2400);
+
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+        clearTimeout(t3);
+      };
+    } else {
+      setEyeOpenProgress(1.0);
+      setEyeBlur(0);
+    }
+  }, [currentSceneIdx, currentScene.visualFocus]);
+
+  // 60FPS Space-Time Void Vortex Canvas Simulation
+  useEffect(() => {
+    if (currentScene.visualFocus !== 'collision_void') return;
+    const canvas = vortexCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    let animId: number;
+    const particles: { angle: number; dist: number; speed: number; radius: number; color: string }[] = [];
+    const colors = ['#a855f7', '#ec4899', '#06b6d4', '#f59e0b', '#ffffff'];
+
+    for (let i = 0; i < 140; i++) {
+      particles.push({
+        angle: Math.random() * Math.PI * 2,
+        dist: 50 + Math.random() * 320,
+        speed: 0.02 + Math.random() * 0.04,
+        radius: 1 + Math.random() * 2.5,
+        color: colors[Math.floor(Math.random() * colors.length)]
+      });
+    }
+
+    const render = () => {
+      const w = canvas.width;
+      const h = canvas.height;
+      const cx = w / 2;
+      const cy = h / 2;
+
+      ctx.clearRect(0, 0, w, h);
+
+      // Swirling gravitational distortion rings
+      for (let r = 40; r < 300; r += 50) {
+        ctx.strokeStyle = `rgba(168, 85, 247, ${0.15 - r * 0.0003})`;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      // Particles sucked inward
+      particles.forEach((p) => {
+        p.angle += p.speed;
+        p.dist -= 1.2;
+        if (p.dist <= 15) {
+          p.dist = 300 + Math.random() * 80;
+        }
+
+        const px = cx + Math.cos(p.angle) * p.dist;
+        const py = cy + Math.sin(p.angle) * p.dist * 0.6; // Perspective squish
+
+        ctx.fillStyle = p.color;
+        ctx.shadowColor = p.color;
+        ctx.shadowBlur = 6;
+        ctx.beginPath();
+        ctx.arc(px, py, p.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      });
+
+      // Event horizon core
+      const coreGrad = ctx.createRadialGradient(cx, cy, 5, cx, cy, 35);
+      coreGrad.addColorStop(0, '#000000');
+      coreGrad.addColorStop(0.7, '#1e0538');
+      coreGrad.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = coreGrad;
+      ctx.beginPath();
+      ctx.arc(cx, cy, 35, 0, Math.PI * 2);
+      ctx.fill();
+
+      animId = requestAnimationFrame(render);
+    };
+
+    render();
+
+    return () => {
+      cancelAnimationFrame(animId);
+    };
+  }, [currentSceneIdx, currentScene.visualFocus]);
 
   const startBgmAudio = () => {
     try {
@@ -71,8 +191,7 @@ export default function AnimeEpisodePlayer({
       master.gain.setValueAtTime(0.12, ctx.currentTime);
       master.connect(ctx.destination);
 
-      // Deep dramatic anime pad drone
-      const baseFreq = isPrologue ? 104 : episode.heroId === 'naruto' ? 110 : episode.heroId === 'luffy' ? 130 : episode.heroId === 'ichigo' ? 98 : 123;
+      const baseFreq = isPrologue ? 98 : episode.heroId === 'naruto' ? 110 : episode.heroId === 'luffy' ? 130 : episode.heroId === 'ichigo' ? 98 : 123;
       const freqs = [baseFreq, baseFreq * 1.5, baseFreq * 2];
 
       freqs.forEach((f, i) => {
@@ -94,7 +213,7 @@ export default function AnimeEpisodePlayer({
         bgmOscNodesRef.current.push({ osc, gain });
       });
     } catch {
-      // Handled
+      // Audio handled
     }
   };
 
@@ -108,6 +227,28 @@ export default function AnimeEpisodePlayer({
       }
     });
     bgmOscNodesRef.current = [];
+  };
+
+  const playHeartbeatSound = () => {
+    if (isAudioMuted || !audioCtxRef.current) return;
+    try {
+      const ctx = audioCtxRef.current;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(75, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(32, ctx.currentTime + 0.18);
+
+      gain.gain.setValueAtTime(0.35, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.22);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.23);
+    } catch {
+      // Handled
+    }
   };
 
   const playImpactSound = () => {
@@ -128,7 +269,7 @@ export default function AnimeEpisodePlayer({
       osc.start();
       osc.stop(ctx.currentTime + 0.36);
     } catch {
-      // Ignored
+      // Handled
     }
   };
 
@@ -156,7 +297,6 @@ export default function AnimeEpisodePlayer({
     if (!isPlaying || viewMode !== 'video') return;
 
     if (isFinalScene) {
-      // If prologue finished, prompt battle or replay; if combat episode, start countdown
       if (!isPrologue) {
         setCountdown(5);
         const countdownInterval = setInterval(() => {
@@ -175,11 +315,10 @@ export default function AnimeEpisodePlayer({
       return;
     }
 
-    // Auto advance scenes every 5.5s
     const timer = setTimeout(() => {
       setCurrentSceneIdx((prev) => prev + 1);
       playImpactSound();
-    }, 5500);
+    }, 6000);
 
     return () => clearTimeout(timer);
   }, [isPlaying, currentSceneIdx, viewMode, isFinalScene, episode, isPrologue, onStartBossFight]);
@@ -219,13 +358,13 @@ export default function AnimeEpisodePlayer({
     }
   };
 
-  // Helper to determine active speaker artwork
   const getSpeakerImage = () => {
-    if (currentScene.visualFocus === 'naruto') return HEROES_CATALOG.naruto.image;
+    if (currentScene.visualFocus === 'naruto' || currentScene.visualFocus === 'naruto_eyes') return HEROES_CATALOG.naruto.image;
     if (currentScene.visualFocus === 'luffy') return HEROES_CATALOG.luffy.image;
     if (currentScene.visualFocus === 'ichigo') return HEROES_CATALOG.ichigo.image;
     if (currentScene.visualFocus === 'asta') return HEROES_CATALOG.asta.image;
-    if (currentScene.isVillain) return villain.image;
+    if (currentScene.visualFocus === 'villains_domination' || currentScene.isVillain) return villain.image;
+    if (currentScene.visualFocus === 'heroes_assemble' || currentScene.visualFocus === 'all_heroes') return '/anime-heroes/heroes_assemble_tokyo_tower.jpg';
     return hero.image;
   };
 
@@ -315,7 +454,7 @@ export default function AnimeEpisodePlayer({
           {/* CinemaScope 16:9 Anime Screen */}
           <div className="relative w-full aspect-video max-h-[530px] rounded-3xl overflow-hidden border-2 border-[#1e3a6a] shadow-[0_0_45px_rgba(30,58,106,0.6)] bg-black flex flex-col justify-between">
             {/* Top Letterbox Cinema Bar */}
-            <div className="z-20 w-full h-11 bg-gradient-to-b from-black via-black/85 to-transparent flex items-center justify-between px-5 text-white">
+            <div className="z-30 w-full h-11 bg-gradient-to-b from-black via-black/85 to-transparent flex items-center justify-between px-5 text-white">
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
                 <span className="text-[11px] font-mono tracking-widest text-slate-300 font-bold uppercase">
@@ -323,7 +462,6 @@ export default function AnimeEpisodePlayer({
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                {/* Audio Synth Toggle */}
                 <button
                   type="button"
                   onClick={toggleAudio}
@@ -337,110 +475,92 @@ export default function AnimeEpisodePlayer({
 
             {/* DYNAMIC SCENE VISUAL CHOREOGRAPHY */}
             <div className="absolute inset-0 z-0 overflow-hidden flex items-center justify-center">
-              {/* Atmospheric Background Glow */}
-              <div
-                className="absolute inset-0 transition-all duration-1000"
-                style={{
-                  background: `radial-gradient(circle at 50% 50%, ${currentScene.bgVibe} 0%, #03050a 100%)`,
-                  opacity: 0.95
-                }}
-              />
-
-              {/* Anime Speed Lines Effect */}
-              <div
-                className="absolute inset-0 pointer-events-none opacity-25 mix-blend-screen"
-                style={{
-                  backgroundImage:
-                    'repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(255,255,255,0.06) 40px, rgba(255,255,255,0.06) 42px)'
-                }}
-              />
-
-              {/* SCENE TYPE RENDERING */}
-              {currentScene.visualFocus === 'all_heroes' ? (
-                /* 4-HERO TETRA ALLIANCE QUAD SHOWCASE */
-                <div className="relative w-full h-full flex flex-col items-center justify-center px-4 animate-in zoom-in-95 duration-700">
-                  <div className="text-center mb-3">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-cyan-400 bg-cyan-950/80 px-3 py-1 rounded-full border border-cyan-700">
-                      ✦ TETRA-DIMENSIONAL SANCTUARY ALLIANCE ✦
-                    </span>
-                    <h3 className="text-sm sm:text-base font-black text-white mt-1 italic">
-                      Four Worlds Collide • Bound Under Tokyo Tower
-                    </h3>
-                  </div>
-
-                  {/* 4 Heroes Alignment Grid */}
-                  <div className="grid grid-cols-4 gap-2 sm:gap-4 max-w-2xl w-full px-2">
-                    {/* Naruto */}
-                    <div className="flex flex-col items-center group">
-                      <div className="relative">
-                        <div className="absolute -inset-1 rounded-2xl bg-amber-500/40 blur-md animate-pulse" />
-                        <img
-                          src={HEROES_CATALOG.naruto.image}
-                          alt="Naruto"
-                          className="relative w-18 h-24 sm:w-28 sm:h-36 object-cover object-top rounded-2xl border-2 border-amber-400 shadow-xl"
-                        />
-                      </div>
-                      <span className="text-[10px] sm:text-xs font-bold text-amber-300 mt-1.5">Naruto</span>
-                      <span className="text-[8px] sm:text-[9px] text-amber-400 font-mono">Chakra / Shibuya</span>
-                    </div>
-
-                    {/* Luffy */}
-                    <div className="flex flex-col items-center group">
-                      <div className="relative">
-                        <div className="absolute -inset-1 rounded-2xl bg-red-500/40 blur-md animate-pulse" />
-                        <img
-                          src={HEROES_CATALOG.luffy.image}
-                          alt="Luffy"
-                          className="relative w-18 h-24 sm:w-28 sm:h-36 object-cover object-top rounded-2xl border-2 border-red-500 shadow-xl"
-                        />
-                      </div>
-                      <span className="text-[10px] sm:text-xs font-bold text-red-300 mt-1.5">Luffy</span>
-                      <span className="text-[8px] sm:text-[9px] text-red-400 font-mono">Haki / Yokohama</span>
-                    </div>
-
-                    {/* Ichigo */}
-                    <div className="flex flex-col items-center group">
-                      <div className="relative">
-                        <div className="absolute -inset-1 rounded-2xl bg-indigo-500/40 blur-md animate-pulse" />
-                        <img
-                          src={HEROES_CATALOG.ichigo.image}
-                          alt="Ichigo"
-                          className="relative w-18 h-24 sm:w-28 sm:h-36 object-cover object-top rounded-2xl border-2 border-indigo-400 shadow-xl"
-                        />
-                      </div>
-                      <span className="text-[10px] sm:text-xs font-bold text-indigo-300 mt-1.5">Ichigo</span>
-                      <span className="text-[8px] sm:text-[9px] text-indigo-400 font-mono">Reishi / Shinjuku</span>
-                    </div>
-
-                    {/* Asta */}
-                    <div className="flex flex-col items-center group">
-                      <div className="relative">
-                        <div className="absolute -inset-1 rounded-2xl bg-emerald-500/40 blur-md animate-pulse" />
-                        <img
-                          src={HEROES_CATALOG.asta.image}
-                          alt="Asta"
-                          className="relative w-18 h-24 sm:w-28 sm:h-36 object-cover object-top rounded-2xl border-2 border-emerald-400 shadow-xl"
-                        />
-                      </div>
-                      <span className="text-[10px] sm:text-xs font-bold text-emerald-300 mt-1.5">Asta</span>
-                      <span className="text-[8px] sm:text-[9px] text-emerald-400 font-mono">Anti-Magic / Outer</span>
-                    </div>
+              {/* SCENE 1: DIMENSIONAL VOID COLLISION & GRAVITATIONAL SUCTION */}
+              {currentScene.visualFocus === 'collision_void' ? (
+                <div className="relative w-full h-full overflow-hidden animate-in fade-in zoom-in-105 duration-1000">
+                  <img
+                    src="/anime-heroes/dimensional_void_collision.jpg"
+                    alt="Dimensional Void Collision"
+                    className="w-full h-full object-cover object-center transform scale-105 animate-pulse"
+                  />
+                  {/* 60FPS Space-Time Accretion Vortex Canvas Overlay */}
+                  <canvas
+                    ref={vortexCanvasRef}
+                    width={800}
+                    height={450}
+                    className="absolute inset-0 w-full h-full pointer-events-none mix-blend-screen"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/60 pointer-events-none" />
+                  <div className="absolute top-14 left-6 px-3.5 py-1.5 rounded-full bg-purple-950/80 border border-purple-500/60 text-purple-200 text-xs font-black tracking-widest flex items-center gap-2 shadow-lg">
+                    <Zap size={14} className="text-yellow-400 animate-bounce" />
+                    <span>COSMIC SPACE-TIME COLLAPSE • HEROES SUCKED IN</span>
                   </div>
                 </div>
-              ) : currentScene.visualFocus === 'naruto' ? (
-                /* NARUTO IN SHIBUYA CROSSING */
-                <div className="relative flex flex-col items-center justify-center animate-in zoom-in-95 duration-700">
-                  <div className="relative">
-                    <div className="absolute -inset-8 rounded-full bg-amber-500/40 blur-2xl animate-pulse" />
-                    <img
-                      src={HEROES_CATALOG.naruto.image}
-                      alt="Naruto Uzumaki"
-                      className="relative w-64 h-80 sm:w-80 sm:h-96 object-cover object-top rounded-3xl border-4 border-amber-400 shadow-[0_0_35px_rgba(251,191,36,0.5)]"
-                    />
+              ) : currentScene.visualFocus === 'naruto_eyes' ? (
+                /* SCENE 2: AWAKENING IN SHIBUYA RAIN - FIRST-PERSON EYE OPENING */
+                <div className="relative w-full h-full overflow-hidden flex items-center justify-center">
+                  {/* High-res keyframe of Naruto awakening in the rain */}
+                  <img
+                    src="/anime-heroes/naruto_awakening_rain.jpg"
+                    alt="Naruto Awakening in Rain"
+                    className="w-full h-full object-cover object-center transition-all duration-700"
+                    style={{ filter: `blur(${eyeBlur}px)` }}
+                  />
+
+                  {/* Dynamic Eyelid Shutter Mask Overlay */}
+                  <div
+                    className="absolute inset-0 pointer-events-none transition-all duration-700 bg-black"
+                    style={{
+                      opacity: Math.max(0, 1 - eyeOpenProgress),
+                      clipPath:
+                        eyeOpenProgress >= 0.99
+                          ? 'none'
+                          : `ellipse(100% ${eyeOpenProgress * 65}% at 50% 50%)`,
+                      display: eyeOpenProgress >= 0.99 ? 'none' : 'block'
+                    }}
+                  />
+
+                  {/* Atmospheric neon rain streaks overlay */}
+                  <div
+                    className="absolute inset-0 pointer-events-none opacity-40 mix-blend-screen"
+                    style={{
+                      backgroundImage:
+                        'repeating-linear-gradient(110deg, transparent, transparent 25px, rgba(56, 189, 248, 0.25) 25px, rgba(56, 189, 248, 0.25) 26px)'
+                    }}
+                  />
+
+                  <div className="absolute top-14 left-6 px-3.5 py-1.5 rounded-full bg-amber-950/80 border border-amber-500/60 text-amber-200 text-xs font-black tracking-widest flex items-center gap-2 shadow-lg">
+                    <Eye size={14} className="text-cyan-400 animate-ping" />
+                    <span>AWAKENING IN SHIBUYA CROSSING • RAIN NEON FOCUS</span>
                   </div>
-                  <div className="mt-3 px-4 py-1 rounded-full bg-black/80 border border-amber-400/50 text-amber-300 text-xs font-extrabold tracking-wider flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
-                    <span>NARUTO UZUMAKI • SHIBUYA CROSSING (CHAKRA CONDUIT)</span>
+                </div>
+              ) : currentScene.visualFocus === 'villains_domination' ? (
+                /* SCENE 3: EVIL SYNDICATE SKYLINE DOMINATION */
+                <div className="relative w-full h-full overflow-hidden animate-in fade-in zoom-in-105 duration-1000">
+                  <img
+                    src="/anime-heroes/villains_syndicate_tokyo.jpg"
+                    alt="Evil Syndicate Tokyo Domination"
+                    className="w-full h-full object-cover object-center transform scale-100 hover:scale-105 transition-all duration-1000"
+                  />
+                  {/* Dark malevolent red aura gradient */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-red-950/20 to-black/60 pointer-events-none" />
+                  <div className="absolute top-14 left-6 px-3.5 py-1.5 rounded-full bg-red-950/90 border border-red-500/70 text-red-200 text-xs font-black tracking-widest flex items-center gap-2 shadow-lg">
+                    <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping" />
+                    <span>EVIL SYNDICATE • TOKYO METROPOLITAN STRANGLEHOLD</span>
+                  </div>
+                </div>
+              ) : currentScene.visualFocus === 'heroes_assemble' ? (
+                /* SCENE 4: HEROES ASSEMBLE UNDER TOKYO TOWER */
+                <div className="relative w-full h-full overflow-hidden animate-in fade-in zoom-in-105 duration-1000">
+                  <img
+                    src="/anime-heroes/heroes_assemble_tokyo_tower.jpg"
+                    alt="Heroes Assemble Under Tokyo Tower"
+                    className="w-full h-full object-cover object-center transform scale-100 hover:scale-105 transition-all duration-1000"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/60 pointer-events-none" />
+                  <div className="absolute top-14 left-6 px-3.5 py-1.5 rounded-full bg-cyan-950/90 border border-cyan-500/70 text-cyan-200 text-xs font-black tracking-widest flex items-center gap-2 shadow-lg">
+                    <Sparkles size={14} className="text-amber-400 animate-spin" />
+                    <span>✦ TETRA ALLIANCE FORMED • TOKYO TOWER SANCTUARY ✦</span>
                   </div>
                 </div>
               ) : currentScene.visualFocus === 'luffy' ? (
@@ -491,67 +611,6 @@ export default function AnimeEpisodePlayer({
                     <span>ASTA • TOKYO OUTSKIRTS (ANTI-MAGIC SINGULARITY)</span>
                   </div>
                 </div>
-              ) : currentScene.visualFocus === 'rift' ? (
-                /* COSMIC DIMENSIONAL RIFT OVER METROPOLIS */
-                <div className="relative w-full h-full flex items-center justify-around px-8 animate-in fade-in duration-700">
-                  <div className="flex flex-col items-center transform -translate-x-4 scale-95 opacity-80">
-                    <img
-                      src={ANIME_VILLAINS.madara.image}
-                      alt="Madara"
-                      className="w-40 h-56 sm:w-52 sm:h-72 object-cover object-top rounded-3xl border-2 border-red-500/60 shadow-2xl"
-                    />
-                    <span className="text-xs font-bold text-red-400 mt-2">Madara &amp; Syndicate</span>
-                  </div>
-
-                  {/* Rift Void Storm */}
-                  <div className="flex flex-col items-center">
-                    <div className="w-20 h-20 rounded-full bg-purple-600/30 flex items-center justify-center border-2 border-purple-500 animate-pulse">
-                      <Zap size={32} className="text-yellow-300 animate-bounce" />
-                    </div>
-                    <span className="text-xs font-black text-purple-300 mt-2 tracking-widest text-center">
-                      COSMIC RIFT 2026<br />SPACE-TIME FRACTURE
-                    </span>
-                  </div>
-
-                  <div className="flex flex-col items-center transform translate-x-4 scale-95 opacity-80">
-                    <img
-                      src={ANIME_VILLAINS.aizen.image}
-                      alt="Aizen"
-                      className="w-40 h-56 sm:w-52 sm:h-72 object-cover object-top rounded-3xl border-2 border-indigo-500/60 shadow-2xl"
-                    />
-                    <span className="text-xs font-bold text-indigo-400 mt-2">Aizen &amp; Cyber-Hogyoku</span>
-                  </div>
-                </div>
-              ) : currentScene.narration ? (
-                /* Dual Standoff */
-                <div className="relative w-full h-full flex items-center justify-around px-8 animate-in fade-in duration-700">
-                  <div className="flex flex-col items-center transform -translate-x-4 scale-95 opacity-80">
-                    <img
-                      src={hero.image}
-                      alt={hero.name}
-                      className="w-48 h-64 sm:w-60 sm:h-80 object-cover object-top rounded-3xl border-2 border-cyan-400/50 shadow-2xl"
-                    />
-                    <span className="text-xs font-bold text-cyan-300 mt-2">{hero.name}</span>
-                  </div>
-
-                  <div className="flex flex-col items-center">
-                    <div className="w-16 h-16 rounded-full bg-red-600/30 flex items-center justify-center border-2 border-red-500 animate-pulse">
-                      <Sword size={28} className="text-amber-300 animate-bounce" />
-                    </div>
-                    <span className="text-xs font-black text-amber-400 mt-2 tracking-widest">
-                      DIMENSIONAL RIFT
-                    </span>
-                  </div>
-
-                  <div className="flex flex-col items-center transform translate-x-4 scale-95 opacity-80">
-                    <img
-                      src={villain.image}
-                      alt={villain.name}
-                      className="w-48 h-64 sm:w-60 sm:h-80 object-cover object-top rounded-3xl border-2 border-red-500/50 shadow-2xl"
-                    />
-                    <span className="text-xs font-bold text-red-400 mt-2">{villain.name}</span>
-                  </div>
-                </div>
               ) : currentScene.isVillain ? (
                 /* Villain Solo */
                 <div className="relative flex flex-col items-center justify-center animate-in zoom-in-95 duration-700">
@@ -595,8 +654,7 @@ export default function AnimeEpisodePlayer({
             </div>
 
             {/* Bottom Anime Subtitle Box (Netflix / Crunchyroll Broadcast Style) */}
-            <div className="z-20 w-full p-4 sm:p-6 bg-gradient-to-t from-black via-black/90 to-transparent flex flex-col gap-2">
-              {/* Speaker Tag Badge */}
+            <div className="z-30 w-full p-4 sm:p-6 bg-gradient-to-t from-black via-black/90 to-transparent flex flex-col gap-2">
               <div className="flex items-center gap-2">
                 <span
                   className={`text-xs font-black px-3 py-1 rounded-xl uppercase tracking-wider ${
@@ -611,11 +669,10 @@ export default function AnimeEpisodePlayer({
                 </span>
 
                 <span className="text-[10px] text-slate-400 font-mono">
-                  SCENE {currentSceneIdx + 1} OF {episode.scenes.length}
+                  ACT {currentSceneIdx + 1} OF {episode.scenes.length}
                 </span>
               </div>
 
-              {/* Dialogue Subtitle */}
               <p className="text-sm sm:text-base font-medium text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] leading-relaxed italic bg-black/40 p-2.5 rounded-xl border border-white/5">
                 &ldquo;{currentScene.text}&rdquo;
               </p>
@@ -673,7 +730,7 @@ export default function AnimeEpisodePlayer({
                   ))}
                 </div>
 
-                {/* Action button: Fight Boss or Next Episode */}
+                {/* Action button */}
                 {isPrologue ? (
                   <button
                     type="button"
@@ -681,7 +738,7 @@ export default function AnimeEpisodePlayer({
                     className="px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-amber-500 hover:brightness-110 text-white font-black text-xs flex items-center gap-1.5 shadow-[0_0_18px_rgba(236,72,153,0.7)] transition cursor-pointer"
                   >
                     <Sword size={14} />
-                    <span>START EPISODE 1: NARUTO</span>
+                    <span>START EPISODE 1 BATTLE</span>
                   </button>
                 ) : (
                   <button
@@ -699,7 +756,6 @@ export default function AnimeEpisodePlayer({
 
           {/* Episode Info Strip */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {/* Left Card */}
             <div className="p-4 rounded-3xl bg-[#0b1226]/90 border border-amber-500/30 flex items-center gap-3">
               <img
                 src={getSpeakerImage()}
@@ -720,16 +776,15 @@ export default function AnimeEpisodePlayer({
               </div>
             </div>
 
-            {/* Right Card */}
             <div className="p-4 rounded-3xl bg-[#0b1226]/90 border border-purple-500/30 flex items-center gap-3">
               <img
-                src={isPrologue ? ANIME_VILLAINS.madara.image : villain.image}
+                src={isPrologue ? '/anime-heroes/villains_syndicate_tokyo.jpg' : villain.image}
                 alt="Target Boss"
                 className="w-16 h-20 rounded-2xl object-cover object-top border-2 border-purple-500 shadow-lg shrink-0"
               />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between text-purple-400 text-xs font-bold">
-                  <span>{isPrologue ? 'TARGET THREAT: 4 DIMENSIONAL BOSSES' : `TARGET BOSS: ${villain.name}`}</span>
+                  <span>{isPrologue ? 'TARGET THREAT: EVIL SYNDICATE' : `TARGET BOSS: ${villain.name}`}</span>
                   <span className="text-[10px] text-purple-300 bg-purple-950/80 px-2 py-0.5 rounded-full border border-purple-800">
                     {villain.hp} HP
                   </span>
@@ -747,9 +802,7 @@ export default function AnimeEpisodePlayer({
       ) : (
         /* 3. STORY READER (VISUAL NOVEL) MODE */
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-          {/* Left Column: Visual Scene & Dialogue (7 Cols) */}
           <div className="lg:col-span-7 flex flex-col gap-3">
-            {/* Episode Header */}
             <div className="p-4 rounded-3xl bg-[#0b1226]/90 border border-[#1e2a4a] shadow-xl">
               <span className="text-[11px] font-mono text-cyan-400 font-bold uppercase tracking-wider block">
                 {isPrologue ? 'ORIGIN PROLOGUE FILM' : `CANONICAL ANIME ARC • EPISODE ${episode.episodeNumber}`}
@@ -759,7 +812,6 @@ export default function AnimeEpisodePlayer({
               <p className="text-xs text-slate-300 mt-2 leading-relaxed">{episode.synopsis}</p>
             </div>
 
-            {/* Interactive Dialogue Stage */}
             <div className="p-5 rounded-3xl bg-gradient-to-b from-[#0e1730] to-[#080d1e] border-2 border-[#1e3a6a] shadow-2xl flex flex-col justify-between min-h-[240px]">
               <div className="flex items-center gap-3">
                 <img
@@ -811,9 +863,7 @@ export default function AnimeEpisodePlayer({
             </div>
           </div>
 
-          {/* Right Column */}
           <div className="lg:col-span-5 flex flex-col gap-3">
-            {/* Powerup Card */}
             <div className="p-4 rounded-3xl bg-gradient-to-br from-[#1c130d] via-[#121c2e] to-[#080d1e] border border-amber-500/40 shadow-xl">
               <div className="flex items-center gap-2 mb-2">
                 <Flame size={16} className="text-amber-400" />
@@ -846,7 +896,6 @@ export default function AnimeEpisodePlayer({
               </div>
             </div>
 
-            {/* Threat Card */}
             <div className="p-4 rounded-3xl bg-[#0b1226]/90 border border-red-500/30 shadow-xl">
               <div className="flex items-center justify-between mb-1.5">
                 <span className="text-[10px] font-bold text-red-400 tracking-wider uppercase">
@@ -857,7 +906,7 @@ export default function AnimeEpisodePlayer({
 
               <div className="flex items-center gap-3 mb-2">
                 <img
-                  src={villain.image}
+                  src={isPrologue ? '/anime-heroes/villains_syndicate_tokyo.jpg' : villain.image}
                   alt={villain.name}
                   className="w-14 h-14 rounded-2xl object-cover object-top border-2 border-red-500 shadow-md"
                 />

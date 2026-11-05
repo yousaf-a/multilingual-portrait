@@ -44,7 +44,7 @@ export interface AnimeEpisode {
     avatar: string;
     isVillain?: boolean;
     narration?: boolean;
-    visualFocus?: 'naruto' | 'luffy' | 'ichigo' | 'asta' | 'madara' | 'doflamingo' | 'aizen' | 'lucius' | 'all_heroes' | 'rift';
+    visualFocus?: 'naruto' | 'luffy' | 'ichigo' | 'asta' | 'madara' | 'doflamingo' | 'aizen' | 'lucius' | 'all_heroes' | 'rift' | 'collision_void' | 'naruto_eyes' | 'villains_domination' | 'heroes_assemble';
     text: string;
     bgVibe: string;
   }[];
@@ -199,58 +199,58 @@ export const ANIME_EPISODES: AnimeEpisode[] = [
         speaker: 'Narrator',
         avatar: '📜',
         narration: true,
-        visualFocus: 'rift',
-        text: 'Tokyo, 2026. In the dead of night, a catastrophic anomaly rips across the upper atmosphere. A joint forbidden experiment between Madara, Aizen, Lucius, and Doflamingo shatters the cosmic seal separating realities. Four legendary anime worlds collapse into modern Earth.',
+        visualFocus: 'collision_void',
+        text: 'Tokyo, 2026. A forbidden dark experiment tears open the heavens! A massive celestial void vortex forms above the city, bending gravity and ripping space-time. Across four distant anime universes, Naruto, Luffy, Ichigo, and Asta are violently sucked into the swirling cosmic wormhole!',
         bgVibe: '#080c1a'
       },
       {
         speaker: 'Naruto Uzumaki',
         avatar: '🍥',
-        visualFocus: 'naruto',
-        text: 'I was testing a space-time sealing scroll outside Konoha when the sky folded into a black hole! When I opened my eyes, rain was pouring down on Shibuya Crossing. My old jumpsuit was shredded by the dimensional pressure, so I geared up with this modern waterproof tactical jacket and chest rig. And get this: the city’s underground electric lines respond directly to my Chakra!',
+        visualFocus: 'naruto_eyes',
+        text: '*(Gasping for air)* Where... where am I?! I can barely open my eyes... the cold rain is pouring down on my face! These aren’t the trees of Konoha... these are towering glass skyscrapers with neon billboards! My jumpsuit was shredded in the vortex, but I geared up in this waterproof tactical techwear and chest rig. The city’s underground power grid is pulsing directly into my Chakra!',
         bgVibe: '#1c1307'
       },
       {
         speaker: 'Monkey D. Luffy',
         avatar: '🍖',
         visualFocus: 'luffy',
-        text: 'The Sunny got sucked into a giant whirlpool in the Grand Line, and next thing I knew, I washed up right on the docks of Yokohama! Dockworkers thought I was doing acrobatics! I traded for this sweet crimson biker leather vest and cargo pants, but I kept my straw hat safe. These giant container cranes and steel buildings are the best swing vines I’ve ever seen!',
+        text: 'The Sunny got sucked into that crazy whirlpool in the sky! When I opened my eyes, I was lying on giant metal shipping containers at Yokohama docks! Found this sweet crimson biker vest and cargo pants, and kept my straw hat safe. These giant cargo cranes and steel skyscrapers make the best rubber swing vines I’ve ever seen!',
         bgVibe: '#1a0808'
       },
       {
         speaker: 'Ichigo Kurosaki',
         avatar: '⚔️',
         visualFocus: 'ichigo',
-        text: 'Aizen bypassed the Senkaimon and routed the Garganta directly through Tokyo’s trans-oceanic fiber-optic internet cables. I plummeted onto a skyscraper helipad in Shinjuku. Threw on this dark tactical high-collar trench coat to blend into the city skyline. I can feel it: the city’s digital networks are humming with concentrated spiritual particles.',
+        text: 'The Senkaimon didn’t take me to Karakura Town. The vortex threw me straight through the trans-oceanic internet fiber-optic cables into Shinjuku! Threw on this dark tactical high-collar trench coat to blend into the shadows. I can feel dense spiritual particles leaking from every digital server room in the city.',
         bgVibe: '#0d0a1c'
       },
       {
         speaker: 'Asta',
         avatar: '🗡️',
         visualFocus: 'asta',
-        text: 'Lucius tried to freeze me in a time singularity, but my Anti-Magic canceled out his spell! The gravitational rebound shot me through the clouds and I crashed into an athletic training gym on Tokyo’s perimeter! Grabbed this heavy training hoodie and slung the Demon-Slayer blade across my back. No matter what world or era I’m in, giving up is NEVER an option!',
+        text: 'The dimensional rebound launched me straight through the clouds into an athletic training gym on Tokyo’s perimeter! Grabbed this heavy training hoodie and strapped my Demon-Slayer blade to my back! No matter what century this is, my legs won’t stop running to protect the innocent!',
         bgVibe: '#061a12'
       },
       {
-        speaker: 'Narrator',
-        avatar: '📜',
-        narration: true,
-        visualFocus: 'all_heroes',
-        text: 'Drawn by the violent seismic tremors shaking the capital, the four strangers converged beneath the towering lattice of Tokyo Tower. At first, weapons were drawn in defensive tension... but when the sky turned crimson and the dimensional alarms screamed, their warrior instincts recognized kindred spirits.',
-        bgVibe: '#111827'
+        speaker: 'Madara Uchiha',
+        avatar: '👁️',
+        isVillain: true,
+        visualFocus: 'villains_domination',
+        text: 'Look down upon this fragile civilization, my accomplices. Doflamingo strings their maritime trade; Aizen commands their digital screens; Lucius manipulates their world clocks. Once our orbital satellites are fully charged with this metropolis’s energy, the entire world shall bend to our new order.',
+        bgVibe: '#2a0a0a'
       },
       {
         speaker: 'Naruto Uzumaki',
         avatar: '🍥',
-        visualFocus: 'all_heroes',
-        text: 'Shinobi, Pirate, Soul Reaper, Magic Knight... our worlds might be across the rift, but the people living here have families, dreams, and futures to protect! Let’s combine our powers right here, raise the Sanctuary Village, and crush these bosses together!',
+        visualFocus: 'heroes_assemble',
+        text: 'Look up there! Those four villains are planning to enslave this entire world! Ninja, Pirate, Soul Reaper, Magic Knight... our worlds might be across the rift, but right here under Tokyo Tower, WE STAND AS ONE! Let’s build our Sanctuary Village, upgrade our defenses, and take this city back!',
         bgVibe: '#1e140a'
       },
       {
         speaker: 'Monkey D. Luffy',
         avatar: '🍖',
-        visualFocus: 'all_heroes',
-        text: 'SHISHISHI! That’s what I’m talking about! Madara, Doflamingo, Aizen, Lucius — whoever tries to hurt this sanctuary is gonna get their butt kicked all the way into next week! ALLIANCE FORMED!!',
+        visualFocus: 'heroes_assemble',
+        text: 'SHISHISHI! That’s what I’m talking about! Madara, Doflamingo, Aizen, Lucius — you messed with the wrong city! With all four of us standing together in this Sanctuary, NOBODY CAN STOP US!! LET’S BATTLE!!',
         bgVibe: '#240b0b'
       }
     ],

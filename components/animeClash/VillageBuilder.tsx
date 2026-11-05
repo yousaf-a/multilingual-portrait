@@ -183,7 +183,7 @@ export default function VillageBuilder({
     img.onload = () => {
       heroImgRef.current = img;
     };
-  }, [activeHero.image]);
+  }, [activeHero.image, activeHero.id]);
 
   // 2.5D Isometric Rendering Loop
   useEffect(() => {
@@ -481,10 +481,23 @@ export default function VillageBuilder({
       return item;
     });
 
+    const isHQUpgrade = b.type === 'command_core';
+    const newHQLevel = isHQUpgrade ? b.level + 1 : villageState.level;
+
+    // Automatically unlock all heroes whose HQ level requirement is met
+    const currentUnlocked = Array.from(new Set(['naruto', ...(villageState.unlockedHeroes || [])]));
+    Object.entries(HERO_UNLOCK_HQ_REQUIREMENTS).forEach(([hId, req]) => {
+      if (req.hqLevel <= newHQLevel && !currentUnlocked.includes(hId)) {
+        currentUnlocked.push(hId);
+      }
+    });
+
     onUpdateVillage({
       ...villageState,
+      level: newHQLevel,
       berries: villageState.berries - cost,
-      buildings: updatedBuildings
+      buildings: updatedBuildings,
+      unlockedHeroes: currentUnlocked
     });
 
     setSelectedBuilding((prev) => (prev ? { ...prev, level: prev.level + 1 } : null));

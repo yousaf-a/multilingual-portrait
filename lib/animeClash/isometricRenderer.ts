@@ -1064,68 +1064,83 @@ export function drawIsoHeroPatrol(
     ctx.fill();
   }
 
-  // 3. Render Hero Character Unit (Circular Tactical Anime Medallion)
-  const heroR = 23;
-  const heroCenterY = drawY - 26;
+  // 3. Render Hero Character Unit (Full-Body Standing Isometric Anime Guardian)
+  const spriteW = 44;
+  const spriteH = 68;
+  const feetY = drawY;
+  const heroTopY = feetY - spriteH;
 
-  // Render hero background pedestal/glow
+  // Ground Elemental Pedestal Glow beneath feet
   ctx.save();
   ctx.beginPath();
-  ctx.arc(cx, heroCenterY, heroR, 0, Math.PI * 2);
-  ctx.fillStyle = '#0f172a';
+  ctx.ellipse(cx, feetY, 22, 10, 0, 0, Math.PI * 2);
+  ctx.fillStyle = heroColor + '33';
   ctx.fill();
-
-  if (heroImage && heroImage.complete && heroImage.naturalWidth > 0) {
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(cx, heroCenterY, heroR, 0, Math.PI * 2);
-    ctx.clip();
-    ctx.drawImage(heroImage, cx - heroR, heroCenterY - heroR, heroR * 2, heroR * 2);
-    ctx.restore();
-  } else {
-    // Stylized Anime Hero Medallion with Hero Accent Gradient & Icon
-    const grad = ctx.createRadialGradient(cx, heroCenterY, 4, cx, heroCenterY, heroR);
-    grad.addColorStop(0, '#ffffff');
-    grad.addColorStop(0.5, heroColor);
-    grad.addColorStop(1, '#0b0f19');
-    ctx.beginPath();
-    ctx.arc(cx, heroCenterY, heroR, 0, Math.PI * 2);
-    ctx.fillStyle = grad;
-    ctx.fill();
-
-    // Hero Character Initial
-    ctx.font = 'bold 16px "Segoe UI", sans-serif';
-    ctx.fillStyle = '#ffffff';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(heroName.charAt(0), cx, heroCenterY);
-  }
-
-  // Multi-layered Flaming Elemental Aura Ring
-  ctx.beginPath();
-  ctx.arc(cx, heroCenterY, heroR, 0, Math.PI * 2);
   ctx.strokeStyle = heroColor;
-  ctx.lineWidth = isSelected ? 3.8 : 2.8;
-  ctx.shadowColor = heroColor;
-  ctx.shadowBlur = 14;
+  ctx.lineWidth = 1.8;
   ctx.stroke();
-  ctx.shadowBlur = 0;
 
-  // Outer Rotating Chakra/Haki Energy Orbit
+  // Outer Rotating Chakra/Haki Energy Orbit on the ground
   ctx.beginPath();
-  ctx.arc(cx, heroCenterY, heroR + 3.5, animTime * 2.2, animTime * 2.2 + Math.PI * 2);
+  ctx.ellipse(cx, feetY, 26, 12, 0, animTime * 2.2, animTime * 2.2 + Math.PI * 2);
   ctx.strokeStyle = '#ffffff';
   ctx.lineWidth = 1.2;
   ctx.setLineDash([3, 5]);
   ctx.stroke();
   ctx.setLineDash([]);
+
+  // Render Full Standing Hero Sprite
+  if (heroImage && heroImage.complete && heroImage.naturalWidth > 0) {
+    ctx.save();
+    // Subtle breathing/bobbing scale
+    const breathScale = 1.0 + Math.sin(animTime * 4) * 0.02;
+    ctx.translate(cx, feetY);
+    ctx.scale(breathScale, breathScale);
+
+    // Drop shadow
+    ctx.shadowColor = heroColor;
+    ctx.shadowBlur = 12;
+
+    ctx.drawImage(
+      heroImage,
+      -spriteW / 2,
+      -spriteH,
+      spriteW,
+      spriteH
+    );
+    ctx.restore();
+  } else {
+    // Stylized Anime Hero Silhouette with Hero Accent Gradient & Icon
+    ctx.save();
+    const grad = ctx.createLinearGradient(cx, heroTopY, cx, feetY);
+    grad.addColorStop(0, '#ffffff');
+    grad.addColorStop(0.3, heroColor);
+    grad.addColorStop(1, '#090d16');
+
+    // Body silhouette
+    ctx.beginPath();
+    ctx.ellipse(cx, heroTopY + 12, 11, 11, 0, 0, Math.PI * 2); // Head
+    ctx.roundRect(cx - 14, heroTopY + 22, 28, 36, 6); // Torso & coat
+    ctx.fillStyle = grad;
+    ctx.shadowColor = heroColor;
+    ctx.shadowBlur = 15;
+    ctx.fill();
+
+    // Hero Initial
+    ctx.font = 'bold 13px "Segoe UI", sans-serif';
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(heroName.charAt(0), cx, heroTopY + 38);
+    ctx.restore();
+  }
   ctx.restore();
 
   // 4. Hero Name & Level Badge (Plaque with Gold Star)
-  const tagY = heroCenterY - heroR - 8;
+  const tagY = heroTopY - 6;
   const tagText = `★ [Lv ${heroLevel}] ${heroName.split(' ')[0]} ★`;
   ctx.font = 'bold 10px "Segoe UI", sans-serif';
-  const tagWidth = ctx.measureText(tagText).width + 14;
+  const tagWidth = ctx.measureText(tagText).width + 16;
 
   ctx.save();
   ctx.beginPath();

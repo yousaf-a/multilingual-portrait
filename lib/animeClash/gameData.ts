@@ -9,7 +9,7 @@ export const HEROES_CATALOG: Record<string, HeroData> = {
     title: 'Seventh Hokage / Will of Fire',
     franchise: 'naruto',
     avatar: '🍥',
-    image: '/anime-heroes/naruto-heroic.jpg',
+    image: '/anime-heroes/naruto-heroic.png',
     hp: 950,
     maxHp: 950,
     attack: 85,
@@ -27,6 +27,11 @@ export const HEROES_CATALOG: Record<string, HeroData> = {
     color: '#f97316',
     accentColor: '#fdba74',
     tierRank: 'goat',
+    poseImages: {
+      combat: '/anime-heroes/naruto-heroic.png',
+      epic: '/anime-heroes/naruto-epic.png',
+      goat: '/anime-heroes/naruto-goat.png'
+    },
     forms: [
       {
         id: 'normal',
@@ -78,7 +83,7 @@ export const HEROES_CATALOG: Record<string, HeroData> = {
     title: 'Future King of the Pirates / Gear Master',
     franchise: 'one_piece',
     avatar: '🍖',
-    image: '/anime-heroes/luffy-tactical.jpg',
+    image: '/anime-heroes/luffy-tactical.png',
     hp: 1250,
     maxHp: 1250,
     attack: 90,
@@ -96,6 +101,11 @@ export const HEROES_CATALOG: Record<string, HeroData> = {
     color: '#dc2626',
     accentColor: '#f87171',
     tierRank: 'goat',
+    poseImages: {
+      combat: '/anime-heroes/luffy-tactical.png',
+      epic: '/anime-heroes/luffy-epic.png',
+      goat: '/anime-heroes/luffy-goat.png'
+    },
     forms: [
       {
         id: 'normal',
@@ -325,7 +335,7 @@ export const HEROES_CATALOG: Record<string, HeroData> = {
     title: 'The Shadow Monarch / S-Rank Sovereign',
     franchise: 'solo_leveling',
     avatar: '👑',
-    image: '/anime-heroes/sung-jinwoo-tactical.jpg',
+    image: '/anime-heroes/sung-jinwoo-tactical.png',
     hp: 1350,
     maxHp: 1350,
     attack: 150,
@@ -341,7 +351,13 @@ export const HEROES_CATALOG: Record<string, HeroData> = {
     ultimateDesc: 'Raises 5 shadow soldiers from defeated buildings to fight alongside your army for 10 seconds.',
     ultimateCooldown: 18,
     color: '#6366f1',
-    accentColor: '#a5b4fc'
+    accentColor: '#a5b4fc',
+    tierRank: 'goat',
+    poseImages: {
+      combat: '/anime-heroes/sung-jinwoo-tactical.png',
+      epic: '/anime-heroes/sung-jinwoo-tactical.png',
+      goat: '/anime-heroes/sung-jinwoo-goat.png'
+    },
   },
   igris: {
     id: 'igris',

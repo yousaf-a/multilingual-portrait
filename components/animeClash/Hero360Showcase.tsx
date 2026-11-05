@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { HeroData, PlayerVillageState, HeroTierRank, HeroFormVariant } from '@/lib/animeClash/types';
 import { HEROES_CATALOG, HERO_UNLOCK_HQ_REQUIREMENTS, ANIME_VOICE_SHOUTS } from '@/lib/animeClash/gameData';
 import { animeAudio } from '@/lib/animeClash/animeAudio';
+import Anime3DViewer from './Anime3DViewer';
 import {
   RotateCcw,
   Volume2,
@@ -47,6 +48,7 @@ export default function Hero360Showcase({
   const [isAutoSpinning, setIsAutoSpinning] = useState<boolean>(true);
   const [spinSpeed, setSpinSpeed] = useState<number>(1.0);
   const [zoomLevel, setZoomLevel] = useState<number>(1.0);
+  const [view3DMode, setView3DMode] = useState<boolean>(true);
   const [studioTheme, setStudioTheme] = useState<'midnight' | 'gold_hour' | 'cyber_neon'>('midnight');
   const [voiceBanner, setVoiceBanner] = useState<{ kanji: string; shout: string; subtitle: string } | null>(null);
 
@@ -178,35 +180,33 @@ export default function Hero360Showcase({
   // Resolve dynamic display image: true 360° turnaround, poses & transformations
   let displayImage = hero.image;
 
-  if (hero.turnaround) {
-    if (currentPose === 'combat' && hero.poseImages?.combat) {
-      displayImage = hero.poseImages.combat;
-    } else if (selectedRank === 'goat' && hero.poseImages?.goat) {
-      displayImage = hero.poseImages.goat;
-    } else if (selectedRank === 'epic' && hero.poseImages?.epic) {
-      displayImage = hero.poseImages.epic;
+  if (selectedRank === 'goat' && hero.poseImages?.goat) {
+    displayImage = hero.poseImages.goat;
+  } else if (selectedRank === 'epic' && hero.poseImages?.epic) {
+    displayImage = hero.poseImages.epic;
+  } else if (hero.turnaround) {
+    // 360 Turnaround angle selection from reference sheet
+    const deg = ((rotationAngle % 360) + 360) % 360;
+    if (deg >= 330 || deg < 30) {
+      displayImage = hero.turnaround.front;
+    } else if (deg >= 30 && deg < 75) {
+      displayImage = hero.turnaround.left34 || hero.turnaround.front;
+    } else if (deg >= 75 && deg < 135) {
+      displayImage = hero.turnaround.leftSide || hero.turnaround.front;
+    } else if (deg >= 135 && deg < 225) {
+      displayImage = hero.turnaround.back || hero.turnaround.front;
+    } else if (deg >= 225 && deg < 285) {
+      displayImage = hero.turnaround.rightSide || hero.turnaround.leftSide || hero.turnaround.front;
     } else {
-      // 360 Turnaround angle selection from reference sheet
-      const deg = ((rotationAngle % 360) + 360) % 360;
-      if (deg >= 330 || deg < 30) {
-        displayImage = hero.turnaround.front;
-      } else if (deg >= 30 && deg < 75) {
-        displayImage = hero.turnaround.left34 || hero.turnaround.front;
-      } else if (deg >= 75 && deg < 135) {
-        displayImage = hero.turnaround.leftSide || hero.turnaround.front;
-      } else if (deg >= 135 && deg < 225) {
-        displayImage = hero.turnaround.back || hero.turnaround.front;
-      } else if (deg >= 225 && deg < 285) {
-        displayImage = hero.turnaround.rightSide || hero.turnaround.leftSide || hero.turnaround.front;
-      } else {
-        displayImage = hero.turnaround.right34 || hero.turnaround.left34 || hero.turnaround.front;
-      }
+      displayImage = hero.turnaround.right34 || hero.turnaround.left34 || hero.turnaround.front;
     }
-  } else {
-    // For heroes without multi-angle sheet, always prefer transparent PNG cutout to eliminate white box!
-    if (displayImage.endsWith('.jpg')) {
-      displayImage = displayImage.replace('.jpg', '.png');
-    }
+  } else if (hero.poseImages?.combat) {
+    displayImage = hero.poseImages.combat;
+  }
+
+  // Enforce transparent PNG cutout across all characters
+  if (displayImage.endsWith('.jpg')) {
+    displayImage = displayImage.replace('.jpg', '.png');
   }
 
   return (
@@ -323,143 +323,183 @@ export default function Hero360Showcase({
                 </button>
               </div>
 
-              {/* Angle Dial + Auto Spin */}
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1.5 bg-black/60 px-3 py-1.5 rounded-2xl border border-white/10 text-xs text-slate-300 font-mono backdrop-blur-md">
+              {/* Angle Dial + 3D/2D Switcher + Auto Spin */}
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                {/* 3D vs 2D View Switcher */}
+                <div className="flex items-center gap-0.5 bg-black/60 p-0.5 rounded-2xl border border-white/10 backdrop-blur-md">
+                  <button
+                    type="button"
+                    onClick={() => setView3DMode(true)}
+                    className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition cursor-pointer flex items-center gap-1 ${
+                      view3DMode
+                        ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-black shadow-md'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                    title="Real-Time 3D WebGL Avatar Engine"
+                  >
+                    <span>🌐 3D</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setView3DMode(false)}
+                    className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition cursor-pointer flex items-center gap-1 ${
+                      !view3DMode
+                        ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-black shadow-md'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                    title="2D Turnaround Cutout View"
+                  >
+                    <span>🖼️ 2D</span>
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-1 bg-black/60 px-2.5 py-1 rounded-2xl border border-white/10 text-xs text-slate-300 font-mono backdrop-blur-md">
                   <Compass size={13} className="text-cyan-400" />
                   <span>{Math.round(rotationAngle)}°</span>
                 </div>
+
                 <button
                   type="button"
                   onClick={() => setIsAutoSpinning(!isAutoSpinning)}
-                  className={`px-3 py-1.5 rounded-2xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer border ${
+                  className={`px-3 py-1 rounded-2xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer border ${
                     isAutoSpinning
                       ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/50 shadow-[0_0_15px_rgba(6,182,212,0.3)]'
                       : 'bg-black/60 text-slate-400 border-white/10 hover:text-white'
                   }`}
                 >
                   {isAutoSpinning ? <Pause size={13} /> : <Play size={13} />}
-                  <span>{isAutoSpinning ? 'Auto Spin' : 'Spin Paused'}</span>
+                  <span>{isAutoSpinning ? 'Auto' : 'Spin'}</span>
                 </button>
               </div>
             </div>
 
             {/* CENTER 3D STAGE & TURNTABLE PEDESTAL */}
-            <div className="relative my-auto flex flex-col items-center justify-center w-full h-[380px] sm:h-[440px]">
-              {/* GOAT MODE EXPLOSIVE DIVINE AURAS & SHOCKWAVES */}
-              {selectedRank === 'goat' && (
-                <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-                  <div className="w-80 h-80 rounded-full border-2 border-amber-400/60 animate-ping" style={{ animationDuration: '2s' }} />
-                  <div className="w-96 h-96 rounded-full border border-dashed border-amber-300/40 animate-spin" style={{ animationDuration: '8s' }} />
-                  <div className="absolute inset-0 bg-radial from-amber-400/10 via-transparent to-transparent animate-pulse" />
+            <div className="relative my-auto flex flex-col items-center justify-center w-full h-[380px] sm:h-[450px]">
+              {view3DMode ? (
+                /* REAL-TIME THREE.JS WEBGL 3D AVATAR VIEWER */
+                <div className="w-full h-full flex items-center justify-center relative">
+                  <Anime3DViewer
+                    hero={hero}
+                    selectedRank={selectedRank}
+                    currentPose={currentPose}
+                    rotationAngle={rotationAngle}
+                    onAngleChange={(ang) => setRotationAngle(Math.round(ang))}
+                    autoRotate={isAutoSpinning}
+                    zoomLevel={zoomLevel}
+                  />
+
+                  {/* Character Nameplate Plaque floating at the bottom */}
+                  <div className="absolute bottom-2 z-20 flex items-center gap-2 px-3.5 py-1 rounded-full bg-black/90 border border-white/20 shadow-xl backdrop-blur-md pointer-events-none">
+                    <span className="text-[10px] font-black uppercase text-amber-400">
+                      {activeForm.badge}
+                    </span>
+                    <span className="text-white text-xs font-black">
+                      {hero.name}
+                    </span>
+                  </div>
                 </div>
-              )}
-
-              {/* 3D TURNTABLE BASE ON THE FLOOR */}
-              <div className="absolute bottom-2 sm:bottom-4 flex items-center justify-center pointer-events-none">
-                {/* 1. Floor Drop Shadow (Dynamic Ellipse shifting with rotationAngle) */}
-                <div
-                  className="absolute w-56 sm:w-64 h-16 rounded-[100%] bg-black/90 blur-md transition-all duration-75"
-                  style={{
-                    transform: `translateX(${shadowX}px) scaleX(${shadowScaleX}) rotateX(68deg)`,
-                    opacity: shadowOpacity
-                  }}
-                />
-
-                {/* 2. Multi-tier 3D Metallic Turntable Ring (Top Edge) */}
-                <div
-                  className="relative w-64 sm:w-72 h-32 rounded-[100%] border-4 shadow-[0_15px_40px_rgba(0,0,0,0.9)] transition-all duration-300"
-                  style={{
-                    transform: 'rotateX(70deg)',
-                    background:
-                      selectedRank === 'goat'
-                        ? 'radial-gradient(circle, #2d2005 0%, #150f02 70%, #451a03 100%)'
-                        : selectedRank === 'epic'
-                        ? 'radial-gradient(circle, #082f49 0%, #031525 70%, #0284c7 100%)'
-                        : 'radial-gradient(circle, #1e293b 0%, #0f172a 70%, #334155 100%)',
-                    borderColor: activeForm.auraColor,
-                    boxShadow: `0 0 50px ${activeForm.auraColor}55`
-                  }}
-                >
-                  {/* Rotating Rune Symbols on the Turntable Rim */}
-                  <div
-                    className="absolute inset-0 rounded-[100%] border border-dashed border-white/30"
-                    style={{ transform: `rotateZ(${rotationAngle * 1.2}deg)` }}
-                  />
-                  <div
-                    className="absolute inset-3 rounded-[100%] border border-white/20"
-                    style={{ transform: `rotateZ(${-rotationAngle * 0.8}deg)` }}
-                  />
-                </div>
-              </div>
-
-              {/* THE 3D STANDING AVATAR (NO CARDBOARD CARD RECTANGLE!) */}
-              <div
-                className="relative z-10 transition-transform duration-75 ease-out flex flex-col items-center justify-end"
-                style={{
-                  transform: `scale(${zoomLevel}) perspective(1000px) skewX(${perspectiveSkewX * 0.15}deg)`,
-                  filter: `drop-shadow(${shadowX * 0.4}px 18px 24px ${activeForm.auraColor}77) brightness(${lightIntensity})`
-                }}
-              >
-                {/* Clean Cutout Standing Anime Avatar Figure */}
-                <div
-                  className={`relative h-[310px] sm:h-[350px] w-auto max-w-[260px] flex items-center justify-center transition-all duration-300 ${
-                    currentPose === 'ultimate'
-                      ? 'scale-105'
-                      : currentPose === 'meditate'
-                      ? 'translate-y-[-14px] animate-pulse'
-                      : 'hover:scale-[1.02]'
-                  }`}
-                >
-                  <img
-                    src={displayImage}
-                    alt={hero.name}
-                    className={`h-full w-auto object-contain transition-all duration-100 select-none pointer-events-none drop-shadow-2xl ${
-                      !hero.turnaround && isFacingBack
-                        ? 'brightness-[0.45] contrast-125 saturate-50'
-                        : isProfileLeft
-                        ? 'skew-y-1 brightness-95'
-                        : isProfileRight
-                        ? '-skew-y-1 brightness-95'
-                        : 'brightness-100'
-                    }`}
-                    style={{
-                      // In back stance without turnaround, render as backlit battle silhouette
-                      filter:
-                        !hero.turnaround && isFacingBack
-                          ? `drop-shadow(0 0 16px ${activeForm.auraColor}) drop-shadow(0 0 35px ${activeForm.auraColor}88)`
-                          : undefined
-                    }}
-                  />
-
-                  {/* Backlit Rim Aura when turning (only if no turnaround sheet) */}
-                  {!hero.turnaround && isFacingBack && (
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 px-3 py-1 rounded-full bg-black/80 border border-white/20 text-[10px] font-mono text-cyan-300 tracking-widest uppercase">
-                      ★ Rear Guard Angle ★
+              ) : (
+                /* 2D Cutout Perspective Fallback */
+                <>
+                  {/* GOAT MODE EXPLOSIVE DIVINE AURAS & SHOCKWAVES */}
+                  {selectedRank === 'goat' && (
+                    <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+                      <div className="w-80 h-80 rounded-full border-2 border-amber-400/60 animate-ping" style={{ animationDuration: '2s' }} />
+                      <div className="w-96 h-96 rounded-full border border-dashed border-amber-300/40 animate-spin" style={{ animationDuration: '8s' }} />
+                      <div className="absolute inset-0 bg-radial from-amber-400/10 via-transparent to-transparent animate-pulse" />
                     </div>
                   )}
 
-                  {/* Elemental Aura Glow Particles on Body */}
-                  {selectedRank === 'goat' && (
+                  {/* 3D TURNTABLE BASE ON THE FLOOR */}
+                  <div className="absolute bottom-2 sm:bottom-4 flex items-center justify-center pointer-events-none">
                     <div
-                      className="absolute inset-0 pointer-events-none mix-blend-screen opacity-70 animate-pulse"
+                      className="absolute w-56 sm:w-64 h-16 rounded-[100%] bg-black/90 blur-md transition-all duration-75"
                       style={{
-                        background: `radial-gradient(circle at 50% 50%, ${activeForm.auraColor}44 0%, transparent 70%)`
+                        transform: `translateX(${shadowX}px) scaleX(${shadowScaleX}) rotateX(68deg)`,
+                        opacity: shadowOpacity
                       }}
                     />
-                  )}
-                </div>
 
-                {/* Character Nameplate Plaque floating just above the turntable */}
-                <div className="mt-[-8px] z-20 flex items-center gap-2 px-3.5 py-1 rounded-full bg-black/90 border border-white/20 shadow-xl backdrop-blur-md">
-                  <span className="text-[10px] font-black uppercase text-amber-400">
-                    {activeForm.badge}
-                  </span>
-                  <span className="text-white text-xs font-black">
-                    {hero.name}
-                  </span>
-                </div>
-              </div>
+                    <div
+                      className="relative w-64 sm:w-72 h-32 rounded-[100%] border-4 shadow-[0_15px_40px_rgba(0,0,0,0.9)] transition-all duration-300"
+                      style={{
+                        transform: 'rotateX(70deg)',
+                        background:
+                          selectedRank === 'goat'
+                            ? 'radial-gradient(circle, #2d2005 0%, #150f02 70%, #451a03 100%)'
+                            : selectedRank === 'epic'
+                            ? 'radial-gradient(circle, #082f49 0%, #031525 70%, #0284c7 100%)'
+                            : 'radial-gradient(circle, #1e293b 0%, #0f172a 70%, #334155 100%)',
+                        borderColor: activeForm.auraColor,
+                        boxShadow: `0 0 50px ${activeForm.auraColor}55`
+                      }}
+                    >
+                      <div
+                        className="absolute inset-0 rounded-[100%] border border-dashed border-white/30"
+                        style={{ transform: `rotateZ(${rotationAngle * 1.2}deg)` }}
+                      />
+                      <div
+                        className="absolute inset-3 rounded-[100%] border border-white/20"
+                        style={{ transform: `rotateZ(${-rotationAngle * 0.8}deg)` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* THE 3D STANDING AVATAR (NO CARDBOARD CARD RECTANGLE!) */}
+                  <div
+                    className="relative z-10 transition-transform duration-75 ease-out flex flex-col items-center justify-end"
+                    style={{
+                      transform: `scale(${zoomLevel}) perspective(1000px) skewX(${perspectiveSkewX * 0.15}deg)`,
+                      filter: `drop-shadow(${shadowX * 0.4}px 18px 24px ${activeForm.auraColor}77) brightness(${lightIntensity})`
+                    }}
+                  >
+                    <div
+                      className={`relative h-[310px] sm:h-[350px] w-auto max-w-[260px] flex items-center justify-center transition-all duration-300 ${
+                        currentPose === 'ultimate'
+                          ? 'scale-105'
+                          : currentPose === 'meditate'
+                          ? 'translate-y-[-14px] animate-pulse'
+                          : 'hover:scale-[1.02]'
+                      }`}
+                    >
+                      <img
+                        src={displayImage}
+                        alt={hero.name}
+                        className={`h-full w-auto object-contain transition-all duration-100 select-none pointer-events-none drop-shadow-2xl ${
+                          !hero.turnaround && isFacingBack
+                            ? 'brightness-[0.45] contrast-125 saturate-50'
+                            : isProfileLeft
+                            ? 'skew-y-1 brightness-95'
+                            : isProfileRight
+                            ? '-skew-y-1 brightness-95'
+                            : 'brightness-100'
+                        }`}
+                        style={{
+                          filter:
+                            !hero.turnaround && isFacingBack
+                              ? `drop-shadow(0 0 16px ${activeForm.auraColor}) drop-shadow(0 0 35px ${activeForm.auraColor}88)`
+                              : undefined
+                        }}
+                      />
+
+                      {!hero.turnaround && isFacingBack && (
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 px-3 py-1 rounded-full bg-black/80 border border-white/20 text-[10px] font-mono text-cyan-300 tracking-widest uppercase">
+                          ★ Rear Guard Angle ★
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="mt-[-8px] z-20 flex items-center gap-2 px-3.5 py-1 rounded-full bg-black/90 border border-white/20 shadow-xl backdrop-blur-md">
+                      <span className="text-[10px] font-black uppercase text-amber-400">
+                        {activeForm.badge}
+                      </span>
+                      <span className="text-white text-xs font-black">
+                        {hero.name}
+                      </span>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Bottom Turntable Quick Angles */}
@@ -640,13 +680,17 @@ export default function Hero360Showcase({
                         setSelectedHeroId(hId);
                         animeAudio.playButtonClick();
                       }}
-                      className={`relative shrink-0 w-12 h-14 rounded-2xl overflow-hidden border-2 transition cursor-pointer ${
+                      className={`relative shrink-0 w-12 h-14 rounded-2xl overflow-hidden border-2 transition cursor-pointer bg-gradient-to-b from-[#131f3d] to-[#070b16] p-1 flex items-center justify-center ${
                         isSelected
                           ? 'border-amber-400 ring-2 ring-amber-400/50 scale-105'
                           : 'border-white/10 opacity-70 hover:opacity-100 hover:border-white/30'
                       }`}
                     >
-                      <img src={hData.image} alt={hData.name} className="w-full h-full object-cover object-top" />
+                      <img
+                        src={hData.image.replace('.jpg', '.png')}
+                        alt={hData.name}
+                        className="w-full h-full object-contain object-top"
+                      />
                       {!unlocked && (
                         <div className="absolute inset-0 bg-black/75 flex items-center justify-center text-[10px]">
                           🔒

@@ -46,8 +46,8 @@ class AnimeAudioManager {
         filter.frequency.setValueAtTime(450, now);
         filter.Q.setValueAtTime(4, now);
 
-        gain.gain.setValueAtTime(0.2, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.9);
+        gain.gain.setValueAtTime(0.05, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
 
         osc.connect(filter);
         filter.connect(gain);
@@ -62,8 +62,8 @@ class AnimeAudioManager {
         osc.frequency.setValueAtTime(150, now);
         osc.frequency.exponentialRampToValueAtTime(60, now + 0.5);
 
-        gain.gain.setValueAtTime(0.3, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
+        gain.gain.setValueAtTime(0.06, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
 
         osc.connect(gain);
         gain.connect(ctx.destination);
@@ -77,8 +77,8 @@ class AnimeAudioManager {
         osc.frequency.setValueAtTime(1200, now);
         osc.frequency.exponentialRampToValueAtTime(180, now + 0.5);
 
-        gain.gain.setValueAtTime(0.25, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.7);
+        gain.gain.setValueAtTime(0.05, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
 
         osc.connect(gain);
         gain.connect(ctx.destination);
@@ -126,12 +126,16 @@ class AnimeAudioManager {
 
     try {
       window.speechSynthesis.cancel(); // Stop overlapping speech
+      window.speechSynthesis.resume(); // Ensure engine is active and not paused by browser
 
       const shout = ANIME_VOICE_SHOUTS[heroId];
-      const defaultDialogue = shout ? `${shout.shoutText}! ${shout.subTitle}` : 'Sanctuary secured!';
+      const hero = HEROES_CATALOG[heroId];
+      const defaultDialogue = hero?.catchphrase || (shout ? `${shout.shoutText}! ${shout.subTitle}` : 'Sanctuary secured!');
       const phrase = textToSpeak ? textToSpeak.replace(/["*]/g, '').trim() : defaultDialogue;
 
       const utterance = new SpeechSynthesisUtterance(phrase);
+
+      const isFemale = ['mereoleona', 'yoruichi', 'boa_hancock', 'mikasa'].includes(heroId);
 
       // Character-tuned pitch and speech speed
       if (heroId === 'naruto') {
@@ -193,32 +197,33 @@ class AnimeAudioManager {
         utterance.rate = 1.0;
       }
 
-      // Voice selection (prefers natural/expressive voice if available)
+      // Voice selection (prefers natural/expressive voice matching gender and character)
       const voices = window.speechSynthesis.getVoices();
       if (voices && voices.length > 0) {
-        const isJapanese =
-          /[\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\uff00-\uff9f\u4e00-\u9faf]/.test(phrase) ||
-          phrase.includes('Bankai') ||
-          phrase.includes('Rasengan') ||
-          phrase.includes('Gomu') ||
-          phrase.includes('Dattebayo') ||
-          phrase.includes('Ryoiki');
-
         let preferredVoice = null;
-        if (isJapanese) {
-          preferredVoice = voices.find((v) => v.lang.startsWith('ja') || v.lang.includes('JP'));
-        }
-        if (!preferredVoice) {
+        if (isFemale) {
+          preferredVoice = voices.find(
+            (v) =>
+              v.lang.startsWith('en') &&
+              (v.name.includes('Zira') ||
+                v.name.includes('Jenny') ||
+                v.name.includes('Samantha') ||
+                v.name.includes('Female') ||
+                v.name.includes('Google US English'))
+          );
+        } else {
           preferredVoice = voices.find(
             (v) =>
               v.lang.startsWith('en') &&
               (v.name.includes('Natural') ||
                 v.name.includes('Guy') ||
                 v.name.includes('David') ||
-                v.name.includes('Google') ||
                 v.name.includes('George') ||
                 v.name.includes('Male'))
           );
+        }
+        if (!preferredVoice) {
+          preferredVoice = voices.find((v) => v.lang.startsWith('en'));
         }
         if (preferredVoice) {
           utterance.voice = preferredVoice;

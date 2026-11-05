@@ -70,6 +70,7 @@ export interface HeroData {
   forms?: HeroFormVariant[];
   turnaround?: HeroTurnaroundAngles;
   poseImages?: HeroPoseImages;
+  model3dUrl?: string;
 }
 
 export interface TroopData {

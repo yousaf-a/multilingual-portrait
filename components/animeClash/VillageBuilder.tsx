@@ -289,16 +289,16 @@ export default function VillageBuilder({
     };
   }, [villageState, selectedBuilding, activeHero, isRelocatingBuildingId, villageViewMode, activeBuildTab]);
 
-  // Handle Isometric Map Click
-  const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  // Unified Map Interaction (Mouse Click & Mobile Touch)
+  const handleMapInteractAt = (clientX: number, clientY: number) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
-    const clickX = (e.clientX - rect.left) * scaleX;
-    const clickY = (e.clientY - rect.top) * scaleY;
+    const clickX = (clientX - rect.left) * scaleX;
+    const clickY = (clientY - rect.top) * scaleY;
 
     const originX = canvas.width / 2;
     const originY = 65;
@@ -307,6 +307,10 @@ export default function VillageBuilder({
 
     // If in Relocation Mode: Place the moving building on the clicked grid tile!
     if (isRelocatingBuildingId) {
+      if (!isOwner) {
+        setIsRelocatingBuildingId(null);
+        return;
+      }
       if (gridX < 1 || gridX > 10 || gridY < 1 || gridY > 10) return;
 
       // Check if tile is occupied by another building
@@ -320,6 +324,7 @@ export default function VillageBuilder({
         );
         onUpdateVillage({ ...villageState, buildings: updated });
         setIsRelocatingBuildingId(null);
+        animeAudio.playButtonClick();
       }
       return;
     }
@@ -338,6 +343,7 @@ export default function VillageBuilder({
       hp.speech = q;
       hp.speechTimer = Date.now() + 3500;
       setHeroInteractionQuote(q);
+      animeAudio.playHeroShout(activeHero.id);
       return;
     }
 
@@ -348,8 +354,20 @@ export default function VillageBuilder({
 
     if (clicked) {
       setSelectedBuilding(clicked);
+      animeAudio.playButtonClick();
     } else {
       setSelectedBuilding(null);
+    }
+  };
+
+  const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    handleMapInteractAt(e.clientX, e.clientY);
+  };
+
+  const handleCanvasTouch = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    if (e.changedTouches.length > 0) {
+      const touch = e.changedTouches[0];
+      handleMapInteractAt(touch.clientX, touch.clientY);
     }
   };
 
@@ -649,7 +667,7 @@ export default function VillageBuilder({
   };
 
   return (
-    <div className="w-full max-w-5xl flex flex-col gap-4 my-4">
+    <div className="w-full max-w-7xl px-2 sm:px-4 flex flex-col gap-3 sm:gap-4 my-2 sm:my-4 transition-all">
       {/* 2.5D Real-Time Troop Marching Raid Arena Modal (Multiplayer & Syndicate) */}
       {isArenaRaidActive && (
         <AnimeRaidArena
@@ -798,7 +816,7 @@ export default function VillageBuilder({
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
           {/* Hero Voice Shout Audio */}
           <button
             type="button"
@@ -813,10 +831,10 @@ export default function VillageBuilder({
                 setTimeout(() => setVoiceShoutBanner(null), 2500);
               }
             }}
-            className="px-3 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/50 text-amber-300 text-xs font-bold transition flex items-center gap-1.5 shadow-sm cursor-pointer"
+            className="px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/50 text-amber-300 text-[11px] sm:text-xs font-bold transition flex items-center gap-1.5 shadow-sm cursor-pointer"
             title="Trigger Japanese Voice Shout Audio"
           >
-            <Volume2 size={14} className="text-amber-400 animate-pulse" />
+            <Volume2 size={13} className="text-amber-400 animate-pulse" />
             <span>Voice Shout</span>
           </button>
 
@@ -824,36 +842,36 @@ export default function VillageBuilder({
           <button
             type="button"
             onClick={() => setIsDefenseActive(true)}
-            className="px-3 py-2 rounded-xl bg-rose-950/80 hover:bg-rose-900 border border-rose-500/60 text-rose-200 text-xs font-bold transition flex items-center gap-1.5 shadow-sm cursor-pointer"
+            className="px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl bg-rose-950/80 hover:bg-rose-900 border border-rose-500/60 text-rose-200 text-[11px] sm:text-xs font-bold transition flex items-center gap-1.5 shadow-sm cursor-pointer"
             title="Defend against an incoming Syndicate assault!"
           >
-            <Shield size={14} className="text-rose-400" />
+            <Shield size={13} className="text-rose-400" />
             <span>🚨 Base Defense</span>
           </button>
 
           <button
             type="button"
             onClick={handleCollectResources}
-            className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition flex items-center gap-1 shadow-sm cursor-pointer"
+            className="px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] sm:text-xs font-bold transition flex items-center gap-1 shadow-sm cursor-pointer"
           >
-            <span>🌾 Harvest All</span>
+            <span>🌾 Harvest</span>
           </button>
 
           <button
             type="button"
             onClick={onOpenStory}
-            className="px-3.5 py-2 rounded-xl bg-[#1e293b] hover:bg-[#334155] border border-[#334155] text-slate-200 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
+            className="px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl bg-[#1e293b] hover:bg-[#334155] border border-[#334155] text-slate-200 text-[11px] sm:text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
           >
-            <BookOpen size={14} className="text-amber-400" />
-            <span>Story Arc</span>
+            <BookOpen size={13} className="text-amber-400" />
+            <span>Story</span>
           </button>
 
           <button
             type="button"
             onClick={() => setIsArenaRaidActive(true)}
-            className="px-4 py-2 rounded-xl bg-gradient-to-r from-red-600 via-rose-500 to-orange-500 hover:brightness-110 text-white text-xs font-bold flex items-center gap-1.5 shadow-[0_0_20px_rgba(239,68,68,0.5)] transition cursor-pointer"
+            className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-gradient-to-r from-red-600 via-rose-500 to-orange-500 hover:brightness-110 text-white text-[11px] sm:text-xs font-bold flex items-center gap-1.5 shadow-[0_0_20px_rgba(239,68,68,0.5)] transition cursor-pointer"
           >
-            <Sword size={14} />
+            <Sword size={13} />
             <span>⚔️ 2.5D Raid!</span>
           </button>
 
@@ -861,14 +879,14 @@ export default function VillageBuilder({
           <button
             type="button"
             onClick={onOpenAuthModal}
-            className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-blue-900/80 via-indigo-900/80 to-purple-900/80 hover:brightness-110 border border-blue-400/50 text-white text-xs font-bold transition flex items-center gap-2 shadow-md cursor-pointer"
+            className="px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl bg-gradient-to-r from-blue-900/80 via-indigo-900/80 to-purple-900/80 hover:brightness-110 border border-blue-400/50 text-white text-[11px] sm:text-xs font-bold transition flex items-center gap-1.5 sm:gap-2 shadow-md cursor-pointer"
             title="Switch User / Login to a different account"
           >
             <div className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center text-[10px]">
               👤
             </div>
             <span>User: <strong className="text-cyan-300">{currentUser?.username?.split(' ')[0] || villageState.playerName?.split(' ')[0] || 'Player'}</strong></span>
-            <span className="text-[10px] bg-blue-500/30 text-blue-200 px-1.5 py-0.5 rounded border border-blue-400/30">
+            <span className="text-[9px] sm:text-[10px] bg-blue-500/30 text-blue-200 px-1.5 py-0.5 rounded border border-blue-400/30">
               Switch 🔄
             </span>
           </button>
@@ -952,7 +970,7 @@ export default function VillageBuilder({
       )}
 
       {/* 2. MODE NAVIGATION TABS */}
-      <div className="flex items-center gap-1.5 bg-[#080d1e] p-1 rounded-2xl border border-[#1e2f54] self-start overflow-x-auto">
+      <div className="w-full max-w-full overflow-x-auto scrollbar-none flex items-center gap-1.5 bg-[#080d1e] p-1 rounded-2xl border border-[#1e2f54] pb-1.5">
         <button
           type="button"
           onClick={() => {
@@ -1070,46 +1088,47 @@ export default function VillageBuilder({
             />
           </div>
 
-          <div className={villageViewMode === 'grid' ? 'flex flex-col lg:flex-row gap-4 items-start' : 'hidden'}>
+          <div className={villageViewMode === 'grid' ? 'flex flex-col lg:flex-row gap-4 items-start w-full' : 'hidden'}>
             {/* Real 2.5D Isometric Canvas */}
-            <div className="flex-1 w-full rounded-3xl overflow-hidden border-2 border-[#1e3a5f] shadow-2xl relative bg-[#091522]">
+            <div className="flex-1 min-w-0 w-full rounded-3xl overflow-hidden border-2 border-[#1e3a5f] shadow-2xl relative bg-[#091522]">
             <canvas
               ref={canvasRef}
               width={820}
               height={440}
               onClick={handleCanvasClick}
-              className="w-full h-auto block cursor-crosshair select-none"
+              onTouchEnd={handleCanvasTouch}
+              className="w-full h-auto block cursor-crosshair select-none touch-manipulation"
             />
 
-            {/* In-Canvas Hero Guard Indicator Pill */}
-            <div className="absolute top-4 left-4 flex items-center gap-2 px-3 py-1 rounded-full bg-black/70 border border-emerald-500/50 backdrop-blur-md text-[11px] text-emerald-300 font-bold">
+            {/* In-Canvas Hero Guard Indicator Pill (Responsive hidden on small phones to avoid HUD overlap) */}
+            <div className="hidden sm:flex absolute top-4 left-4 items-center gap-2 px-3 py-1 rounded-full bg-black/70 border border-emerald-500/50 backdrop-blur-md text-[11px] text-emerald-300 font-bold pointer-events-none">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
               <span>{activeHero.name} is on Patrol &bull; Tap Hero to Speak</span>
             </div>
 
             {/* Relocation Mode Banner */}
             {isRelocatingBuildingId && (
-              <div className="absolute top-4 right-4 flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-amber-500 text-slate-950 text-xs font-black shadow-lg animate-pulse">
+              <div className="absolute top-3 sm:top-4 right-3 sm:right-4 flex items-center gap-2 px-3 sm:px-3.5 py-1.5 rounded-xl bg-amber-500 text-slate-950 text-[11px] sm:text-xs font-black shadow-lg animate-pulse">
                 <Move size={14} />
-                <span>RELOCATING BUILDING: Tap Destination Tile</span>
+                <span>RELOCATING: Tap Green Tile</span>
                 <button
                   type="button"
                   onClick={() => setIsRelocatingBuildingId(null)}
-                  className="ml-2 text-red-950 underline hover:text-red-800"
+                  className="ml-1 text-red-950 underline hover:text-red-800 font-bold"
                 >
                   Cancel
                 </button>
               </div>
             )}
 
-            {/* Bottom Tip */}
-            <div className="absolute bottom-3 left-4 text-[11px] text-slate-300 bg-black/60 px-3 py-1 rounded-full backdrop-blur-sm pointer-events-none">
+            {/* Bottom Tip (Responsive) */}
+            <div className="hidden sm:block absolute bottom-3 left-4 text-[11px] text-slate-300 bg-black/60 px-3 py-1 rounded-full backdrop-blur-sm pointer-events-none">
               💡 Tap any building to inspect/upgrade/move &bull; Tap {activeHero.name.split(' ')[0]} to interact
             </div>
           </div>
 
           {/* Right Panel: Selected Building or Active Hero Details */}
-          <div className="w-full lg:w-80 shrink-0">
+          <div className="w-full lg:w-80 xl:w-96 shrink-0">
             {selectedBuilding ? (
               <div className="bg-[#0b1226]/90 border border-[#1e2a4a] rounded-3xl p-5 shadow-xl backdrop-blur-md flex flex-col gap-3">
                 <div className="flex items-center justify-between border-b border-[#182442] pb-3">

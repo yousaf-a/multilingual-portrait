@@ -307,3 +307,4 @@ export function recordCrossUserRaid(
     saveUserVillageState(defenderUserId, updatedState);
   } catch (_) {}
 }
+

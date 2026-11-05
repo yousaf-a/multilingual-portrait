@@ -79,23 +79,24 @@ export default function UserAuthModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4 backdrop-blur-md animate-in fade-in">
-      <div className="relative w-full max-w-2xl bg-[#090f1e] border-2 border-[#1e3a5f] rounded-3xl shadow-[0_0_60px_rgba(59,130,246,0.35)] overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-2 sm:p-4 backdrop-blur-md animate-in fade-in">
+      <div className="relative w-full max-w-2xl bg-[#090f1e] border-2 border-[#1e3a5f] rounded-2xl sm:rounded-3xl shadow-[0_0_60px_rgba(59,130,246,0.35)] overflow-hidden flex flex-col max-h-[94vh]">
         {/* Top Header Banner */}
-        <div className="bg-gradient-to-r from-blue-950 via-indigo-900 to-purple-950 px-6 py-5 border-b border-[#203666] flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-400 to-yellow-600 flex items-center justify-center shadow-lg border border-yellow-200">
-              <Shield size={22} className="text-black" />
+        <div className="bg-gradient-to-r from-blue-950 via-indigo-900 to-purple-950 px-4 sm:px-6 py-3.5 sm:py-5 border-b border-[#203666] flex items-center justify-between">
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-gradient-to-br from-amber-400 to-yellow-600 flex items-center justify-center shadow-lg border border-yellow-200 shrink-0">
+              <Shield size={18} className="text-black sm:hidden" />
+              <Shield size={22} className="text-black hidden sm:block" />
             </div>
             <div>
-              <h2 className="text-lg font-black text-white tracking-wide flex items-center gap-2">
+              <h2 className="text-sm sm:text-lg font-black text-white tracking-wide flex items-center gap-2">
                 <span>Sanctuary User Logins</span>
-                <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded-full bg-blue-500/30 text-blue-300 border border-blue-400/40">
-                  Private Base Protection
+                <span className="text-[9px] sm:text-[10px] font-mono uppercase px-1.5 sm:px-2 py-0.5 rounded-full bg-blue-500/30 text-blue-300 border border-blue-400/40">
+                  Private Base
                 </span>
               </h2>
-              <p className="text-xs text-slate-300">
-                Each player has their own private base. You alone can change your base — others can only scout or raid!
+              <p className="text-[11px] sm:text-xs text-slate-300 line-clamp-1 sm:line-clamp-none">
+                Each player has their own private base. You alone can change your base!
               </p>
             </div>
           </div>
@@ -103,58 +104,58 @@ export default function UserAuthModal({
           <button
             type="button"
             onClick={onClose}
-            className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white cursor-pointer transition"
+            className="p-1.5 sm:p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white cursor-pointer transition shrink-0"
           >
             <X size={18} />
           </button>
         </div>
 
         {/* Current Active Account Bar */}
-        <div className="px-6 py-3 bg-[#0d172e] border-b border-[#182a4d] flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-slate-400">Currently Logged In:</span>
-            <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-950/80 border border-emerald-500/60">
+        <div className="px-4 sm:px-6 py-2.5 sm:py-3 bg-[#0d172e] border-b border-[#182a4d] flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] sm:text-xs text-slate-400">Logged In:</span>
+            <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full bg-emerald-950/80 border border-emerald-500/60">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <strong className="text-xs font-bold text-white">{currentAccount.username}</strong>
-              <span className="text-[10px] font-mono text-emerald-300">{currentAccount.tag}</span>
+              <strong className="text-[11px] sm:text-xs font-bold text-white">{currentAccount.username}</strong>
+              <span className="text-[9px] sm:text-[10px] font-mono text-emerald-300">{currentAccount.tag}</span>
             </div>
           </div>
-          <span className="text-[11px] text-amber-300 font-semibold flex items-center gap-1">
-            <Crown size={12} /> Base Owner Mode Active
+          <span className="text-[10px] sm:text-[11px] text-amber-300 font-semibold flex items-center gap-1">
+            <Crown size={12} /> Owner Mode
           </span>
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex border-b border-[#182a4d] px-6 pt-3 gap-3 bg-[#080d1a]">
+        <div className="flex border-b border-[#182a4d] px-3 sm:px-6 pt-2 sm:pt-3 gap-2 bg-[#080d1a] overflow-x-auto scrollbar-none">
           <button
             type="button"
             onClick={() => setActiveTab('switch')}
-            className={`px-4 py-2.5 rounded-t-xl text-xs font-bold flex items-center gap-2 transition cursor-pointer border-t-2 ${
+            className={`px-3 sm:px-4 py-2 sm:py-2.5 rounded-t-xl text-[11px] sm:text-xs font-bold flex items-center gap-1.5 whitespace-nowrap transition cursor-pointer border-t-2 ${
               activeTab === 'switch'
                 ? 'bg-[#0f1d38] border-blue-500 text-white shadow-lg'
                 : 'border-transparent text-slate-400 hover:text-slate-200'
             }`}
           >
-            <User size={14} className="text-blue-400" />
-            <span>Switch Account / Login ({accounts.length})</span>
+            <User size={13} className="text-blue-400" />
+            <span>Switch Account ({accounts.length})</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('register')}
-            className={`px-4 py-2.5 rounded-t-xl text-xs font-bold flex items-center gap-2 transition cursor-pointer border-t-2 ${
+            className={`px-3 sm:px-4 py-2 sm:py-2.5 rounded-t-xl text-[11px] sm:text-xs font-bold flex items-center gap-1.5 whitespace-nowrap transition cursor-pointer border-t-2 ${
               activeTab === 'register'
                 ? 'bg-[#0f1d38] border-purple-500 text-white shadow-lg'
                 : 'border-transparent text-slate-400 hover:text-slate-200'
             }`}
           >
-            <UserPlus size={14} className="text-purple-400" />
-            <span>Register New Player Account</span>
+            <UserPlus size={13} className="text-purple-400" />
+            <span>Register New Player</span>
           </button>
         </div>
 
         {/* Content Body */}
-        <div className="p-6 overflow-y-auto flex-1 bg-[#090f1e]">
+        <div className="p-3.5 sm:p-6 overflow-y-auto flex-1 bg-[#090f1e]">
           {/* TAB 1: SWITCH / LOGIN ACCOUNT */}
           {activeTab === 'switch' && (
             <div className="flex flex-col gap-4">
@@ -367,3 +368,4 @@ export default function UserAuthModal({
     </div>
   );
 }
+

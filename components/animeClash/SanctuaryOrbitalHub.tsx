@@ -307,14 +307,14 @@ export default function SanctuaryOrbitalHub({
         {/* ======================================================== */}
 
         {/* 1. TOP-LEFT POD: QUESTS (Cyan Flame Aura Shield) */}
-        <div className="absolute top-10 sm:top-14 left-8 sm:left-20 flex flex-col items-center">
+        <div className="absolute top-4 sm:top-10 left-2 sm:left-12 md:left-20 flex flex-col items-center">
           <button
             type="button"
             onClick={() => {
               setActiveModal('quests');
               animeAudio.playCombatSFX('spell');
             }}
-            className="group relative w-16 h-20 sm:w-20 sm:h-24 flex items-center justify-center transition-transform hover:scale-110 cursor-pointer"
+            className="group relative w-14 h-16 sm:w-20 sm:h-24 flex items-center justify-center transition-transform hover:scale-110 cursor-pointer"
           >
             {/* Glowing Cyan Flame Aura */}
             <div className="absolute -inset-2 rounded-2xl bg-cyan-500/50 blur-lg group-hover:bg-cyan-400/80 transition" />
@@ -327,32 +327,31 @@ export default function SanctuaryOrbitalHub({
               }}
             >
               {/* White Exclamation Mark ! */}
-              <div className="text-3xl sm:text-4xl font-black text-white drop-shadow-[0_0_12px_rgba(255,255,255,0.9)]">
+              <div className="text-2xl sm:text-4xl font-black text-white drop-shadow-[0_0_12px_rgba(255,255,255,0.9)]">
                 !
               </div>
 
               {/* Notification Badge Ring on Top-Right */}
-              <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-red-500 border border-white animate-ping opacity-80" />
-              <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-red-500 border border-white text-[9px] font-bold text-white flex items-center justify-center">
+              <div className="absolute top-1 right-1 w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-red-500 border border-white text-[8px] sm:text-[9px] font-bold text-white flex items-center justify-center">
                 2
               </div>
             </div>
           </button>
           {/* Black Pill Label: Quests */}
-          <span className="mt-2 px-3 py-0.5 rounded-full bg-black/90 border border-white/20 text-xs font-black text-white tracking-wide shadow-lg">
+          <span className="mt-1 sm:mt-2 px-2 sm:px-3 py-0.5 rounded-full bg-black/90 border border-white/20 text-[10px] sm:text-xs font-black text-white tracking-wide shadow-lg">
             Quests
           </span>
         </div>
 
         {/* 2. TOP-RIGHT POD: LEADERBOARD (Purple & Orange Fire Banner) */}
-        <div className="absolute top-10 sm:top-14 right-8 sm:right-20 flex flex-col items-center">
+        <div className="absolute top-4 sm:top-10 right-2 sm:right-12 md:right-20 flex flex-col items-center">
           <button
             type="button"
             onClick={() => {
               setActiveModal('leaderboard');
               animeAudio.playCombatSFX('sword');
             }}
-            className="group relative w-16 h-20 sm:w-20 sm:h-24 flex items-center justify-center transition-transform hover:scale-110 cursor-pointer"
+            className="group relative w-14 h-16 sm:w-20 sm:h-24 flex items-center justify-center transition-transform hover:scale-110 cursor-pointer"
           >
             {/* Glowing Purple & Amber Fire Aura */}
             <div className="absolute -inset-2 rounded-2xl bg-purple-500/50 blur-lg group-hover:bg-purple-400/80 transition" />
@@ -365,29 +364,30 @@ export default function SanctuaryOrbitalHub({
               }}
             >
               {/* Trophy Cup Icon with Flame */}
-              <Trophy size={32} className="text-amber-300 drop-shadow-[0_0_10px_rgba(245,158,11,0.9)]" />
+              <Trophy size={24} className="sm:hidden text-amber-300 drop-shadow-[0_0_10px_rgba(245,158,11,0.9)]" />
+              <Trophy size={32} className="hidden sm:block text-amber-300 drop-shadow-[0_0_10px_rgba(245,158,11,0.9)]" />
 
               {/* Red Badge */}
-              <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-red-500 border border-white flex items-center justify-center text-[9px] font-bold text-white">
+              <div className="absolute top-1 right-1 w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-red-500 border border-white flex items-center justify-center text-[8px] sm:text-[9px] font-bold text-white">
                 #1
               </div>
             </div>
           </button>
           {/* Black Pill Label: Leaderboard */}
-          <span className="mt-2 px-3 py-0.5 rounded-full bg-black/90 border border-white/20 text-xs font-black text-white tracking-wide shadow-lg">
+          <span className="mt-1 sm:mt-2 px-2 sm:px-3 py-0.5 rounded-full bg-black/90 border border-white/20 text-[10px] sm:text-xs font-black text-white tracking-wide shadow-lg">
             Leaderboard
           </span>
         </div>
 
         {/* 3. BOTTOM-LEFT POD: TRIALS (Indigo Hexagon with Sword) */}
-        <div className="absolute bottom-10 sm:bottom-12 left-10 sm:left-24 flex flex-col items-center">
+        <div className="absolute bottom-4 sm:bottom-12 left-2 sm:left-12 md:left-24 flex flex-col items-center">
           <button
             type="button"
             onClick={() => {
               setActiveModal('trials');
               animeAudio.playCombatSFX('sword');
             }}
-            className="group relative w-16 h-18 sm:w-20 sm:h-22 flex items-center justify-center transition-transform hover:scale-110 cursor-pointer"
+            className="group relative w-14 h-16 sm:w-20 sm:h-22 flex items-center justify-center transition-transform hover:scale-110 cursor-pointer"
           >
             {/* Beveled Hexagon Body */}
             <div
@@ -397,29 +397,29 @@ export default function SanctuaryOrbitalHub({
               }}
             >
               {/* Diagonal White Sword/Rapier */}
-              <span className="text-2xl sm:text-3xl -rotate-45 transform drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]">
+              <span className="text-xl sm:text-3xl -rotate-45 transform drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]">
                 🗡️
               </span>
 
               {/* Red Indicator Ring on Top */}
-              <div className="absolute -top-1 right-2 w-4 h-4 rounded-full border-2 border-red-500 bg-red-950/80" />
+              <div className="absolute -top-1 right-2 w-3 h-3 sm:w-4 sm:h-4 rounded-full border-2 border-red-500 bg-red-950/80" />
             </div>
           </button>
           {/* Black Pill Label: Trials */}
-          <span className="mt-2 px-3 py-0.5 rounded-full bg-black/90 border border-white/20 text-xs font-black text-white tracking-wide shadow-lg">
+          <span className="mt-1 sm:mt-2 px-2 sm:px-3 py-0.5 rounded-full bg-black/90 border border-white/20 text-[10px] sm:text-xs font-black text-white tracking-wide shadow-lg">
             Trials
           </span>
         </div>
 
         {/* 4. BOTTOM-RIGHT POD: PLAYERS SEARCH (Hexagon with Magnifying Glass & Gem) */}
-        <div className="absolute bottom-10 sm:bottom-12 right-10 sm:right-24 flex flex-col items-center">
+        <div className="absolute bottom-4 sm:bottom-12 right-2 sm:right-12 md:right-24 flex flex-col items-center">
           <button
             type="button"
             onClick={() => {
               setActiveModal('search');
               animeAudio.playCombatSFX('spell');
             }}
-            className="group relative w-16 h-18 sm:w-20 sm:h-22 flex items-center justify-center transition-transform hover:scale-110 cursor-pointer"
+            className="group relative w-14 h-16 sm:w-20 sm:h-22 flex items-center justify-center transition-transform hover:scale-110 cursor-pointer"
           >
             {/* Beveled Hexagon Body */}
             <div
@@ -430,26 +430,27 @@ export default function SanctuaryOrbitalHub({
             >
               {/* Magnifying Glass with Gem inside */}
               <div className="relative flex items-center justify-center">
-                <Search size={28} className="text-amber-400 drop-shadow" />
-                <span className="absolute text-[10px] text-pink-300">💎</span>
+                <Search size={20} className="sm:hidden text-amber-400 drop-shadow" />
+                <Search size={28} className="hidden sm:block text-amber-400 drop-shadow" />
+                <span className="absolute text-[8px] sm:text-[10px] text-pink-300">💎</span>
               </div>
             </div>
           </button>
           {/* Black Pill Label: Players Search */}
-          <span className="mt-2 px-3 py-0.5 rounded-full bg-black/90 border border-white/20 text-xs font-black text-white tracking-wide shadow-lg whitespace-nowrap">
+          <span className="mt-1 sm:mt-2 px-2 sm:px-3 py-0.5 rounded-full bg-black/90 border border-white/20 text-[10px] sm:text-xs font-black text-white tracking-wide shadow-lg whitespace-nowrap">
             Players Search
           </span>
         </div>
 
         {/* 5. BOTTOM-CENTER POD: 1v1 (Dual Crossed Flaming Katanas Hexagon) */}
-        <div className="absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 flex flex-col items-center z-25">
+        <div className="absolute bottom-1.5 sm:bottom-4 left-1/2 -translate-x-1/2 flex flex-col items-center z-25">
           <button
             type="button"
             onClick={() => {
               onLaunch1v1();
               animeAudio.playCombatSFX('sword');
             }}
-            className="group relative w-20 h-22 sm:w-24 sm:h-26 flex items-center justify-center transition-transform hover:scale-115 cursor-pointer"
+            className="group relative w-16 h-18 sm:w-24 sm:h-26 flex items-center justify-center transition-transform hover:scale-115 cursor-pointer"
           >
             {/* Flaming Red Clash Glow */}
             <div className="absolute -inset-3 rounded-full bg-red-600/40 blur-xl group-hover:bg-red-500/70 transition" />
@@ -462,14 +463,15 @@ export default function SanctuaryOrbitalHub({
               }}
             >
               {/* Dual Crossed Flaming Swords Icon */}
-              <Swords size={36} className="text-amber-400 drop-shadow-[0_0_12px_rgba(239,68,68,0.95)]" />
+              <Swords size={24} className="sm:hidden text-amber-400 drop-shadow-[0_0_12px_rgba(239,68,68,0.95)]" />
+              <Swords size={36} className="hidden sm:block text-amber-400 drop-shadow-[0_0_12px_rgba(239,68,68,0.95)]" />
 
               {/* Red Badge Ring */}
-              <div className="absolute -top-1 left-2 w-4 h-4 rounded-full border border-red-400 bg-red-600 animate-ping opacity-75" />
+              <div className="absolute -top-1 left-2 w-3 h-3 sm:w-4 sm:h-4 rounded-full border border-red-400 bg-red-600 animate-ping opacity-75" />
             </div>
           </button>
           {/* Black Pill Label: 1v1 */}
-          <span className="mt-1.5 px-4 py-0.5 rounded-full bg-black/95 border border-red-500/80 text-xs font-black text-amber-300 tracking-wider shadow-lg">
+          <span className="mt-1 px-3 sm:px-4 py-0.5 rounded-full bg-black/95 border border-red-500/80 text-[10px] sm:text-xs font-black text-amber-300 tracking-wider shadow-lg">
             1v1
           </span>
         </div>

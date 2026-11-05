@@ -520,8 +520,8 @@ export default function AnimeRaidArena({
     return () => cancelAnimationFrame(animId);
   }, [selectedTarget, battleFinished]);
 
-  // Handle Deploy on Canvas
-  const handleDeployOnCanvas = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  // Handle Deploy on Canvas (Unified Click & Mobile Touch)
+  const handleDeployAt = (clientX: number, clientY: number) => {
     if (battleFinished) return;
 
     const canvas = canvasRef.current;
@@ -530,8 +530,8 @@ export default function AnimeRaidArena({
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
-    const clickX = (e.clientX - rect.left) * scaleX;
-    const clickY = (e.clientY - rect.top) * scaleY;
+    const clickX = (clientX - rect.left) * scaleX;
+    const clickY = (clientY - rect.top) * scaleY;
 
     const originX = canvas.width / 2;
     const originY = 60;
@@ -605,13 +605,24 @@ export default function AnimeRaidArena({
     }
   };
 
+  const handleDeployOnCanvas = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    handleDeployAt(e.clientX, e.clientY);
+  };
+
+  const handleDeployTouch = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    if (e.changedTouches.length > 0) {
+      const touch = e.changedTouches[0];
+      handleDeployAt(touch.clientX, touch.clientY);
+    }
+  };
+
   const handleFinishAndCollect = () => {
     const stars = destructionPct >= 100 ? 3 : destructionPct >= 70 ? 2 : destructionPct >= 40 ? 1 : 0;
     onFinishRaid(lootEarned.berries, lootEarned.chakra, selectedTarget.name, stars);
   };
 
   return (
-    <div className="w-full max-w-5xl flex flex-col gap-4 my-3 animate-in fade-in">
+    <div className="w-full max-w-7xl px-2 sm:px-4 flex flex-col gap-3 sm:gap-4 my-2 sm:my-3 animate-in fade-in transition-all">
       {/* 1. TOP COMBAT BAR & RIVAL SWITCHER */}
       <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-3xl bg-[#0b1226]/95 border border-purple-500/50 shadow-2xl">
         <div className="flex flex-wrap items-center gap-3">
@@ -680,7 +691,8 @@ export default function AnimeRaidArena({
           width={840}
           height={460}
           onClick={handleDeployOnCanvas}
-          className="w-full h-auto block cursor-crosshair select-none"
+          onTouchEnd={handleDeployTouch}
+          className="w-full h-auto block cursor-crosshair select-none touch-manipulation"
         />
 
         {/* Deployment Instruction Banner */}
@@ -731,15 +743,15 @@ export default function AnimeRaidArena({
       </div>
 
       {/* 3. TROOP & HERO DEPLOYMENT BAR */}
-      <div className="flex flex-wrap items-center gap-3 p-3.5 rounded-3xl bg-[#0b1226]/95 border border-[#1e2a4a]">
-        <span className="text-xs font-mono font-bold text-slate-400 uppercase ml-1">DEPLOY UNIT:</span>
+      <div className="flex flex-wrap items-center gap-2 sm:gap-3 p-2.5 sm:p-3.5 rounded-2xl sm:rounded-3xl bg-[#0b1226]/95 border border-[#1e2a4a] overflow-x-auto">
+        <span className="text-[11px] sm:text-xs font-mono font-bold text-slate-400 uppercase ml-1">DEPLOY UNIT:</span>
 
         {/* Hero Deploy Button */}
         <button
           type="button"
           onClick={() => setSelectedDeployTroop('hero')}
           disabled={heroDeployed}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-black transition cursor-pointer ${
+          className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl text-[11px] sm:text-xs font-black transition cursor-pointer ${
             selectedDeployTroop === 'hero'
               ? 'bg-amber-500 text-slate-950 ring-2 ring-amber-300'
               : 'bg-slate-800 text-white hover:bg-slate-700 disabled:opacity-40'

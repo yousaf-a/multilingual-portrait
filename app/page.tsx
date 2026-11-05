@@ -176,7 +176,7 @@ export default function Home() {
       </div>
 
       {/* Header Bar */}
-      <header className="w-full max-w-4xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3.5 pb-5 border-b border-[#182442]">
+      <header className={`w-full ${studioMode === 'anime_clash' ? 'max-w-7xl' : 'max-w-4xl'} flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3.5 pb-5 border-b border-[#182442] transition-all duration-300`}>
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 shrink-0 flex items-center justify-center text-cyan-400 drop-shadow-[0_0_12px_rgba(0,229,255,0.8)]">
             <Sparkles size={28} className="fill-cyan-400" />
@@ -202,7 +202,7 @@ export default function Home() {
       </header>
 
       {/* MASTER STUDIO MODE SELECTOR (Daily Utility Navigation) */}
-      <div className="w-full max-w-4xl flex items-center justify-start sm:justify-center overflow-x-auto gap-2 py-3.5 my-2 border-b border-[#182442]/80 scrollbar-none">
+      <div className={`w-full ${studioMode === 'anime_clash' ? 'max-w-7xl' : 'max-w-4xl'} flex items-center justify-start sm:justify-center overflow-x-auto gap-2 py-3.5 my-2 border-b border-[#182442]/80 scrollbar-none transition-all duration-300`}>
         <button
           type="button"
           onClick={() => {

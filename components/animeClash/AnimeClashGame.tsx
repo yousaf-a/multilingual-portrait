@@ -3,15 +3,19 @@
 import React, { useState, useEffect } from 'react';
 import { PlayerVillageState, StoryChapter } from '@/lib/animeClash/types';
 import { INITIAL_PLAYER_STATE, STORY_CHAPTERS, HEROES_CATALOG } from '@/lib/animeClash/gameData';
+import { AnimeEpisode, ANIME_EPISODES } from '@/lib/animeClash/animeStoryData';
 import VillageBuilder from './VillageBuilder';
 import BattleArena from './BattleArena';
 import StoryCampaignModal from './StoryCampaignModal';
+import AnimeEpisodePlayer from './AnimeEpisodePlayer';
+import AnimeBossFightArena from './AnimeBossFightArena';
 
 const STORAGE_KEY = 'anime_clash_village_v1';
 
 export default function AnimeClashGame() {
   const [villageState, setVillageState] = useState<PlayerVillageState>(INITIAL_PLAYER_STATE);
-  const [gameMode, setGameMode] = useState<'village' | 'battle'>('village');
+  const [gameMode, setGameMode] = useState<'village' | 'battle' | 'story_episodes' | 'boss_fight'>('village');
+  const [activeBossEpisode, setActiveBossEpisode] = useState<AnimeEpisode>(ANIME_EPISODES[0]);
   const [isStoryOpen, setIsStoryOpen] = useState(false);
 
   // Load saved game from localStorage
@@ -73,7 +77,25 @@ export default function AnimeClashGame() {
           villageState={villageState}
           onUpdateVillage={handleUpdateVillage}
           onLaunchBattle={() => setGameMode('battle')}
-          onOpenStory={() => setIsStoryOpen(true)}
+          onOpenStory={() => setGameMode('story_episodes')}
+        />
+      )}
+
+      {gameMode === 'story_episodes' && (
+        <AnimeEpisodePlayer
+          onStartBossFight={(ep) => {
+            setActiveBossEpisode(ep);
+            setGameMode('boss_fight');
+          }}
+          onClose={() => setGameMode('village')}
+        />
+      )}
+
+      {gameMode === 'boss_fight' && (
+        <AnimeBossFightArena
+          episode={activeBossEpisode}
+          onVictory={handleBattleVictory}
+          onExit={() => setGameMode('village')}
         />
       )}
 

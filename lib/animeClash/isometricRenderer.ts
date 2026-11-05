@@ -466,3 +466,4 @@ export function drawClashHUD(
 
   ctx.restore();
 }
+

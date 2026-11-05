@@ -101,5 +101,7 @@ export interface PlayerVillageState {
   unlockedHeroes: string[];
   activeHeroId: string;
   completedChapters: string[];
+  heroLevels?: Record<string, number>; // Level of each hero (1 to 30)
+  trainedTroops?: Record<string, number>; // Army camp troop counts
 }
 

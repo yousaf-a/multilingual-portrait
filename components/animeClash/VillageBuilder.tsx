@@ -12,7 +12,12 @@ import {
   TROOPS_CATALOG,
   VILLAGE_HQ_LEVEL_PLANS,
   BASE_LAYOUT_PRESETS,
-  BaseLayoutPreset
+  BaseLayoutPreset,
+  getMaxBuildingLevelForHQ,
+  getMaxHeroLevelForHQ,
+  getArmyCampCapForHQ,
+  getHeroStatsForLevel,
+  getHeroUpgradeCost
 } from '@/lib/animeClash/gameData';
 import {
   toIso,
@@ -60,9 +65,17 @@ export default function VillageBuilder({
   onOpenStory
 }: VillageBuilderProps) {
   const [selectedBuilding, setSelectedBuilding] = useState<BuildingInstance | null>(null);
-  const [activeBuildTab, setActiveBuildTab] = useState<'village' | 'shop' | 'heroes' | 'layouts' | 'roadmap'>('village');
+  const [activeBuildTab, setActiveBuildTab] = useState<'village' | 'shop' | 'heroes' | 'layouts' | 'roadmap' | 'attack'>('village');
   const [isRelocatingBuildingId, setIsRelocatingBuildingId] = useState<string | null>(null);
   const [heroInteractionQuote, setHeroInteractionQuote] = useState<string | null>(null);
+  const [isRaiding, setIsRaiding] = useState(false);
+  const [raidResult, setRaidResult] = useState<{
+    stars: number;
+    destruction: number;
+    berriesLooted: number;
+    chakraLooted: number;
+    log: string[];
+  } | null>(null);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const animRef = useRef<number | null>(null);
@@ -164,6 +177,7 @@ export default function VillageBuilder({
           const isSelected = selectedBuilding?.id === ent.data.id || isRelocatingBuildingId === ent.data.id;
           drawIsoBuilding(ctx, ent.data, originX, originY, elapsed, isSelected);
         } else {
+          const activeHeroLevel = villageState.heroLevels?.[villageState.activeHeroId] || 1;
           drawIsoHeroPatrol(
             ctx,
             hp.currentX,
@@ -175,7 +189,8 @@ export default function VillageBuilder({
             activeHero.color,
             elapsed,
             hp.speech,
-            false
+            false,
+            activeHeroLevel
           );
         }
       }
@@ -291,8 +306,16 @@ export default function VillageBuilder({
     });
   };
 
-  // Upgrade building
+  // Upgrade building (Capped by Town Hall HQ Level)
   const handleUpgradeBuilding = (b: BuildingInstance) => {
+    const maxBuildingLevel = getMaxBuildingLevelForHQ(villageState.level);
+    if (b.level >= maxBuildingLevel) {
+      alert(
+        `⚠️ Building Level Cap Reached!\n\nTown Hall HQ Level ${villageState.level} limits all structures to Level ${maxBuildingLevel}.\n\nUpgrade your Town Hall HQ in the "Leveling Plans" tab to unlock higher building tiers!`
+      );
+      return;
+    }
+
     const cost = b.level * 150;
     if (villageState.berries < cost) {
       alert(`Not enough Berries! Upgrade requires 💰 ${cost} Berries.`);
@@ -320,6 +343,132 @@ export default function VillageBuilder({
     });
 
     setSelectedBuilding((prev) => (prev ? { ...prev, level: prev.level + 1 } : null));
+  };
+
+  // Upgrade Hero Function (Capped by Town Hall HQ Level)
+  const handleUpgradeHero = (heroId: string) => {
+    const currentHeroLevel = villageState.heroLevels?.[heroId] || 1;
+    const maxHeroLevel = getMaxHeroLevelForHQ(villageState.level);
+
+    if (currentHeroLevel >= maxHeroLevel) {
+      alert(
+        `⚠️ Hero Level Cap Reached!\n\nTown Hall HQ Level ${villageState.level} caps heroes at Level ${maxHeroLevel}.\n\nUpgrade your Town Hall HQ in the "Leveling Plans" tab to unlock higher hero power tiers!`
+      );
+      return;
+    }
+
+    const costInfo = getHeroUpgradeCost(heroId, currentHeroLevel);
+    if (costInfo.resource === 'chakra' && villageState.chakra < costInfo.amount) {
+      alert(`Insufficient Chakra! Requires 🌀 ${costInfo.amount} Chakra.`);
+      return;
+    }
+    if (costInfo.resource === 'berries' && villageState.berries < costInfo.amount) {
+      alert(`Insufficient Berries! Requires 💰 ${costInfo.amount} Berries.`);
+      return;
+    }
+    if (costInfo.resource === 'reishi' && villageState.reishi < costInfo.amount) {
+      alert(`Insufficient Reishi! Requires 🔮 ${costInfo.amount} Reishi.`);
+      return;
+    }
+
+    const newHeroLevels = {
+      ...(villageState.heroLevels || { naruto: 1, luffy: 1, ichigo: 1, asta: 1 }),
+      [heroId]: currentHeroLevel + 1
+    };
+
+    onUpdateVillage({
+      ...villageState,
+      chakra:
+        costInfo.resource === 'chakra'
+          ? villageState.chakra - costInfo.amount
+          : costInfo.chakraAmount
+          ? villageState.chakra - costInfo.chakraAmount
+          : villageState.chakra,
+      berries: costInfo.resource === 'berries' ? villageState.berries - costInfo.amount : villageState.berries,
+      reishi: costInfo.resource === 'reishi' ? villageState.reishi - costInfo.amount : villageState.reishi,
+      heroLevels: newHeroLevels
+    });
+  };
+
+  // Troops & Raid Logistics
+  const totalTroopsCount = Object.values(villageState.trainedTroops || {}).reduce((a, b) => a + b, 0);
+  const armyCampCap = getArmyCampCapForHQ(villageState.level);
+
+  const handleTrainTroop = (troopId: string, count: number, cost: number, resType: 'chakra' | 'berries' | 'reishi') => {
+    if (totalTroopsCount + count > armyCampCap) {
+      alert(`Army Camp is full! Current capacity: ${totalTroopsCount}/${armyCampCap} units. Upgrade your Town Hall HQ to expand your army!`);
+      return;
+    }
+
+    if (resType === 'chakra' && villageState.chakra < cost * count) {
+      alert('Not enough Chakra!');
+      return;
+    }
+    if (resType === 'berries' && villageState.berries < cost * count) {
+      alert('Not enough Berries!');
+      return;
+    }
+    if (resType === 'reishi' && villageState.reishi < cost * count) {
+      alert('Not enough Reishi!');
+      return;
+    }
+
+    const currentTroops = villageState.trainedTroops || {};
+    const newTroops = {
+      ...currentTroops,
+      [troopId]: (currentTroops[troopId] || 0) + count
+    };
+
+    onUpdateVillage({
+      ...villageState,
+      chakra: resType === 'chakra' ? villageState.chakra - cost * count : villageState.chakra,
+      berries: resType === 'berries' ? villageState.berries - cost * count : villageState.berries,
+      reishi: resType === 'reishi' ? villageState.reishi - cost * count : villageState.reishi,
+      trainedTroops: newTroops
+    });
+  };
+
+  // Launch Real-Time Village Raid Assault
+  const handleLaunchSyndicateRaid = () => {
+    if (totalTroopsCount < 4) {
+      alert('Train at least 4 troops before deploying on a raid!');
+      return;
+    }
+
+    setIsRaiding(true);
+    setTimeout(() => {
+      setIsRaiding(false);
+      const berriesPlunder = 650 + Math.floor(Math.random() * 450);
+      const chakraPlunder = 500 + Math.floor(Math.random() * 350);
+      const destructionPct = 85 + Math.floor(Math.random() * 16);
+      const stars = destructionPct >= 100 ? 3 : destructionPct >= 70 ? 2 : 1;
+
+      setRaidResult({
+        stars,
+        destruction: Math.min(100, destructionPct),
+        berriesLooted: berriesPlunder,
+        chakraLooted: chakraPlunder,
+        log: [
+          `⚔️ ${activeHero.name} breached the outer perimeter wall!`,
+          `🥷 Shinobi swarm bypassed cannon fire with Body Flicker jutsu.`,
+          `🏴‍☠️ Straw Hat brawlers demolished the Syndicate Berry Vault!`,
+          `🔮 Kido casters shattered enemy barrier spires with Hado #88.`,
+          `🏆 100% Core Destruction! Base liberated from Syndicate control!`
+        ]
+      });
+
+      onUpdateVillage({
+        ...villageState,
+        berries: Math.min(villageState.maxStorage, villageState.berries + berriesPlunder),
+        chakra: Math.min(villageState.maxStorage, villageState.chakra + chakraPlunder),
+        trainedTroops: {
+          konoha_ninja: Math.max(0, (villageState.trainedTroops?.konoha_ninja || 0) - 3),
+          strawhat_brawler: Math.max(0, (villageState.trainedTroops?.strawhat_brawler || 0) - 2),
+          shinigami_patrol: Math.max(0, (villageState.trainedTroops?.shinigami_patrol || 0) - 2),
+          black_bulls_mage: Math.max(0, (villageState.trainedTroops?.black_bulls_mage || 0) - 1)
+        }
+      });
+    }, 1600);
   };
 
   // Upgrade Village Town Hall HQ Level
@@ -505,6 +654,26 @@ export default function VillageBuilder({
         </button>
         <button
           type="button"
+          onClick={() => setActiveBuildTab('attack')}
+          className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 ${
+            activeBuildTab === 'attack' ? 'bg-red-600 text-white shadow-md ring-2 ring-red-400/30' : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <Sword size={13} className="text-red-300" />
+          <span>Troops & Raid ({totalTroopsCount}/{armyCampCap})</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveBuildTab('heroes')}
+          className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 ${
+            activeBuildTab === 'heroes' ? 'bg-amber-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <Crown size={13} className="text-yellow-300" />
+          <span>Hero Levels & Roster</span>
+        </button>
+        <button
+          type="button"
           onClick={() => setActiveBuildTab('layouts')}
           className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 ${
             activeBuildTab === 'layouts' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
@@ -517,11 +686,11 @@ export default function VillageBuilder({
           type="button"
           onClick={() => setActiveBuildTab('roadmap')}
           className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 ${
-            activeBuildTab === 'roadmap' ? 'bg-amber-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
+            activeBuildTab === 'roadmap' ? 'bg-purple-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
           }`}
         >
           <Star size={13} className="text-yellow-300" />
-          <span>Leveling Plans (HQ {villageState.level})</span>
+          <span>HQ Level Caps (HQ {villageState.level})</span>
         </button>
         <button
           type="button"
@@ -531,15 +700,6 @@ export default function VillageBuilder({
           }`}
         >
           🔨 Defense Shop
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveBuildTab('heroes')}
-          className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
-            activeBuildTab === 'heroes' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
-          }`}
-        >
-          👑 Hero Roster (4)
         </button>
       </div>
 
@@ -831,15 +991,17 @@ export default function VillageBuilder({
             )}
           </div>
 
-          {/* Leveling Progression Roadmap Table */}
+          {/* Leveling Progression Roadmap Table (Clash of Clans Town Hall Limit Chart) */}
           <div className="overflow-x-auto rounded-2xl border border-[#1e2f54]">
             <table className="w-full text-left text-xs text-slate-300">
               <thead className="bg-[#0e1730] text-[11px] text-slate-400 uppercase font-mono">
                 <tr>
                   <th className="p-3">HQ Level</th>
                   <th className="p-3">Title</th>
+                  <th className="p-3 text-amber-300">Max Hero Lv</th>
+                  <th className="p-3 text-cyan-300">Max Structure Lv</th>
+                  <th className="p-3 text-red-300">Army Camp Space</th>
                   <th className="p-3">Storage Cap</th>
-                  <th className="p-3">Max Buildings</th>
                   <th className="p-3">Unlocked Features</th>
                   <th className="p-3">Hero Buff</th>
                 </tr>
@@ -851,8 +1013,10 @@ export default function VillageBuilder({
                     <tr key={plan.level} className={isCurrent ? 'bg-blue-950/40 font-bold text-white' : ''}>
                       <td className="p-3 font-mono text-cyan-400">LVL {plan.level}</td>
                       <td className="p-3 font-semibold">{plan.title}</td>
+                      <td className="p-3 text-amber-400 font-bold">Lv {plan.maxHeroLevel}</td>
+                      <td className="p-3 text-cyan-400 font-bold">Lv {plan.maxBuildingLevel}</td>
+                      <td className="p-3 text-red-400 font-bold">{plan.armyCampCapacity} Units</td>
                       <td className="p-3">{plan.maxStorage.toLocaleString()}</td>
-                      <td className="p-3">{plan.maxBuildings}</td>
                       <td className="p-3 text-[11px] text-slate-300">{plan.unlockedFeatures.join(', ')}</td>
                       <td className="p-3 text-[11px] text-emerald-300">{plan.heroBuffBonus}</td>
                     </tr>
@@ -917,74 +1081,299 @@ export default function VillageBuilder({
         </div>
       )}
 
-      {/* 7. HERO ROSTER TAB */}
+      {/* 7. HERO ROSTER & LEVELING TAB */}
       {activeBuildTab === 'heroes' && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {Object.values(HEROES_CATALOG).map((hero) => {
-            const isUnlocked = villageState.unlockedHeroes.includes(hero.id);
-            const isActive = villageState.activeHeroId === hero.id;
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-3xl bg-[#0b1226]/90 border border-[#1e2a4a]">
+            <div>
+              <h3 className="text-base font-extrabold text-white flex items-center gap-2">
+                <Crown size={18} className="text-amber-400" />
+                <span>Hero Levels, Upgrades &amp; Guardians</span>
+              </h3>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Level up anime heroes with resources. Hero level cap is bound by Town Hall HQ Level {villageState.level} (Max Hero Lv {getMaxHeroLevelForHQ(villageState.level)}).
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setActiveBuildTab('village')}
+              className="text-xs text-slate-300 hover:text-white px-3 py-1.5 rounded-xl bg-[#1e293b]"
+            >
+              Return to Map
+            </button>
+          </div>
 
-            return (
-              <div
-                key={hero.id}
-                className={`p-3.5 rounded-3xl border flex flex-col justify-between transition overflow-hidden ${
-                  isActive
-                    ? 'bg-[#152347] border-amber-400 shadow-xl ring-2 ring-amber-400/30'
-                    : 'bg-[#0b1226]/90 border-[#1e2a4a]'
-                }`}
-              >
-                <div>
-                  <div className="relative w-full aspect-[4/5] rounded-2xl overflow-hidden mb-2.5 border border-white/10 shadow-md">
-                    <img
-                      src={hero.image}
-                      alt={hero.name}
-                      className="w-full h-full object-cover object-top hover:scale-105 transition duration-500"
-                    />
-                    <div className="absolute top-2 right-2">
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-black/70 text-white font-mono border border-white/20">
-                        HP {hero.hp}
-                      </span>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {Object.values(HEROES_CATALOG).map((hero) => {
+              const heroLevel = villageState.heroLevels?.[hero.id] || 1;
+              const maxHeroLevel = getMaxHeroLevelForHQ(villageState.level);
+              const stats = getHeroStatsForLevel(hero, heroLevel);
+              const nextStats = getHeroStatsForLevel(hero, heroLevel + 1);
+              const costInfo = getHeroUpgradeCost(hero.id, heroLevel);
+              const isMaxedForHQ = heroLevel >= maxHeroLevel;
+              const isUnlocked = villageState.unlockedHeroes.includes(hero.id);
+              const isActive = villageState.activeHeroId === hero.id;
+
+              return (
+                <div
+                  key={hero.id}
+                  className={`p-3.5 rounded-3xl border flex flex-col justify-between transition overflow-hidden ${
+                    isActive
+                      ? 'bg-[#152347] border-amber-400 shadow-xl ring-2 ring-amber-400/30'
+                      : 'bg-[#0b1226]/90 border-[#1e2a4a]'
+                  }`}
+                >
+                  <div>
+                    <div className="relative w-full aspect-[4/5] rounded-2xl overflow-hidden mb-2.5 border border-white/10 shadow-md">
+                      <img
+                        src={hero.image}
+                        alt={hero.name}
+                        className="w-full h-full object-cover object-top hover:scale-105 transition duration-500"
+                      />
+                      <div className="absolute top-2 left-2">
+                        <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 shadow-md">
+                          LVL {heroLevel} / {maxHeroLevel}
+                        </span>
+                      </div>
+                      <div className="absolute top-2 right-2">
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-black/70 text-white font-mono border border-white/20">
+                          HP {stats.hp}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-bold text-white">{hero.name}</h4>
+                      <span className="text-xs text-red-400 font-bold">⚔️ {stats.attack} ATK</span>
+                    </div>
+                    <p className="text-[11px] text-amber-300 font-medium">{hero.title}</p>
+
+                    {/* Level Progress Bar */}
+                    <div className="w-full bg-slate-800 h-1.5 rounded-full my-2 overflow-hidden">
+                      <div
+                        className="bg-gradient-to-r from-amber-500 to-yellow-300 h-full rounded-full transition-all"
+                        style={{ width: `${Math.min(100, (heroLevel / maxHeroLevel) * 100)}%` }}
+                      />
+                    </div>
+
+                    <div className="text-[10px] text-slate-400 space-y-0.5 bg-[#080d1e] p-2 rounded-xl border border-white/5">
+                      <div><strong>Skill:</strong> {hero.skillName}</div>
+                      <div><strong>Ultimate:</strong> {hero.ultimateName}</div>
                     </div>
                   </div>
 
-                  <h4 className="text-sm font-bold text-white">{hero.name}</h4>
-                  <p className="text-[11px] text-amber-300">{hero.title}</p>
-                  <p className="text-[10px] text-slate-400 mt-1 line-clamp-2 italic">
-                    &ldquo;{hero.quote}&rdquo;
-                  </p>
-                </div>
+                  <div className="mt-3 space-y-2">
+                    {/* Hero Upgrade Button */}
+                    {!isMaxedForHQ ? (
+                      <button
+                        type="button"
+                        onClick={() => handleUpgradeHero(hero.id)}
+                        className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:brightness-110 text-slate-950 font-black text-xs flex items-center justify-center gap-1.5 shadow-md transition cursor-pointer"
+                      >
+                        <ArrowUpCircle size={14} />
+                        <span>Level Up to {heroLevel + 1} ({costInfo.label})</span>
+                      </button>
+                    ) : (
+                      <div className="py-1.5 px-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[10px] font-bold text-center">
+                        🔒 Max Lv {maxHeroLevel} for HQ {villageState.level} (Upgrade HQ)
+                      </div>
+                    )}
 
-                <div className="mt-3">
-                  {isActive ? (
-                    <div className="py-2 text-center text-xs font-bold text-amber-400 bg-amber-400/10 rounded-xl border border-amber-400/30">
-                      ★ Active Guard Defender ★
+                    {/* Active Guard Status */}
+                    {isActive ? (
+                      <div className="py-1.5 text-center text-xs font-bold text-amber-400 bg-amber-400/10 rounded-xl border border-amber-400/30">
+                        ★ Patrolling Guard Defender ★
+                      </div>
+                    ) : isUnlocked ? (
+                      <button
+                        type="button"
+                        onClick={() => onUpdateVillage({ ...villageState, activeHeroId: hero.id })}
+                        className="w-full py-1.5 rounded-xl bg-blue-600/80 hover:bg-blue-600 text-white font-bold text-xs transition cursor-pointer"
+                      >
+                        Assign as Patrol Guard
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          onUpdateVillage({
+                            ...villageState,
+                            unlockedHeroes: [...villageState.unlockedHeroes, hero.id]
+                          })
+                        }
+                        className="w-full py-1.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs transition cursor-pointer"
+                      >
+                        Recruit Hero (⭐ Free)
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* 8. TROOPS & RAID SIMULATOR TAB */}
+      {activeBuildTab === 'attack' && (
+        <div className="flex flex-col gap-4">
+          {/* Header */}
+          <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-3xl bg-[#0b1226]/90 border border-[#1e2a4a]">
+            <div>
+              <h3 className="text-base font-extrabold text-white flex items-center gap-2">
+                <Sword size={18} className="text-red-400" />
+                <span>Army Camp &amp; Syndicate Outpost Raid</span>
+              </h3>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Train anime troops in your barracks and launch real-time village assaults against the evil Syndicate to loot resources!
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="text-right">
+                <span className="text-[10px] text-slate-400 uppercase font-mono block">ARMY HOUSING SPACE</span>
+                <span className="text-sm font-black text-amber-300">
+                  {totalTroopsCount} / {armyCampCap} Units
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveBuildTab('village')}
+                className="text-xs text-slate-300 hover:text-white px-3 py-1.5 rounded-xl bg-[#1e293b]"
+              >
+                Return to Map
+              </button>
+            </div>
+          </div>
+
+          {/* Troop Training Barracks Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {TROOPS_CATALOG.map((troop) => {
+              const count = villageState.trainedTroops?.[troop.id] || 0;
+              const resIcon = troop.resourceType === 'chakra' ? '🌀' : troop.resourceType === 'berries' ? '💰' : '🔮';
+
+              return (
+                <div
+                  key={troop.id}
+                  className="p-4 rounded-3xl bg-[#0e172f] border border-[#1e3a6a] flex flex-col justify-between hover:border-red-500/50 transition"
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-3xl">{troop.icon}</span>
+                      <span className="text-xs font-mono font-bold px-2.5 py-0.5 rounded-full bg-slate-800 text-cyan-300 border border-slate-700">
+                        {count} Ready
+                      </span>
                     </div>
-                  ) : isUnlocked ? (
+                    <h4 className="text-sm font-bold text-white">{troop.name}</h4>
+                    <p className="text-[11px] text-slate-400 mt-1 leading-snug">{troop.desc}</p>
+                    <div className="mt-2 text-xs text-slate-300 space-y-0.5">
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Combat Power:</span>
+                        <span className="text-red-400 font-bold">⚔️ {troop.attack} ATK &bull; {troop.hp} HP</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Training Cost:</span>
+                        <span className="text-amber-300 font-bold">{resIcon} {troop.cost}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 flex gap-2">
                     <button
                       type="button"
-                      onClick={() => onUpdateVillage({ ...villageState, activeHeroId: hero.id })}
-                      className="w-full py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition cursor-pointer"
+                      onClick={() => handleTrainTroop(troop.id, 1, troop.cost, troop.resourceType)}
+                      disabled={totalTroopsCount >= armyCampCap}
+                      className="flex-1 py-2 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:brightness-110 disabled:opacity-40 text-white font-bold text-xs shadow-md transition cursor-pointer"
                     >
-                      Assign as Guard
+                      +1 Train
                     </button>
-                  ) : (
                     <button
                       type="button"
-                      onClick={() =>
-                        onUpdateVillage({
-                          ...villageState,
-                          unlockedHeroes: [...villageState.unlockedHeroes, hero.id]
-                        })
-                      }
-                      className="w-full py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs transition cursor-pointer"
+                      onClick={() => handleTrainTroop(troop.id, 5, troop.cost, troop.resourceType)}
+                      disabled={totalTroopsCount + 5 > armyCampCap}
+                      className="py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-slate-200 font-bold text-xs border border-white/10 transition cursor-pointer"
                     >
-                      Recruit Hero (⭐ Free)
+                      +5
                     </button>
-                  )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Raid Target Card & Battle Launcher */}
+          <div className="p-5 rounded-3xl bg-gradient-to-br from-[#1c0e2a] via-[#100b24] to-[#070b16] border border-red-500/40 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-5">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 rounded-2xl bg-red-950/80 border-2 border-red-500 flex items-center justify-center text-3xl shadow-[0_0_20px_rgba(239,68,68,0.5)]">
+                ☠️
+              </div>
+              <div>
+                <span className="text-[10px] font-bold text-red-400 uppercase tracking-widest block">
+                  SYNDICATE FORWARD COMPOUND &bull; SECTOR 7
+                </span>
+                <h4 className="text-lg font-black text-white mt-0.5">Neo-Shibuya Plunder Outpost</h4>
+                <div className="flex items-center gap-3 text-xs text-slate-300 mt-1">
+                  <span>💰 Plunder: <strong>650 - 1,100 Berries</strong></span>
+                  <span>🌀 Plunder: <strong>500 - 850 Chakra</strong></span>
+                  <span>🛡️ Fortifications: <strong>Heavy Cannons + Mortar</strong></span>
                 </div>
               </div>
-            );
-          })}
+            </div>
+
+            <button
+              type="button"
+              onClick={handleLaunchSyndicateRaid}
+              disabled={isRaiding || totalTroopsCount < 4}
+              className="w-full md:w-auto px-6 py-3.5 rounded-2xl bg-gradient-to-r from-red-600 via-rose-600 to-amber-500 hover:brightness-110 disabled:opacity-50 text-white font-black text-sm shadow-[0_0_25px_rgba(239,68,68,0.6)] flex items-center justify-center gap-2 transition cursor-pointer"
+            >
+              <Sword size={18} />
+              <span>{isRaiding ? 'Deploying Strike Force...' : 'Launch Raid Assault (Deploy Troops)'}</span>
+            </button>
+          </div>
+
+          {/* Raid Result Modal / Banner */}
+          {raidResult && (
+            <div className="p-5 rounded-3xl bg-gradient-to-b from-[#0b1f3a] to-[#070e1c] border-2 border-emerald-400 shadow-2xl animate-in zoom-in-95">
+              <div className="flex items-center justify-between border-b border-white/10 pb-3 mb-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl">
+                    {'⭐'.repeat(raidResult.stars)}
+                  </span>
+                  <div>
+                    <h4 className="text-base font-black text-white">
+                      {raidResult.stars === 3 ? 'VICTORY: 100% BASE ANNIHILATION!' : 'OUTPOST BREACHED!'}
+                    </h4>
+                    <span className="text-xs text-emerald-300 font-bold">
+                      {raidResult.destruction}% Total Destruction Achieved
+                    </span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setRaidResult(null)}
+                  className="text-xs px-3 py-1 rounded-xl bg-white/10 hover:bg-white/20 text-white cursor-pointer"
+                >
+                  Close Results
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 mb-3 text-center">
+                <div className="p-3 rounded-2xl bg-emerald-950/40 border border-emerald-500/40">
+                  <span className="text-[10px] text-slate-400 uppercase block">BERRIES PLUNDERED</span>
+                  <span className="text-base font-black text-amber-300">+💰 {raidResult.berriesLooted}</span>
+                </div>
+                <div className="p-3 rounded-2xl bg-cyan-950/40 border border-cyan-500/40">
+                  <span className="text-[10px] text-slate-400 uppercase block">CHAKRA SECURED</span>
+                  <span className="text-base font-black text-cyan-300">+🌀 {raidResult.chakraLooted}</span>
+                </div>
+              </div>
+
+              <div className="space-y-1 text-xs text-slate-300 bg-black/40 p-3 rounded-xl border border-white/5 font-mono">
+                {raidResult.log.map((entry, idx) => (
+                  <div key={idx}>{entry}</div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

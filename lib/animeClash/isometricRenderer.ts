@@ -139,39 +139,108 @@ export function drawIsoBuilding(
     ctx.setLineDash([]);
   }
 
-  // 2. Render Specific 3D Building Geometry
+  // 2. Render Specific 3D Building Geometry (Upgrades Visually Per Level)
   switch (b.type) {
     case 'command_core': {
-      // Town Hall (Hokage / Shonen Pagoda Fortress)
-      const bH = 50;
+      // Town Hall (Visual Evolution based on b.level)
+      if (b.level === 1) {
+        // Tier 1: Shonen Outpost Pagoda
+        draw3DBox(ctx, cx, cy, 44, 24, 12, '#334155', '#1e293b', '#475569');
+        draw3DBox(ctx, cx, cy - 12, 34, 18, 22, '#ea580c', '#c2410c', '#fb923c');
 
-      // Base Platform (Granite)
-      draw3DBox(ctx, cx, cy, 44, 24, 12, '#334155', '#1e293b', '#475569');
+        ctx.fillStyle = '#1e3a8a';
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - 12 - 22 - 18);
+        ctx.lineTo(cx + 26, cy - 12 - 22 + 4);
+        ctx.lineTo(cx, cy - 12 - 22 + 12);
+        ctx.lineTo(cx - 26, cy - 12 - 22 + 4);
+        ctx.closePath();
+        ctx.fill();
 
-      // Main Building Body (Crimson / Orange Wall)
-      draw3DBox(ctx, cx, cy - 12, 34, 18, 22, '#ea580c', '#c2410c', '#fb923c');
+        ctx.strokeStyle = '#f59e0b';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
 
-      // Curved Pagoda Roof (Navy Blue & Gold Trim)
-      ctx.fillStyle = '#1e3a8a';
-      ctx.beginPath();
-      ctx.moveTo(cx, cy - 12 - 22 - 18); // Peak
-      ctx.lineTo(cx + 26, cy - 12 - 22 + 4);
-      ctx.lineTo(cx, cy - 12 - 22 + 12);
-      ctx.lineTo(cx - 26, cy - 12 - 22 + 4);
-      ctx.closePath();
-      ctx.fill();
+        ctx.fillStyle = '#dc2626';
+        ctx.fillRect(cx - 3, cy - 62, 6, 12);
+        ctx.font = '10px serif';
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText('火', cx - 4, cy - 52);
+      } else if (b.level === 2) {
+        // Tier 2: Two-Tier Fortified Sanctuary
+        draw3DBox(ctx, cx, cy, 48, 26, 14, '#1e293b', '#0f172a', '#334155');
+        draw3DBox(ctx, cx, cy - 14, 38, 20, 16, '#c2410c', '#9a3412', '#ea580c');
 
-      // Roof Highlight
-      ctx.strokeStyle = '#f59e0b';
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
+        // Lower Eave
+        ctx.fillStyle = '#1e3a8a';
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - 36);
+        ctx.lineTo(cx + 28, cy - 26);
+        ctx.lineTo(cx, cy - 20);
+        ctx.lineTo(cx - 28, cy - 26);
+        ctx.closePath();
+        ctx.fill();
 
-      // Top Hokage / Pirate Crest Banner
-      ctx.fillStyle = '#dc2626';
-      ctx.fillRect(cx - 3, cy - 62, 6, 12);
-      ctx.font = '10px serif';
-      ctx.fillStyle = '#ffffff';
-      ctx.fillText('火', cx - 4, cy - 52);
+        // Upper Tower & Roof
+        draw3DBox(ctx, cx, cy - 34, 26, 14, 16, '#ea580c', '#c2410c', '#fb923c');
+        ctx.fillStyle = '#172554';
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - 68);
+        ctx.lineTo(cx + 22, cy - 48);
+        ctx.lineTo(cx, cy - 42);
+        ctx.lineTo(cx - 22, cy - 48);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = '#f59e0b';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Glowing Lantern
+        ctx.fillStyle = '#fbbf24';
+        ctx.beginPath();
+        ctx.arc(cx, cy - 70, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        // Tier 3+: Grand Celestial Hokage Citadel (High-Tech Obsidian & Gilded Spire)
+        draw3DBox(ctx, cx, cy, 54, 30, 16, '#0f172a', '#020617', '#1e293b');
+        draw3DBox(ctx, cx, cy - 16, 42, 22, 18, '#7c2d12', '#431407', '#9a3412');
+
+        // Glowing Chakra Conduits on Foundation
+        ctx.strokeStyle = '#06b6d4';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(cx - 20, cy - 8);
+        ctx.lineTo(cx, cy - 2);
+        ctx.lineTo(cx + 20, cy - 8);
+        ctx.stroke();
+
+        // Mid Pagoda Tier
+        draw3DBox(ctx, cx, cy - 34, 30, 16, 16, '#ea580c', '#9a3412', '#fb923c');
+
+        // Grand Gilded Roof with Dragon Horns
+        ctx.fillStyle = '#1e1b4b';
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - 76);
+        ctx.lineTo(cx + 32, cy - 50);
+        ctx.lineTo(cx, cy - 44);
+        ctx.lineTo(cx - 32, cy - 50);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.strokeStyle = '#fbbf24';
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+
+        // Holographic Celestial Power Core
+        const coreGlow = (Math.sin(animTime * 4) + 1) / 2;
+        ctx.fillStyle = `rgba(6, 182, 212, ${0.7 + coreGlow * 0.3})`;
+        ctx.shadowColor = '#06b6d4';
+        ctx.shadowBlur = 10;
+        ctx.beginPath();
+        ctx.arc(cx, cy - 82, 4.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
       break;
     }
 
@@ -179,8 +248,8 @@ export function drawIsoBuilding(
       // Elixir / Chakra Vat with Luminous Swirling Fluid
       draw3DBox(ctx, cx, cy, 32, 18, 8, '#334155', '#1e293b', '#475569');
 
-      // Glass Dome
-      const domeR = 15;
+      // Glass Dome (Larger & armored on level 2+)
+      const domeR = b.level >= 2 ? 18 : 15;
       const domeY = cy - 12;
 
       // Glowing Chakra Liquid
@@ -195,14 +264,24 @@ export function drawIsoBuilding(
       ctx.arc(cx, domeY, domeR * 0.9, 0, Math.PI * 2);
       ctx.fill();
 
-      // Glass Highlights
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+      // Armored Metal Cage if Level >= 2
+      if (b.level >= 2) {
+        ctx.strokeStyle = '#f59e0b';
+        ctx.lineWidth = 1.4;
+        ctx.beginPath();
+        ctx.moveTo(cx - domeR, domeY);
+        ctx.lineTo(cx + domeR, domeY);
+        ctx.moveTo(cx, domeY - domeR);
+        ctx.lineTo(cx, domeY + domeR);
+        ctx.stroke();
+      }
+
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
       ctx.lineWidth = 1.2;
       ctx.beginPath();
       ctx.arc(cx, domeY, domeR, 0, Math.PI * 2);
       ctx.stroke();
 
-      // Bubble
       ctx.fillStyle = '#ffffff';
       ctx.beginPath();
       ctx.arc(cx - 4, domeY - 5, 2.5, 0, Math.PI * 2);
@@ -214,14 +293,25 @@ export function drawIsoBuilding(
       // Gold Vault / Berry Treasury with Glowing Gold Coins
       draw3DBox(ctx, cx, cy, 34, 20, 14, '#78350f', '#451a03', '#92400e');
 
-      // Overflowing Gold Coins Top
       ctx.fillStyle = '#fbbf24';
       ctx.beginPath();
-      ctx.ellipse(cx, cy - 14, 14, 8, 0, 0, Math.PI * 2);
+      ctx.ellipse(cx, cy - 14, b.level >= 2 ? 16 : 14, 8, 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.strokeStyle = '#d97706';
       ctx.lineWidth = 1;
       ctx.stroke();
+
+      if (b.level >= 2) {
+        // Gemstone insets
+        ctx.fillStyle = '#ef4444';
+        ctx.beginPath();
+        ctx.arc(cx - 8, cy - 14, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#3b82f6';
+        ctx.beginPath();
+        ctx.arc(cx + 8, cy - 14, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
 
       // Sparkling Gold Highlights
       ctx.fillStyle = '#ffffff';
@@ -236,20 +326,27 @@ export function drawIsoBuilding(
       // Spiritual Reishi Siphon (Dark Elixir / Soul Reaper Obelisk)
       draw3DBox(ctx, cx, cy, 28, 16, 6, '#1e1b4b', '#0f172a', '#312e81');
 
-      // Purple Crystal Spire
       ctx.fillStyle = '#a855f7';
       ctx.beginPath();
-      ctx.moveTo(cx, cy - 35);
-      ctx.lineTo(cx + 9, cy - 8);
+      ctx.moveTo(cx, cy - (b.level >= 2 ? 42 : 35));
+      ctx.lineTo(cx + 10, cy - 8);
       ctx.lineTo(cx, cy - 2);
-      ctx.lineTo(cx - 9, cy - 8);
+      ctx.lineTo(cx - 10, cy - 8);
       ctx.closePath();
       ctx.fill();
 
-      // Glowing Core
       ctx.strokeStyle = '#e9d5ff';
-      ctx.lineWidth = 1.2;
+      ctx.lineWidth = 1.4;
       ctx.stroke();
+
+      if (b.level >= 2) {
+        // Orbiting Soul Reaper Reishi Ring
+        ctx.strokeStyle = 'rgba(192, 132, 252, 0.7)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.ellipse(cx, cy - 22, 16, 6, 0, 0, Math.PI * 2);
+        ctx.stroke();
+      }
       break;
     }
 
@@ -257,21 +354,40 @@ export function drawIsoBuilding(
       // Defensive Cannon with Swiveling Metal Barrel
       draw3DBox(ctx, cx, cy, 30, 18, 10, '#334155', '#1e293b', '#475569');
 
-      // Rotating Swivel Cannon
       const angle = Math.sin(animTime * 1.5) * 0.4 - 0.7;
       ctx.save();
       ctx.translate(cx, cy - 14);
       ctx.rotate(angle);
 
-      // Cannon Barrel
-      ctx.fillStyle = '#0f172a';
-      ctx.fillRect(-4, -18, 8, 20);
-      ctx.strokeStyle = '#dc2626'; // Armament Haki Red Sheen
-      ctx.lineWidth = 1;
-      ctx.strokeRect(-4, -18, 8, 20);
+      if (b.level >= 3) {
+        // Level 3+: Twin Heavy Rail Cannons
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(-6, -22, 5, 24);
+        ctx.fillRect(1, -22, 5, 24);
+        ctx.strokeStyle = '#ef4444';
+        ctx.lineWidth = 1.2;
+        ctx.strokeRect(-6, -22, 5, 24);
+        ctx.strokeRect(1, -22, 5, 24);
 
-      // Cannon Base Ring
-      ctx.fillStyle = '#ef4444';
+        // Laser Sighting Line
+        ctx.strokeStyle = 'rgba(239, 68, 68, 0.7)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([2, 4]);
+        ctx.beginPath();
+        ctx.moveTo(0, -22);
+        ctx.lineTo(0, -60);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      } else {
+        // Level 1-2: Standard Haki Cannon Barrel
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(-4, -18, 8, 20);
+        ctx.strokeStyle = b.level >= 2 ? '#fbbf24' : '#dc2626';
+        ctx.lineWidth = 1.2;
+        ctx.strokeRect(-4, -18, 8, 20);
+      }
+
+      ctx.fillStyle = b.level >= 2 ? '#fbbf24' : '#ef4444';
       ctx.beginPath();
       ctx.arc(0, 0, 6, 0, Math.PI * 2);
       ctx.fill();
@@ -280,22 +396,50 @@ export function drawIsoBuilding(
     }
 
     case 'paper_mortar': {
-      // Paper Bomb Mortar (Angled Launch Cauldron)
       draw3DBox(ctx, cx, cy, 32, 18, 10, '#475569', '#1e293b', '#64748b');
 
       ctx.fillStyle = '#090d16';
       ctx.beginPath();
       ctx.ellipse(cx, cy - 12, 11, 7, 0, 0, Math.PI * 2);
       ctx.fill();
-      ctx.strokeStyle = '#f59e0b';
-      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = b.level >= 2 ? '#ef4444' : '#f59e0b';
+      ctx.lineWidth = 1.8;
       ctx.stroke();
       break;
     }
 
     case 'defense_wall': {
-      // 3D Fortified Stone / Obsidian Wall Segment
-      draw3DBox(ctx, cx, cy, 22, 14, 18, '#64748b', '#334155', '#94a3b8');
+      // Wall Evolves by Level:
+      // Lv 1: Heavy Granite Wall
+      // Lv 2: Steel-Plated Wall with Gold Rivets
+      // Lv 3: Gilded Titanium Wall
+      // Lv 4+: Void Obsidian Magma Barrier
+      if (b.level === 1) {
+        draw3DBox(ctx, cx, cy, 22, 14, 18, '#64748b', '#334155', '#94a3b8');
+      } else if (b.level === 2) {
+        draw3DBox(ctx, cx, cy, 24, 15, 20, '#475569', '#1e293b', '#cbd5e1');
+        // Rivet dots
+        ctx.fillStyle = '#fbbf24';
+        ctx.fillRect(cx - 6, cy - 16, 2, 2);
+        ctx.fillRect(cx + 4, cy - 16, 2, 2);
+      } else if (b.level === 3) {
+        draw3DBox(ctx, cx, cy, 24, 15, 22, '#d97706', '#92400e', '#fde047');
+        ctx.strokeStyle = '#fef08a';
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.moveTo(cx - 7, cy - 18);
+        ctx.lineTo(cx, cy - 14);
+        ctx.lineTo(cx + 7, cy - 18);
+        ctx.stroke();
+      } else {
+        // Lv 4+: Void Magma Obsidian Wall
+        draw3DBox(ctx, cx, cy, 26, 16, 24, '#581c87', '#3b0764', '#c084fc');
+        ctx.fillStyle = '#06b6d4';
+        ctx.shadowColor = '#06b6d4';
+        ctx.shadowBlur = 6;
+        ctx.fillRect(cx - 2, cy - 20, 4, 10);
+        ctx.shadowBlur = 0;
+      }
       break;
     }
 
@@ -481,7 +625,8 @@ export function drawIsoHeroPatrol(
   heroColor: string,
   animTime: number,
   speechBubbleText: string | null = null,
-  isSelected: boolean = false
+  isSelected: boolean = false,
+  heroLevel: number = 1
 ) {
   const pos = toIso(heroX, heroY, originX, originY);
   const cx = pos.x;
@@ -548,14 +693,14 @@ export function drawIsoHeroPatrol(
   ctx.textAlign = 'center';
   ctx.fillStyle = 'rgba(11, 18, 38, 0.9)';
   ctx.beginPath();
-  ctx.roundRect(cx - 40, badgeY - 10, 80, 14, 7);
+  ctx.roundRect(cx - 48, badgeY - 10, 96, 14, 7);
   ctx.fill();
-  ctx.strokeStyle = heroColor;
-  ctx.lineWidth = 1;
+  ctx.strokeStyle = heroLevel >= 10 ? '#fbbf24' : heroColor;
+  ctx.lineWidth = 1.2;
   ctx.stroke();
 
-  ctx.fillStyle = '#ffffff';
-  ctx.fillText(`★ ${heroName.split(' ')[0]} (GUARD) ★`, cx, badgeY);
+  ctx.fillStyle = heroLevel >= 10 ? '#fbbf24' : '#ffffff';
+  ctx.fillText(`★ [Lv ${heroLevel}] ${heroName.split(' ')[0]} ★`, cx, badgeY);
 
   // 5. Speech Bubble if hero is speaking
   if (speechBubbleText) {

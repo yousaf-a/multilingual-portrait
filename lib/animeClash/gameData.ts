@@ -271,14 +271,16 @@ export const INITIAL_VILLAGE_BUILDINGS: BuildingInstance[] = [
 
 export const INITIAL_PLAYER_STATE: PlayerVillageState = {
   level: 1,
-  berries: 450,
-  chakra: 300,
-  reishi: 250,
+  berries: 650,
+  chakra: 500,
+  reishi: 400,
   maxStorage: 2500,
   buildings: INITIAL_VILLAGE_BUILDINGS,
-  unlockedHeroes: ['naruto', 'luffy'],
+  unlockedHeroes: ['naruto', 'luffy', 'ichigo', 'asta'],
   activeHeroId: 'naruto',
-  completedChapters: []
+  completedChapters: [],
+  heroLevels: { naruto: 1, luffy: 1, ichigo: 1, asta: 1 },
+  trainedTroops: { konoha_ninja: 8, strawhat_brawler: 4, shinigami_patrol: 4, black_bulls_mage: 2 }
 };
 
 export interface VillageHQPlan {
@@ -286,6 +288,9 @@ export interface VillageHQPlan {
   title: string;
   maxStorage: number;
   maxBuildings: number;
+  maxHeroLevel: number;
+  maxBuildingLevel: number;
+  armyCampCapacity: number;
   upgradeCostBerries: number;
   upgradeCostChakra: number;
   unlockedFeatures: string[];
@@ -298,9 +303,12 @@ export const VILLAGE_HQ_LEVEL_PLANS: Record<number, VillageHQPlan> = {
     title: 'Neon Outpost',
     maxStorage: 2500,
     maxBuildings: 12,
+    maxHeroLevel: 5,
+    maxBuildingLevel: 2,
+    armyCampCapacity: 30,
     upgradeCostBerries: 0,
     upgradeCostChakra: 0,
-    unlockedFeatures: ['Command Core', 'Haki Rail Cannon', 'Titanium Wall Tier 1', 'Chakra Turbine'],
+    unlockedFeatures: ['Command Core', 'Haki Rail Cannon', 'Titanium Wall Tier 1', 'Chakra Turbine', 'Max Hero Lv 5'],
     heroBuffBonus: 'Base hero stats active.'
   },
   2: {
@@ -308,9 +316,12 @@ export const VILLAGE_HQ_LEVEL_PLANS: Record<number, VillageHQPlan> = {
     title: 'Fortified Sanctuary',
     maxStorage: 5000,
     maxBuildings: 18,
+    maxHeroLevel: 10,
+    maxBuildingLevel: 3,
+    armyCampCapacity: 50,
     upgradeCostBerries: 800,
     upgradeCostChakra: 500,
-    unlockedFeatures: ['Spiritual Tower', 'Paper-Bomb Traps', 'Storage Expansion (+100%)', 'Wall Tier 2'],
+    unlockedFeatures: ['Spiritual Tower', 'Paper-Bomb Traps', 'Storage Expansion (+100%)', 'Wall Tier 2', 'Max Hero Lv 10'],
     heroBuffBonus: '+15% Hero HP & Guard Patrol Aura.'
   },
   3: {
@@ -318,9 +329,12 @@ export const VILLAGE_HQ_LEVEL_PLANS: Record<number, VillageHQPlan> = {
     title: 'Dimensional Bastion',
     maxStorage: 10000,
     maxBuildings: 24,
+    maxHeroLevel: 15,
+    maxBuildingLevel: 5,
+    armyCampCapacity: 80,
     upgradeCostBerries: 2200,
     upgradeCostChakra: 1400,
-    unlockedFeatures: ['Heavy Laser Mortar', 'Reishi Siphon Overclock', 'Auto-Repair Shield', 'Wall Tier 3'],
+    unlockedFeatures: ['Heavy Laser Mortar', 'Reishi Siphon Overclock', 'Auto-Repair Shield', 'Wall Tier 3', 'Max Hero Lv 15'],
     heroBuffBonus: '+30% Hero Damage & Ultimate Cooldown -2s.'
   },
   4: {
@@ -328,9 +342,12 @@ export const VILLAGE_HQ_LEVEL_PLANS: Record<number, VillageHQPlan> = {
     title: 'Metropolitan Fortress',
     maxStorage: 25000,
     maxBuildings: 32,
+    maxHeroLevel: 20,
+    maxBuildingLevel: 7,
+    armyCampCapacity: 120,
     upgradeCostBerries: 5000,
     upgradeCostChakra: 3200,
-    unlockedFeatures: ['Hero Awakening Shrine', 'Twin Rail Cannons', 'EMP Defense Barrier', 'Wall Tier 4'],
+    unlockedFeatures: ['Hero Awakening Shrine', 'Twin Rail Cannons', 'EMP Defense Barrier', 'Wall Tier 4', 'Max Hero Lv 20'],
     heroBuffBonus: '+50% Hero Firepower & Instant Guard Teleport.'
   },
   5: {
@@ -338,12 +355,54 @@ export const VILLAGE_HQ_LEVEL_PLANS: Record<number, VillageHQPlan> = {
     title: 'Apex Celestial Citadel',
     maxStorage: 60000,
     maxBuildings: 42,
+    maxHeroLevel: 30,
+    maxBuildingLevel: 10,
+    armyCampCapacity: 180,
     upgradeCostBerries: 12000,
     upgradeCostChakra: 8000,
-    unlockedFeatures: ['Tetra-Dimensional Forcefield', 'Orbital Rail Artillery', 'Infinite Void Trap', 'Master Walls'],
+    unlockedFeatures: ['Tetra-Dimensional Forcefield', 'Orbital Rail Artillery', 'Infinite Void Trap', 'Master Walls', 'Max Hero Lv 30'],
     heroBuffBonus: '+100% Hero Stats & Permanent Awakening Aura.'
   }
 };
+
+export function getMaxBuildingLevelForHQ(hqLevel: number): number {
+  return hqLevel === 1 ? 2 : hqLevel === 2 ? 3 : hqLevel === 3 ? 5 : hqLevel === 4 ? 7 : 10;
+}
+
+export function getMaxHeroLevelForHQ(hqLevel: number): number {
+  return hqLevel === 1 ? 5 : hqLevel === 2 ? 10 : hqLevel === 3 ? 15 : hqLevel === 4 ? 20 : 30;
+}
+
+export function getArmyCampCapForHQ(hqLevel: number): number {
+  return hqLevel === 1 ? 30 : hqLevel === 2 ? 50 : hqLevel === 3 ? 80 : hqLevel === 4 ? 120 : 180;
+}
+
+export function getHeroStatsForLevel(baseHero: HeroData, level: number = 1) {
+  const hpMultiplier = 1 + (level - 1) * 0.18;
+  const atkMultiplier = 1 + (level - 1) * 0.15;
+  const currentHp = Math.round(baseHero.hp * hpMultiplier);
+  const currentAtk = Math.round(baseHero.attack * atkMultiplier);
+  return {
+    ...baseHero,
+    level,
+    hp: currentHp,
+    maxHp: currentHp,
+    attack: currentAtk
+  };
+}
+
+export function getHeroUpgradeCost(heroId: string, currentLevel: number) {
+  if (heroId === 'naruto') {
+    return { resource: 'chakra' as const, amount: currentLevel * 180, label: `🌀 ${currentLevel * 180} Chakra` };
+  }
+  if (heroId === 'luffy') {
+    return { resource: 'berries' as const, amount: currentLevel * 200, label: `💰 ${currentLevel * 200} Berries` };
+  }
+  if (heroId === 'ichigo') {
+    return { resource: 'reishi' as const, amount: currentLevel * 160, label: `🔮 ${currentLevel * 160} Reishi` };
+  }
+  return { resource: 'berries' as const, amount: currentLevel * 150, chakraAmount: currentLevel * 100, label: `💰 ${currentLevel * 150} + 🌀 ${currentLevel * 100}` };
+}
 
 export interface BaseLayoutPreset {
   id: string;

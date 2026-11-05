@@ -91,6 +91,21 @@ export interface StoryChapter {
   enemyBasePreset: string;
 }
 
+export type WeatherTimeMode = 'day' | 'twilight' | 'night' | 'rain';
+
+export interface SanctuaryGuild {
+  id: string;
+  name: string;
+  tag: string;
+  icon: string;
+  franchise: AnimeFranchise;
+  perkTitle: string;
+  perkDesc: string;
+  level: number;
+  memberCount: number;
+  leader: string;
+}
+
 export interface PlayerVillageState {
   level: number;
   berries: number;
@@ -103,5 +118,8 @@ export interface PlayerVillageState {
   completedChapters: string[];
   heroLevels?: Record<string, number>; // Level of each hero (1 to 30)
   trainedTroops?: Record<string, number>; // Army camp troop counts
+  weatherMode?: WeatherTimeMode;
+  activeGuildId?: string;
+  guildContribution?: number;
 }
 

@@ -5,7 +5,9 @@ import {
   PlayerVillageState,
   BuildingInstance,
   BuildingType,
-  HeroData
+  HeroData,
+  WeatherTimeMode,
+  SanctuaryGuild
 } from '@/lib/animeClash/types';
 import {
   HEROES_CATALOG,
@@ -13,6 +15,8 @@ import {
   VILLAGE_HQ_LEVEL_PLANS,
   BASE_LAYOUT_PRESETS,
   BaseLayoutPreset,
+  SANCTUARY_GUILDS,
+  ANIME_VOICE_SHOUTS,
   getMaxBuildingLevelForHQ,
   getMaxHeroLevelForHQ,
   getArmyCampCapForHQ,
@@ -29,6 +33,9 @@ import {
   ISO_TILE_W,
   ISO_TILE_H
 } from '@/lib/animeClash/isometricRenderer';
+import AnimeRaidArena from './AnimeRaidArena';
+import BaseDefenseSimulator from './BaseDefenseSimulator';
+import { animeAudio } from '@/lib/animeClash/animeAudio';
 import {
   Shield,
   Zap,
@@ -48,7 +55,13 @@ import {
   Layout,
   Star,
   Award,
-  Crown
+  Crown,
+  Sun,
+  Sunset,
+  Moon,
+  CloudRain,
+  Volume2,
+  Users
 } from 'lucide-react';
 
 interface VillageBuilderProps {
@@ -65,10 +78,13 @@ export default function VillageBuilder({
   onOpenStory
 }: VillageBuilderProps) {
   const [selectedBuilding, setSelectedBuilding] = useState<BuildingInstance | null>(null);
-  const [activeBuildTab, setActiveBuildTab] = useState<'village' | 'shop' | 'heroes' | 'layouts' | 'roadmap' | 'attack'>('village');
+  const [activeBuildTab, setActiveBuildTab] = useState<'village' | 'shop' | 'heroes' | 'layouts' | 'roadmap' | 'attack' | 'guilds'>('village');
   const [isRelocatingBuildingId, setIsRelocatingBuildingId] = useState<string | null>(null);
   const [heroInteractionQuote, setHeroInteractionQuote] = useState<string | null>(null);
   const [isRaiding, setIsRaiding] = useState(false);
+  const [isArenaRaidActive, setIsArenaRaidActive] = useState(false);
+  const [isDefenseActive, setIsDefenseActive] = useState(false);
+  const [voiceShoutBanner, setVoiceShoutBanner] = useState<{ kanji: string; romaji: string; trans: string } | null>(null);
   const [raidResult, setRaidResult] = useState<{
     stars: number;
     destruction: number;
@@ -130,8 +146,8 @@ export default function VillageBuilder({
 
       ctx.clearRect(0, 0, width, height);
 
-      // 1. Draw 2.5D Lush Grass Terrain & Forest Perimeter
-      drawIsoTerrain(ctx, width, height, originX, originY, 12);
+      // 1. Draw 2.5D Lush Grass Terrain & Forest Perimeter with Dynamic Weather Lighting
+      drawIsoTerrain(ctx, width, height, originX, originY, 12, villageState.weatherMode || 'night', elapsed);
 
       // 2. Update Animated Hero Patrol Movement along waypoints
       const hp = heroPatrolRef.current;
@@ -559,6 +575,54 @@ export default function VillageBuilder({
 
   return (
     <div className="w-full max-w-5xl flex flex-col gap-4 my-4">
+      {/* 2.5D Real-Time Troop Marching Raid Arena Modal */}
+      {isArenaRaidActive && (
+        <AnimeRaidArena
+          villageState={villageState}
+          onFinishRaid={(lootBerries, lootChakra) => {
+            onUpdateVillage({
+              ...villageState,
+              berries: Math.min(villageState.maxStorage, villageState.berries + lootBerries),
+              chakra: Math.min(villageState.maxStorage, villageState.chakra + lootChakra)
+            });
+            setIsArenaRaidActive(false);
+          }}
+          onClose={() => setIsArenaRaidActive(false)}
+        />
+      )}
+
+      {/* Syndicate Counter-Raid Base Defense Simulator Modal */}
+      {isDefenseActive && (
+        <BaseDefenseSimulator
+          villageState={villageState}
+          onFinishDefense={(rewardBerries) => {
+            if (rewardBerries > 0) {
+              onUpdateVillage({
+                ...villageState,
+                berries: Math.min(villageState.maxStorage, villageState.berries + rewardBerries),
+                chakra: Math.min(villageState.maxStorage, villageState.chakra + 300)
+              });
+            }
+            setIsDefenseActive(false);
+          }}
+          onClose={() => setIsDefenseActive(false)}
+        />
+      )}
+
+      {/* Voice Shout Japanese Kanji Banner Overlay */}
+      {voiceShoutBanner && (
+        <div className="fixed top-12 left-1/2 -translate-x-1/2 z-50 pointer-events-none animate-in fade-in zoom-in duration-300">
+          <div className="px-8 py-3.5 rounded-3xl bg-black/90 border-2 border-amber-400 shadow-[0_0_50px_rgba(245,158,11,0.8)] text-center backdrop-blur-md">
+            <div className="text-3xl font-black text-amber-300 tracking-widest drop-shadow-[0_0_15px_rgba(245,158,11,0.9)]">
+              {voiceShoutBanner.kanji}
+            </div>
+            <div className="text-xs text-white font-mono uppercase tracking-wider mt-0.5">
+              {voiceShoutBanner.romaji} &bull; &ldquo;{voiceShoutBanner.trans}&rdquo;
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 1. TOP HEADER & ACTION BAR */}
       <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-3xl bg-[#0b1226]/95 border border-[#1e2a4a] shadow-xl backdrop-blur-md">
         <div className="flex items-center gap-3">
@@ -582,8 +646,84 @@ export default function VillageBuilder({
           </div>
         </div>
 
+        {/* Dynamic Weather & Time Atmosphere Switcher */}
+        <div className="flex items-center gap-1 bg-black/60 p-1 rounded-2xl border border-white/10 text-xs">
+          <button
+            type="button"
+            title="Daytime Sunny"
+            onClick={() => onUpdateVillage({ ...villageState, weatherMode: 'day' })}
+            className={`p-1.5 rounded-xl transition cursor-pointer ${
+              (villageState.weatherMode || 'night') === 'day' ? 'bg-amber-500 text-black shadow-md' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Sun size={15} />
+          </button>
+          <button
+            type="button"
+            title="Golden Twilight Sunset"
+            onClick={() => onUpdateVillage({ ...villageState, weatherMode: 'twilight' })}
+            className={`p-1.5 rounded-xl transition cursor-pointer ${
+              villageState.weatherMode === 'twilight' ? 'bg-orange-500 text-white shadow-md' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Sunset size={15} />
+          </button>
+          <button
+            type="button"
+            title="Neon Nighttime"
+            onClick={() => onUpdateVillage({ ...villageState, weatherMode: 'night' })}
+            className={`p-1.5 rounded-xl transition cursor-pointer ${
+              villageState.weatherMode === 'night' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Moon size={15} />
+          </button>
+          <button
+            type="button"
+            title="Shibuya Rain Thunderstorm"
+            onClick={() => onUpdateVillage({ ...villageState, weatherMode: 'rain' })}
+            className={`p-1.5 rounded-xl transition cursor-pointer ${
+              villageState.weatherMode === 'rain' ? 'bg-cyan-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <CloudRain size={15} />
+          </button>
+        </div>
+
         {/* Action Buttons */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Hero Voice Shout Audio */}
+          <button
+            type="button"
+            onClick={() => {
+              const shout = animeAudio.playHeroShout(activeHero.id);
+              if (shout) {
+                setVoiceShoutBanner({
+                  kanji: shout.kanji,
+                  romaji: shout.shoutText,
+                  trans: shout.subTitle
+                });
+                setTimeout(() => setVoiceShoutBanner(null), 2500);
+              }
+            }}
+            className="px-3 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/50 text-amber-300 text-xs font-bold transition flex items-center gap-1.5 shadow-sm cursor-pointer"
+            title="Trigger Japanese Voice Shout Audio"
+          >
+            <Volume2 size={14} className="text-amber-400 animate-pulse" />
+            <span>Voice Shout</span>
+          </button>
+
+          {/* Test Base Defense Simulator */}
+          <button
+            type="button"
+            onClick={() => setIsDefenseActive(true)}
+            className="px-3 py-2 rounded-xl bg-rose-950/80 hover:bg-rose-900 border border-rose-500/60 text-rose-200 text-xs font-bold transition flex items-center gap-1.5 shadow-sm cursor-pointer"
+            title="Defend against an incoming Syndicate assault!"
+          >
+            <Shield size={14} className="text-rose-400" />
+            <span>🚨 Base Defense</span>
+          </button>
+
           <button
             type="button"
             onClick={handleCollectResources}
@@ -603,11 +743,11 @@ export default function VillageBuilder({
 
           <button
             type="button"
-            onClick={onLaunchBattle}
+            onClick={() => setIsArenaRaidActive(true)}
             className="px-4 py-2 rounded-xl bg-gradient-to-r from-red-600 via-rose-500 to-orange-500 hover:brightness-110 text-white text-xs font-bold flex items-center gap-1.5 shadow-[0_0_20px_rgba(239,68,68,0.5)] transition cursor-pointer"
           >
             <Sword size={14} />
-            <span>⚔️ Attack / Raid!</span>
+            <span>⚔️ 2.5D Raid!</span>
           </button>
         </div>
       </div>
@@ -691,6 +831,16 @@ export default function VillageBuilder({
         >
           <Star size={13} className="text-yellow-300" />
           <span>HQ Level Caps (HQ {villageState.level})</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveBuildTab('guilds')}
+          className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 ${
+            activeBuildTab === 'guilds' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <Users size={13} className="text-emerald-300" />
+          <span>Sanctuary Guilds</span>
         </button>
         <button
           type="button"
@@ -1319,15 +1469,24 @@ export default function VillageBuilder({
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={handleLaunchSyndicateRaid}
-              disabled={isRaiding || totalTroopsCount < 4}
-              className="w-full md:w-auto px-6 py-3.5 rounded-2xl bg-gradient-to-r from-red-600 via-rose-600 to-amber-500 hover:brightness-110 disabled:opacity-50 text-white font-black text-sm shadow-[0_0_25px_rgba(239,68,68,0.6)] flex items-center justify-center gap-2 transition cursor-pointer"
-            >
-              <Sword size={18} />
-              <span>{isRaiding ? 'Deploying Strike Force...' : 'Launch Raid Assault (Deploy Troops)'}</span>
-            </button>
+            <div className="flex flex-col sm:flex-row gap-2.5 w-full md:w-auto">
+              <button
+                type="button"
+                onClick={() => setIsArenaRaidActive(true)}
+                className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-red-600 via-rose-600 to-amber-500 hover:brightness-110 text-white font-black text-sm shadow-[0_0_25px_rgba(239,68,68,0.7)] flex items-center justify-center gap-2 transition cursor-pointer"
+              >
+                <Sword size={18} />
+                <span>Launch 2.5D Animated Marching Raid</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleLaunchSyndicateRaid}
+                disabled={isRaiding || totalTroopsCount < 4}
+                className="px-4 py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-slate-200 text-xs font-bold border border-white/10 flex items-center justify-center gap-1.5 transition cursor-pointer"
+              >
+                <span>{isRaiding ? 'Deploying...' : 'Quick Auto-Raid'}</span>
+              </button>
+            </div>
           </div>
 
           {/* Raid Result Modal / Banner */}
@@ -1374,6 +1533,112 @@ export default function VillageBuilder({
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* 9. ANIME CLAN / SANCTUARY GUILDS TAB */}
+      {activeBuildTab === 'guilds' && (
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-3xl bg-[#0b1226]/90 border border-[#1e2a4a]">
+            <div>
+              <h3 className="text-base font-extrabold text-white flex items-center gap-2">
+                <Users size={18} className="text-emerald-400" />
+                <span>Anime Sanctuary Guilds &amp; Alliances</span>
+              </h3>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Join a legendary anime coalition to unlock global passive boosts, joint raid perks, and clan leveling milestones.
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-mono text-emerald-300 bg-emerald-950/70 border border-emerald-500/50 px-3 py-1 rounded-xl">
+                Active Guild: <strong className="text-white">{villageState.activeGuildId ? SANCTUARY_GUILDS.find(g => g.id === villageState.activeGuildId)?.name : 'None (Join Below)'}</strong>
+              </span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {SANCTUARY_GUILDS.map((guild) => {
+              const isMember = villageState.activeGuildId === guild.id;
+              return (
+                <div
+                  key={guild.id}
+                  className={`p-5 rounded-3xl border transition flex flex-col justify-between ${
+                    isMember
+                      ? 'bg-gradient-to-br from-emerald-950/60 to-[#0e172f] border-emerald-500 shadow-xl ring-2 ring-emerald-500/30'
+                      : 'bg-[#0e172f] border-[#1e3a6a] hover:border-slate-500'
+                  }`}
+                >
+                  <div>
+                    <div className="flex items-start justify-between gap-3 mb-3">
+                      <div className="flex items-center gap-3">
+                        <span className="text-3xl p-2 rounded-2xl bg-slate-900 border border-slate-700">{guild.icon}</span>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h4 className="text-base font-extrabold text-white">{guild.name}</h4>
+                            <span className="text-[10px] font-mono text-slate-400 bg-slate-800 px-2 py-0.5 rounded-full">{guild.tag}</span>
+                          </div>
+                          <span className="text-xs text-slate-400">Leader: <strong className="text-slate-300">{guild.leader}</strong> &bull; {guild.memberCount} Members</span>
+                        </div>
+                      </div>
+                      <span className="text-xs font-black text-amber-300 px-2.5 py-1 rounded-xl bg-amber-950/70 border border-amber-500/40">
+                        Guild Lv. {guild.level}
+                      </span>
+                    </div>
+
+                    <div className="p-3 rounded-2xl bg-black/40 border border-white/5 space-y-1 mb-3">
+                      <div className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
+                        <Sparkles size={13} />
+                        <span>{guild.perkTitle}</span>
+                      </div>
+                      <p className="text-[11px] text-slate-300 leading-relaxed">{guild.perkDesc}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-2 border-t border-white/5">
+                    {isMember ? (
+                      <>
+                        <span className="text-xs text-emerald-400 font-bold flex-1 flex items-center gap-1">
+                          <CheckCircle size={14} /> Active Guild Perks Active
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (villageState.berries < 200 || villageState.chakra < 150) {
+                              alert('Requires 200 Berries & 150 Chakra to contribute!');
+                              return;
+                            }
+                            onUpdateVillage({
+                              ...villageState,
+                              berries: villageState.berries - 200,
+                              chakra: villageState.chakra - 150,
+                              guildContribution: (villageState.guildContribution || 0) + 100
+                            });
+                            alert(`Donated 200 Berries & 150 Chakra! Earned +100 Guild Prestige Points.`);
+                          }}
+                          className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs cursor-pointer transition shadow-md"
+                        >
+                          + Donate Resources
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onUpdateVillage({
+                            ...villageState,
+                            activeGuildId: guild.id
+                          });
+                        }}
+                        className="w-full py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:brightness-110 text-white font-bold text-xs transition cursor-pointer shadow-md"
+                      >
+                        Enlist in {guild.name}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>

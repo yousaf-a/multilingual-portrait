@@ -1,6 +1,6 @@
 // Anime Clash: Neo-Village Chronicles - Game Data Catalog
 
-import { HeroData, TroopData, BuildingInstance, StoryChapter, PlayerVillageState } from './types';
+import { HeroData, TroopData, BuildingInstance, StoryChapter, PlayerVillageState, SanctuaryGuild } from './types';
 
 export const HEROES_CATALOG: Record<string, HeroData> = {
   naruto: {
@@ -280,7 +280,100 @@ export const INITIAL_PLAYER_STATE: PlayerVillageState = {
   activeHeroId: 'naruto',
   completedChapters: [],
   heroLevels: { naruto: 1, luffy: 1, ichigo: 1, asta: 1 },
-  trainedTroops: { konoha_ninja: 8, strawhat_brawler: 4, shinigami_patrol: 4, black_bulls_mage: 2 }
+  trainedTroops: { konoha_ninja: 8, strawhat_brawler: 4, shinigami_patrol: 4, black_bulls_mage: 2 },
+  weatherMode: 'night',
+  activeGuildId: 'hidden_leaf',
+  guildContribution: 120
+};
+
+export const SANCTUARY_GUILDS: SanctuaryGuild[] = [
+  {
+    id: 'hidden_leaf',
+    name: 'Hidden Leaf Shinobi Coalition',
+    tag: 'WILL OF FIRE',
+    icon: '🍃',
+    franchise: 'naruto',
+    perkTitle: 'Body Flicker Logistics',
+    perkDesc: '+18% Troop Movement Speed & +25% Chakra Passive Generation.',
+    level: 4,
+    memberCount: 48,
+    leader: 'Seventh Hokage'
+  },
+  {
+    id: 'strawhat_armada',
+    name: 'Straw Hat Grand Armada',
+    tag: 'SUN GOD DAWN',
+    icon: '🏴‍☠️',
+    franchise: 'one_piece',
+    perkTitle: 'Baccarat Treasury Plunder',
+    perkDesc: '+30% Plunder Loot from Syndicate Raids & +20% Storage Cap.',
+    level: 5,
+    memberCount: 50,
+    leader: 'Straw Hat Luffy'
+  },
+  {
+    id: 'gotei_squads',
+    name: 'Gotei 13 Court Guard Squads',
+    tag: 'SOUL SANCTUARY',
+    icon: '⚔️',
+    franchise: 'bleach',
+    perkTitle: 'Sekiseki Barrier Fortification',
+    perkDesc: '+25% Defense Wall HP & Haki Cannon Range +1.5 Tiles.',
+    level: 3,
+    memberCount: 42,
+    leader: 'Head Captain Kurosaki'
+  },
+  {
+    id: 'black_bulls',
+    name: 'Black Bulls Rogue Brigade',
+    tag: 'SURPASS LIMITS',
+    icon: '🐂',
+    franchise: 'black_clover',
+    perkTitle: 'Anti-Magic Singularity',
+    perkDesc: '+35% Hero Ultimate Damage & Ultimate Cooldown -3 Seconds.',
+    level: 4,
+    memberCount: 39,
+    leader: 'Anti-Magic Knight Asta'
+  }
+];
+
+export interface AnimeVoiceShout {
+  heroId: string;
+  shoutText: string;
+  kanji: string;
+  subTitle: string;
+  audioKey: string;
+}
+
+export const ANIME_VOICE_SHOUTS: Record<string, AnimeVoiceShout> = {
+  naruto: {
+    heroId: 'naruto',
+    shoutText: 'RASENGAN!!',
+    kanji: '螺旋丸',
+    subTitle: 'Wind Style: Spiral Sphere Vortex',
+    audioKey: 'wind_vortex'
+  },
+  luffy: {
+    heroId: 'luffy',
+    shoutText: 'GOMU GOMU NO... RED HAWK!!',
+    kanji: 'ゴムゴムの火拳銃',
+    subTitle: 'Gear Second Flame Friction Impact',
+    audioKey: 'flame_impact'
+  },
+  ichigo: {
+    heroId: 'ichigo',
+    shoutText: 'BANKAI: TENSA ZANGETSU!!',
+    kanji: '卍解・天鎖斬月',
+    subTitle: 'Heaven Chain Slicing Moon',
+    audioKey: 'getsuga_slash'
+  },
+  asta: {
+    heroId: 'asta',
+    shoutText: 'BLACK DIVIDER!!',
+    kanji: '断魔・ブラックディバイダー',
+    subTitle: 'Demon-Slayer Greatsword Cleave',
+    audioKey: 'black_divider'
+  }
 };
 
 export interface VillageHQPlan {

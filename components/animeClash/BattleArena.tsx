@@ -278,32 +278,76 @@ export default function BattleArena({
       buildingsRef.current.forEach((b) => {
         if (b.isDestroyed) {
           destroyedCount++;
-          // Ruin marker
-          ctx.fillStyle = 'rgba(71, 85, 105, 0.5)';
-          ctx.fillRect(b.x - 20, b.y - 20, 40, 40);
-          ctx.font = '18px serif';
-          ctx.fillText('💥', b.x - 10, b.y + 6);
+          // Ruin marker (Smoking rubble)
+          ctx.save();
+          ctx.fillStyle = 'rgba(30, 41, 59, 0.7)';
+          ctx.beginPath();
+          ctx.ellipse(b.x, b.y + 4, 22, 12, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#64748b';
+          ctx.fillRect(b.x - 12, b.y - 8, 24, 16);
+          // Smoke puff
+          ctx.fillStyle = 'rgba(148, 163, 184, 0.4)';
+          ctx.beginPath();
+          ctx.arc(b.x + Math.sin(Date.now() / 200) * 4, b.y - 14, 8, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
           return;
         }
 
-        // Active building
-        ctx.fillStyle = b.color + '30';
+        // Active building (High-tech military fortress graphic)
+        ctx.save();
+        // Drop shadow
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+        ctx.beginPath();
+        ctx.ellipse(b.x, b.y + 20, 24, 10, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Bunker body
+        ctx.fillStyle = '#0f172a';
         ctx.strokeStyle = b.color;
         ctx.lineWidth = 2;
-        ctx.fillRect(b.x - 24, b.y - 24, 48, 48);
-        ctx.strokeRect(b.x - 24, b.y - 24, 48, 48);
+        ctx.beginPath();
+        ctx.roundRect(b.x - 22, b.y - 22, 44, 44, 8);
+        ctx.fill();
+        ctx.stroke();
 
-        ctx.font = '22px serif';
+        // Glowing center core / turret
+        if (b.id === 'ecore') {
+          // Command HQ Power Dome
+          ctx.fillStyle = '#ef4444';
+          ctx.shadowColor = '#ef4444';
+          ctx.shadowBlur = 10;
+          ctx.beginPath();
+          ctx.arc(b.x, b.y, 10, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.shadowBlur = 0;
+        } else if (b.id.includes('wall')) {
+          // Steel blast wall chevron
+          ctx.fillStyle = '#475569';
+          ctx.fillRect(b.x - 16, b.y - 6, 32, 12);
+        } else {
+          // Cannon turret barrel
+          ctx.fillStyle = b.color;
+          ctx.beginPath();
+          ctx.arc(b.x, b.y, 7, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillRect(b.x - 2, b.y - 14, 4, 14);
+        }
+
+        // Name tag
+        ctx.font = 'bold 9px sans-serif';
+        ctx.fillStyle = '#e2e8f0';
         ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(b.icon, b.x, b.y - 2);
+        ctx.fillText(b.name.split(' ')[0], b.x, b.y - 26);
+        ctx.restore();
 
         // HP bar
         const hpPercent = Math.max(0, b.hp / b.maxHp);
         ctx.fillStyle = '#1e293b';
-        ctx.fillRect(b.x - 22, b.y + 28, 44, 4);
+        ctx.fillRect(b.x - 22, b.y + 26, 44, 4);
         ctx.fillStyle = hpPercent > 0.4 ? '#22c55e' : '#ef4444';
-        ctx.fillRect(b.x - 22, b.y + 28, 44 * hpPercent, 4);
+        ctx.fillRect(b.x - 22, b.y + 26, 44 * hpPercent, 4);
       });
 
       // Update Destruction
@@ -422,22 +466,60 @@ export default function BattleArena({
         // Draw Unit
         ctx.save();
         if (unit.isHero && heroImgRef.current && heroImgRef.current.complete) {
+          // Hero high-res circle portrait
           ctx.save();
+          // Drop shadow
+          ctx.fillStyle = 'rgba(0,0,0,0.4)';
           ctx.beginPath();
-          ctx.arc(unit.x, unit.y, 16, 0, Math.PI * 2);
+          ctx.ellipse(unit.x, unit.y + 16, 16, 6, 0, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.beginPath();
+          ctx.arc(unit.x, unit.y, 18, 0, Math.PI * 2);
           ctx.clip();
-          ctx.drawImage(heroImgRef.current, unit.x - 16, unit.y - 16, 32, 32);
+          ctx.drawImage(heroImgRef.current, unit.x - 18, unit.y - 18, 36, 36);
           ctx.restore();
+
+          // Border ring & pulsating aura
+          ctx.strokeStyle = unit.color;
+          ctx.lineWidth = 3;
+          ctx.shadowColor = unit.color;
+          ctx.shadowBlur = 10;
+          ctx.beginPath();
+          ctx.arc(unit.x, unit.y, 18, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.shadowBlur = 0;
+        } else {
+          // Tactical Anime Troop Token (Zero Raw Emoji Text)
+          ctx.save();
+          // Shadow
+          ctx.fillStyle = 'rgba(0,0,0,0.35)';
+          ctx.beginPath();
+          ctx.ellipse(unit.x, unit.y + 12, 12, 5, 0, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Outer glowing armor disc
+          ctx.fillStyle = '#0f172a';
           ctx.strokeStyle = unit.color;
           ctx.lineWidth = 2.5;
           ctx.beginPath();
-          ctx.arc(unit.x, unit.y, 16, 0, Math.PI * 2);
+          ctx.arc(unit.x, unit.y, 13, 0, Math.PI * 2);
+          ctx.fill();
           ctx.stroke();
-        } else {
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.font = unit.isHero ? '28px serif' : '18px serif';
-          ctx.fillText(unit.avatar, unit.x, unit.y);
+
+          // Inner combat insignia
+          ctx.fillStyle = unit.color;
+          ctx.beginPath();
+          ctx.arc(unit.x, unit.y, 6, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Weapon slash arc
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.arc(unit.x, unit.y, 10, -0.6, 0.6);
+          ctx.stroke();
+          ctx.restore();
         }
 
         // Name tag

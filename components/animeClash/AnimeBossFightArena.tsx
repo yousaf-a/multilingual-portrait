@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { AnimeEpisode, AnimeVillain, HeroPowerup, ANIME_VILLAINS, SURPRISE_ALLIES_CATALOG, SurpriseAlly } from '@/lib/animeClash/animeStoryData';
 import { HEROES_CATALOG } from '@/lib/animeClash/gameData';
 import { HeroData } from '@/lib/animeClash/types';
+import { animeAudio } from '@/lib/animeClash/animeAudio';
 import {
   Sword,
   Shield,
@@ -54,17 +55,25 @@ export default function AnimeBossFightArena({
   useEffect(() => {
     const hImg = new Image();
     hImg.src = hero.image;
-    hImg.onload = () => {
+    if (hImg.complete) {
       heroImgRef.current = hImg;
-      setImagesLoadedTick((t) => t + 1);
-    };
+    } else {
+      hImg.onload = () => {
+        heroImgRef.current = hImg;
+        setImagesLoadedTick((t) => t + 1);
+      };
+    }
 
     const bImg = new Image();
     bImg.src = villain.image;
-    bImg.onload = () => {
+    if (bImg.complete) {
       bossImgRef.current = bImg;
-      setImagesLoadedTick((t) => t + 1);
-    };
+    } else {
+      bImg.onload = () => {
+        bossImgRef.current = bImg;
+        setImagesLoadedTick((t) => t + 1);
+      };
+    }
   }, [hero.image, villain.image]);
 
   // Entities Ref
@@ -86,6 +95,7 @@ export default function AnimeBossFightArena({
 
     // Dash forward
     c.heroVelX = 14;
+    animeAudio.playCombatSFX('sword');
 
     // Damage boss
     const dmg = heroAwakened ? hero.attack * 2.2 : hero.attack;
@@ -114,6 +124,9 @@ export default function AnimeBossFightArena({
   const handleHeroSkill = () => {
     if (battleWon || battleLost) return;
     const c = combatRef.current;
+
+    animeAudio.playHeroShout(hero.id);
+    animeAudio.playCombatSFX('sword');
 
     // Damage boss
     const dmg = (heroAwakened ? hero.attack * 3.2 : hero.attack * 1.8);
@@ -148,6 +161,7 @@ export default function AnimeBossFightArena({
     setHeroAwakened(true);
     setActiveCutscene(`★ ${powerup.formName.toUpperCase()}! ★`);
     setScreenShake(true);
+    animeAudio.playCombatSFX('spell');
 
     // Deal massive Awakening damage
     setBossHp((prev) => {
@@ -326,34 +340,52 @@ export default function AnimeBossFightArena({
       }
 
       // Real Hero Character Illustration
+      const spriteW = 120;
+      const spriteH = 160;
+      const swayY = Math.sin(now / 350) * 4;
+
       if (heroImgRef.current && heroImgRef.current.complete) {
-        const spriteW = 95;
-        const spriteH = 130;
         ctx.save();
-        const swayY = Math.sin(now / 400) * 3;
         ctx.beginPath();
-        ctx.roundRect(c.heroX - spriteW / 2, c.heroY - spriteH / 2 + swayY, spriteW, spriteH, 16);
+        ctx.roundRect(c.heroX - spriteW / 2, c.heroY - spriteH / 2 + swayY, spriteW, spriteH, 20);
         ctx.clip();
         ctx.drawImage(heroImgRef.current, c.heroX - spriteW / 2, c.heroY - spriteH / 2 + swayY, spriteW, spriteH);
         ctx.restore();
 
-        // Border ring
+        // Border ring & energy outline
         ctx.strokeStyle = heroAwakened ? powerup.auraColor : hero.color;
-        ctx.lineWidth = heroAwakened ? 3 : 2;
+        ctx.lineWidth = heroAwakened ? 3.5 : 2.5;
+        ctx.shadowColor = heroAwakened ? powerup.auraColor : hero.color;
+        ctx.shadowBlur = heroAwakened ? 16 : 8;
         ctx.beginPath();
-        ctx.roundRect(c.heroX - 95 / 2, c.heroY - 130 / 2 + Math.sin(now / 400) * 3, 95, 130, 16);
+        ctx.roundRect(c.heroX - spriteW / 2, c.heroY - spriteH / 2 + swayY, spriteW, spriteH, 20);
         ctx.stroke();
+        ctx.shadowBlur = 0;
       } else {
-        ctx.font = 'bold 16px sans-serif';
-        ctx.fillStyle = '#ffffff';
-        ctx.fillText(hero.name, c.heroX, c.heroY);
+        // High-end stylized energy silhouette (Zero raw text/emoji fallback)
+        ctx.save();
+        ctx.fillStyle = '#0f172a';
+        ctx.strokeStyle = hero.color;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.roundRect(c.heroX - spriteW / 2, c.heroY - spriteH / 2 + swayY, spriteW, spriteH, 20);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = hero.color;
+        ctx.shadowColor = hero.color;
+        ctx.shadowBlur = 12;
+        ctx.beginPath();
+        ctx.arc(c.heroX, c.heroY + swayY - 20, 24, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
       }
 
       // Hero Name & Mode
-      ctx.font = 'bold 12px "Segoe UI", sans-serif';
+      ctx.font = 'bold 13px "Segoe UI", sans-serif';
       ctx.fillStyle = heroAwakened ? powerup.auraColor : '#ffffff';
       ctx.textAlign = 'center';
-      ctx.fillText(heroAwakened ? `★ ${powerup.formName.split(':')[0]} ★` : hero.name.split(' ')[0], c.heroX, c.heroY - 75);
+      ctx.fillText(heroAwakened ? `★ ${powerup.formName.split(':')[0]} ★` : hero.name, c.heroX, c.heroY - 90);
       ctx.restore();
 
       // 5. Draw Villain Boss (Real Anime Artwork)
@@ -361,44 +393,66 @@ export default function AnimeBossFightArena({
       // Drop shadow
       ctx.fillStyle = 'rgba(0,0,0,0.55)';
       ctx.beginPath();
-      ctx.ellipse(c.bossX, c.bossY + 70, 42, 14, 0, 0, Math.PI * 2);
+      ctx.ellipse(c.bossX, c.bossY + 80, 50, 16, 0, 0, Math.PI * 2);
       ctx.fill();
 
       // Villain Boss Aura
-      const bossAura = ctx.createRadialGradient(c.bossX, c.bossY, 20, c.bossX, c.bossY, 85);
+      const bossAura = ctx.createRadialGradient(c.bossX, c.bossY, 20, c.bossX, c.bossY, 95);
       bossAura.addColorStop(0, villain.color);
       bossAura.addColorStop(0.8, 'rgba(0,0,0,0.3)');
       bossAura.addColorStop(1, 'rgba(0,0,0,0)');
       ctx.fillStyle = bossAura;
       ctx.beginPath();
-      ctx.arc(c.bossX, c.bossY, 85, 0, Math.PI * 2);
+      ctx.arc(c.bossX, c.bossY, 95, 0, Math.PI * 2);
       ctx.fill();
 
       // Real Villain Boss Illustration
+      const bossW = 125;
+      const bossH = 165;
+      const swayBoss = Math.sin(now / 400 + 1) * 4;
+
       if (bossImgRef.current && bossImgRef.current.complete) {
-        const bossW = 100;
-        const bossH = 135;
         ctx.save();
-        const swayBoss = Math.sin(now / 450 + 1) * 3;
         ctx.beginPath();
-        ctx.roundRect(c.bossX - bossW / 2, c.bossY - bossH / 2 + swayBoss, bossW, bossH, 16);
+        ctx.roundRect(c.bossX - bossW / 2, c.bossY - bossH / 2 + swayBoss, bossW, bossH, 20);
         ctx.clip();
         ctx.drawImage(bossImgRef.current, c.bossX - bossW / 2, c.bossY - bossH / 2 + swayBoss, bossW, bossH);
         ctx.restore();
 
-        // Border ring
+        // Border ring & dark aura
         ctx.strokeStyle = villain.color;
-        ctx.lineWidth = 2.5;
+        ctx.lineWidth = 3;
+        ctx.shadowColor = villain.color;
+        ctx.shadowBlur = 12;
         ctx.beginPath();
-        ctx.roundRect(c.bossX - bossW / 2, c.bossY - bossH / 2 + Math.sin(now / 450 + 1) * 3, bossW, bossH, 16);
+        ctx.roundRect(c.bossX - bossW / 2, c.bossY - bossH / 2 + swayBoss, bossW, bossH, 20);
         ctx.stroke();
+        ctx.shadowBlur = 0;
+      } else {
+        // Ominous Villain Void Silhouette (Zero emoji fallback)
+        ctx.save();
+        ctx.fillStyle = '#180808';
+        ctx.strokeStyle = villain.color;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.roundRect(c.bossX - bossW / 2, c.bossY - bossH / 2 + swayBoss, bossW, bossH, 20);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = villain.color;
+        ctx.shadowColor = villain.color;
+        ctx.shadowBlur = 15;
+        ctx.beginPath();
+        ctx.arc(c.bossX, c.bossY + swayBoss - 20, 26, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
       }
 
       // Boss Name
-      ctx.font = 'bold 13px "Segoe UI", sans-serif';
+      ctx.font = 'bold 14px "Segoe UI", sans-serif';
       ctx.fillStyle = villain.color;
       ctx.textAlign = 'center';
-      ctx.fillText(villain.name, c.bossX, c.bossY - 78);
+      ctx.fillText(villain.name, c.bossX, c.bossY - 92);
 
       // Infinite Void Stun Indicator
       if (bossFrozen) {

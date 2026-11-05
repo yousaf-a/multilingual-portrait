@@ -32,28 +32,69 @@ export function drawIsoTerrain(
   height: number,
   originX: number,
   originY: number,
-  gridSize: number = 12
+  gridSize: number = 12,
+  weatherMode: 'day' | 'twilight' | 'night' | 'rain' = 'night',
+  animTime: number = 0
 ) {
-  // Deep Forest Background surrounding the village
-  ctx.fillStyle = '#264e1c';
+  const isNight = weatherMode === 'night';
+  const isTwilight = weatherMode === 'twilight';
+  const isRain = weatherMode === 'rain';
+
+  // 1. Forest Background surrounding the village clearing
+  ctx.fillStyle = isNight
+    ? '#050c18'
+    : isTwilight
+    ? '#2d132c'
+    : isRain
+    ? '#0d1f18'
+    : '#264e1c';
   ctx.fillRect(0, 0, width, height);
 
   // Soft atmospheric radial lighting on village clearing
-  const clearingGlow = ctx.createRadialGradient(originX, originY + (gridSize * ISO_TILE_H) / 2, 80, originX, originY + (gridSize * ISO_TILE_H) / 2, width * 0.7);
-  clearingGlow.addColorStop(0, 'rgba(100, 180, 50, 0.25)');
-  clearingGlow.addColorStop(0.8, 'rgba(20, 50, 15, 0.4)');
-  clearingGlow.addColorStop(1, 'rgba(0, 0, 0, 0.7)');
+  const clearingGlow = ctx.createRadialGradient(
+    originX,
+    originY + (gridSize * ISO_TILE_H) / 2,
+    80,
+    originX,
+    originY + (gridSize * ISO_TILE_H) / 2,
+    width * 0.7
+  );
+
+  if (isNight) {
+    clearingGlow.addColorStop(0, 'rgba(6, 182, 212, 0.12)');
+    clearingGlow.addColorStop(0.7, 'rgba(15, 23, 42, 0.6)');
+    clearingGlow.addColorStop(1, 'rgba(2, 6, 23, 0.95)');
+  } else if (isTwilight) {
+    clearingGlow.addColorStop(0, 'rgba(251, 146, 60, 0.25)');
+    clearingGlow.addColorStop(0.7, 'rgba(88, 28, 135, 0.4)');
+    clearingGlow.addColorStop(1, 'rgba(30, 10, 45, 0.85)');
+  } else if (isRain) {
+    clearingGlow.addColorStop(0, 'rgba(56, 189, 248, 0.15)');
+    clearingGlow.addColorStop(0.8, 'rgba(10, 30, 25, 0.5)');
+    clearingGlow.addColorStop(1, 'rgba(3, 10, 8, 0.9)');
+  } else {
+    clearingGlow.addColorStop(0, 'rgba(100, 180, 50, 0.25)');
+    clearingGlow.addColorStop(0.8, 'rgba(20, 50, 15, 0.4)');
+    clearingGlow.addColorStop(1, 'rgba(0, 0, 0, 0.7)');
+  }
   ctx.fillStyle = clearingGlow;
   ctx.fillRect(0, 0, width, height);
 
-  // Draw Isometric Grass Tiles (Checkerboard Green like Clash of Clans)
+  // 2. Draw Isometric Grass Tiles
   for (let gy = 0; gy < gridSize; gy++) {
     for (let gx = 0; gx < gridSize; gx++) {
       const pos = toIso(gx, gy, originX, originY);
       const isAlt = (gx + gy) % 2 === 0;
 
-      // Clash of Clans Grass Palette
-      ctx.fillStyle = isAlt ? '#5ca32c' : '#529624';
+      if (isNight) {
+        ctx.fillStyle = isAlt ? '#0f2920' : '#0a1e16';
+      } else if (isTwilight) {
+        ctx.fillStyle = isAlt ? '#854d0e' : '#713f12';
+      } else if (isRain) {
+        ctx.fillStyle = isAlt ? '#22472b' : '#1b3b23';
+      } else {
+        ctx.fillStyle = isAlt ? '#5ca32c' : '#529624';
+      }
 
       ctx.beginPath();
       ctx.moveTo(pos.x, pos.y);
@@ -64,13 +105,21 @@ export function drawIsoTerrain(
       ctx.fill();
 
       // Subtle grid border
-      ctx.strokeStyle = isAlt ? 'rgba(80, 145, 35, 0.35)' : 'rgba(70, 130, 30, 0.35)';
+      ctx.strokeStyle = isNight
+        ? 'rgba(6, 182, 212, 0.12)'
+        : isTwilight
+        ? 'rgba(251, 146, 60, 0.2)'
+        : isRain
+        ? 'rgba(56, 189, 248, 0.2)'
+        : isAlt
+        ? 'rgba(80, 145, 35, 0.35)'
+        : 'rgba(70, 130, 30, 0.35)';
       ctx.lineWidth = 0.5;
       ctx.stroke();
     }
   }
 
-  // Draw Border Rocks & Pine Trees around perimeter
+  // 3. Draw Border Rocks & Pine Trees around perimeter
   ctx.save();
   const borderCoords = [
     { x: -1, y: 3 }, { x: -1, y: 7 }, { x: 3, y: -1 }, { x: 8, y: -1 },
@@ -79,14 +128,12 @@ export function drawIsoTerrain(
 
   borderCoords.forEach((b) => {
     const p = toIso(b.x, b.y, originX, originY);
-    // Tree Shadow
-    ctx.fillStyle = 'rgba(15, 35, 10, 0.45)';
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
     ctx.beginPath();
     ctx.ellipse(p.x + 5, p.y + 12, 14, 7, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // Pine Tree Cones
-    ctx.fillStyle = '#1c4516';
+    ctx.fillStyle = isNight ? '#061710' : isTwilight ? '#381622' : isRain ? '#0e2617' : '#1c4516';
     ctx.beginPath();
     ctx.moveTo(p.x, p.y - 28);
     ctx.lineTo(p.x + 12, p.y);
@@ -94,7 +141,7 @@ export function drawIsoTerrain(
     ctx.closePath();
     ctx.fill();
 
-    ctx.fillStyle = '#2d6a24';
+    ctx.fillStyle = isNight ? '#0b291d' : isTwilight ? '#581c35' : isRain ? '#173d25' : '#2d6a24';
     ctx.beginPath();
     ctx.moveTo(p.x, p.y - 38);
     ctx.lineTo(p.x + 9, p.y - 12);
@@ -103,6 +150,20 @@ export function drawIsoTerrain(
     ctx.fill();
   });
   ctx.restore();
+
+  // 4. Weather Overlays (Rain Streaks & Lanterns)
+  if (isRain) {
+    ctx.strokeStyle = 'rgba(125, 211, 252, 0.4)';
+    ctx.lineWidth = 1.2;
+    for (let i = 0; i < 45; i++) {
+      const rx = (Math.sin(i * 99 + animTime * 12) * 0.5 + 0.5) * width;
+      const ry = ((i * 35 + animTime * 450) % height);
+      ctx.beginPath();
+      ctx.moveTo(rx, ry);
+      ctx.lineTo(rx - 3, ry + 12);
+      ctx.stroke();
+    }
+  }
 }
 
 /**
@@ -461,7 +522,7 @@ export function drawIsoBuilding(
 }
 
 // Helper: Draw 3D Isometric Prismatic Box
-function draw3DBox(
+export function draw3DBox(
   ctx: CanvasRenderingContext2D,
   cx: number,
   cy: number,

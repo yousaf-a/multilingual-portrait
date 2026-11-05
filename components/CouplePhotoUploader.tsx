@@ -379,25 +379,57 @@ export default function CouplePhotoUploader({
 
         } else {
           // =========================================================================
-          // --- STYLE B: DUAL SIDE-BY-SIDE COMPANIONS (References 1 & 2) ---
-          // Both people share the canvas space:
-          // Partner 1 on the left (X=285), Partner 2 on the right (X=515).
-          // Crisp 12px contact seam where shoulders/hair touch at X=400.
-          // NO double-exposure ghosting! Both people remain solid and distinct!
+          // --- STYLE B: DUAL SIDE-BY-SIDE COMPANIONS (References 1 & 2 / Image 3) ---
+          // TWO FULL INDIVIDUALS STANDING SHOULDER-TO-SHOULDER:
+          // Partner 1 has their FULL head on the left (centered at X=225, Y=440).
+          // Partner 2 has their FULL head on the right (centered at X=575, Y=440).
+          // Both individuals are scaled to fit their side completely.
+          // NEITHER FACE IS CHOPPED OR CUT IN HALF!
+          // Their shoulders naturally touch in the middle (X=370..430).
           // =========================================================================
-          const baseZoom = 1.05;
-          const p1CenterX = 285;
-          const p2CenterX = 515;
-          const centerFaceY = 450;
+          const p1CenterX = 225;
+          const p2CenterX = 575;
+          const centerFaceY = 440;
 
-          const layer1 = renderPartnerLayer(img1, w, h, p1CenterX, centerFaceY, baseZoom, t1);
-          const layer2 = renderPartnerLayer(img2, w, h, p2CenterX, centerFaceY, baseZoom, t2);
+          // Render Partner 1 as full individual on left panel
+          const layer1 = document.createElement('canvas');
+          layer1.width = w;
+          layer1.height = h;
+          const l1Ctx = layer1.getContext('2d');
+          if (l1Ctx) {
+            const p1Scale = Math.max((w * 0.49) / img1.width, (h * 0.62) / img1.height) * (t1.zoom || 1.0);
+            const p1W = img1.width * p1Scale;
+            const p1H = img1.height * p1Scale;
+            const p1FocalX = Math.max(0.05, Math.min(0.95, 0.50 + (t1.panX || 0) / 100));
+            const p1FocalY = Math.max(0.05, Math.min(0.95, 0.40 + (t1.panY || 0) / 100));
+            const p1DrawX = p1CenterX - (p1FocalX * p1W);
+            const p1DrawY = centerFaceY - (p1FocalY * p1H);
+
+            l1Ctx.drawImage(img1, p1DrawX, p1DrawY, p1W, p1H);
+          }
+
+          // Render Partner 2 as full individual on right panel
+          const layer2 = document.createElement('canvas');
+          layer2.width = w;
+          layer2.height = h;
+          const l2Ctx = layer2.getContext('2d');
+          if (l2Ctx) {
+            const p2Scale = Math.max((w * 0.49) / img2.width, (h * 0.62) / img2.height) * (t2.zoom || 1.0);
+            const p2W = img2.width * p2Scale;
+            const p2H = img2.height * p2Scale;
+            const p2FocalX = Math.max(0.05, Math.min(0.95, 0.50 + (t2.panX || 0) / 100));
+            const p2FocalY = Math.max(0.05, Math.min(0.95, 0.40 + (t2.panY || 0) / 100));
+            const p2DrawX = p2CenterX - (p2FocalX * p2W);
+            const p2DrawY = centerFaceY - (p2FocalY * p2H);
+
+            l2Ctx.drawImage(img2, p2DrawX, p2DrawY, p2W, p2H);
+          }
 
           // 1. Draw Partner 1 (Left Companion)
           ctx.drawImage(layer1, 0, 0);
 
-          // 2. Crisp Micro-Seam Contact for Partner 2 (Right Companion)
-          const seamW = Math.max(4, Math.min(24, blend));
+          // 2. Feathered Contact Seam at Midline (X=370..430) where shoulders touch
+          const seamW = Math.max(16, Math.min(60, blend * 2));
           const maskCanvas = document.createElement('canvas');
           maskCanvas.width = w;
           maskCanvas.height = h;
@@ -421,7 +453,7 @@ export default function CouplePhotoUploader({
             ctx.drawImage(maskCanvas, 0, 0);
           }
 
-          // 3. Subtle outer paper edge soften
+          // 3. Subtle paper edge vignette on outer borders
           ctx.save();
           const lGrad = ctx.createLinearGradient(0, 0, 30, 0);
           lGrad.addColorStop(0, '#faf8f5');
@@ -464,11 +496,11 @@ export default function CouplePhotoUploader({
     if (layoutMode === 'split_face') {
       t1 = { zoom: 1.0, panX: 0, panY: 0 };
       t2 = { zoom: 1.0, panX: 0, panY: 0 };
-      blend = 26;
+      blend = 12;
     } else {
-      t1 = { zoom: 1.04, panX: 2, panY: -2 };
-      t2 = { zoom: 1.02, panX: -2, panY: 2 };
-      blend = 120;
+      t1 = { zoom: 1.0, panX: 0, panY: 0 };
+      t2 = { zoom: 1.0, panX: 0, panY: 0 };
+      blend = 20;
     }
 
     setP1Transform(t1);
@@ -483,13 +515,9 @@ export default function CouplePhotoUploader({
   // Switch composition mode
   const handleLayoutChange = (mode: CoupleLayoutMode) => {
     setLayoutMode(mode);
-    const t1 = mode === 'split_face'
-      ? { zoom: 1.0, panX: 0, panY: 0 }
-      : { zoom: 1.04, panX: 2, panY: -2 };
-    const t2 = mode === 'split_face'
-      ? { zoom: 1.0, panX: 0, panY: 0 }
-      : { zoom: 1.02, panX: -2, panY: 2 };
-    const blend = mode === 'split_face' ? 26 : 120;
+    const t1 = { zoom: 1.0, panX: 0, panY: 0 };
+    const t2 = { zoom: 1.0, panX: 0, panY: 0 };
+    const blend = mode === 'split_face' ? 12 : 20;
 
     setP1Transform(t1);
     setP2Transform(t2);

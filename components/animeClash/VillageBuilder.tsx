@@ -123,9 +123,13 @@ export default function VillageBuilder({
   useEffect(() => {
     const img = new Image();
     img.src = activeHero.image;
-    img.onload = () => {
+    if (img.complete) {
       heroImgRef.current = img;
-    };
+    } else {
+      img.onload = () => {
+        heroImgRef.current = img;
+      };
+    }
   }, [activeHero.image]);
 
   // 2.5D Isometric Rendering Loop
@@ -140,6 +144,10 @@ export default function VillageBuilder({
 
     const render = () => {
       if (!isRunning) return;
+      if (villageViewMode !== 'grid') {
+        animRef.current = requestAnimationFrame(render);
+        return;
+      }
       const elapsed = (Date.now() - startTime) / 1000;
 
       const width = canvas.width;
@@ -239,7 +247,7 @@ export default function VillageBuilder({
       isRunning = false;
       if (animRef.current) cancelAnimationFrame(animRef.current);
     };
-  }, [villageState, selectedBuilding, activeHero, isRelocatingBuildingId]);
+  }, [villageState, selectedBuilding, activeHero, isRelocatingBuildingId, villageViewMode, activeBuildTab]);
 
   // Handle Isometric Map Click
   const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -879,18 +887,20 @@ export default function VillageBuilder({
 
       {/* 3. MAIN INTERACTIVE CONTENT: ISOMETRIC VILLAGE OR SANCTUARY ORBITAL HUB */}
       {activeBuildTab === 'village' && (
-        villageViewMode === 'orbit_hub' ? (
-          <SanctuaryOrbitalHub
-            villageState={villageState}
-            onUpdateVillage={onUpdateVillage}
-            onLaunch1v1={onLaunchBattle}
-            onLaunchTrials={(_floor) => setIsArenaRaidActive(true)}
-            onSwitchToVillageGrid={() => setVillageViewMode('grid')}
-          />
-        ) : (
-        <div className="flex flex-col lg:flex-row gap-4 items-start">
-          {/* Real 2.5D Isometric Canvas */}
-          <div className="flex-1 w-full rounded-3xl overflow-hidden border-2 border-[#1e3a5f] shadow-2xl relative bg-[#091522]">
+        <>
+          <div className={villageViewMode === 'orbit_hub' ? 'block' : 'hidden'}>
+            <SanctuaryOrbitalHub
+              villageState={villageState}
+              onUpdateVillage={onUpdateVillage}
+              onLaunch1v1={onLaunchBattle}
+              onLaunchTrials={(_floor) => setIsArenaRaidActive(true)}
+              onSwitchToVillageGrid={() => setVillageViewMode('grid')}
+            />
+          </div>
+
+          <div className={villageViewMode === 'grid' ? 'flex flex-col lg:flex-row gap-4 items-start' : 'hidden'}>
+            {/* Real 2.5D Isometric Canvas */}
+            <div className="flex-1 w-full rounded-3xl overflow-hidden border-2 border-[#1e3a5f] shadow-2xl relative bg-[#091522]">
             <canvas
               ref={canvasRef}
               width={820}
@@ -1013,7 +1023,7 @@ export default function VillageBuilder({
                 </div>
 
                 <p className="text-xs text-slate-300 italic mb-2 px-1">
-                  {heroInteractionQuote ? `💬 ${heroInteractionQuote}` : `&ldquo;${activeHero.quote}&rdquo;`}
+                  {heroInteractionQuote ? `💬 ${heroInteractionQuote}` : `"${activeHero.quote}"`}
                 </p>
 
                 <div className="space-y-1 text-xs text-slate-300 p-3 rounded-2xl bg-[#080d1e] border border-[#1e2a4a]">
@@ -1031,7 +1041,7 @@ export default function VillageBuilder({
             )}
           </div>
         </div>
-        )
+      </>
       )}
 
       {/* 4. CUSTOM BASE SETUP TAB */}

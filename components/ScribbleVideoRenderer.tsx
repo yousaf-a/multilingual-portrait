@@ -7,6 +7,8 @@ import { audioController } from '@/lib/audio';
 import ShareGiftModal from '@/components/ShareGiftModal';
 import LiveDuoChat from '@/components/LiveDuoChat';
 import { CelestialMapConfig, drawCelestialStarMap } from '@/lib/celestialStarMap';
+import { ZodiacFusionConfig, drawZodiacFusion } from '@/lib/zodiacConstellations';
+import { FingerprintHeartConfig, drawFingerprintHeartSeal } from '@/lib/fingerprintHeart';
 
 interface HatchStroke {
   x1: number;
@@ -46,6 +48,8 @@ interface ScribbleVideoRendererProps {
   musicTrack: string;
   customMusicUrl: string | null;
   celestialConfig?: CelestialMapConfig;
+  zodiacConfig?: ZodiacFusionConfig;
+  fingerprintConfig?: FingerprintHeartConfig;
   roomId?: string;
   senderName?: string;
   onBackToEdit: () => void;
@@ -60,6 +64,8 @@ export default function ScribbleVideoRenderer({
   musicTrack,
   customMusicUrl,
   celestialConfig,
+  zodiacConfig,
+  fingerprintConfig,
   roomId: propRoomId,
   senderName = 'You',
   onBackToEdit
@@ -740,6 +746,16 @@ export default function ScribbleVideoRenderer({
       drawCelestialStarMap(ctx, width, height, celestialConfig, Math.min(1.0, progressRatio * 1.35));
     }
 
+    // 1.6 ZODIAC SOULMATE CONSTELLATION FUSION (Infinity Ribbon Linkage)
+    if (zodiacConfig && zodiacConfig.enabled) {
+      drawZodiacFusion(ctx, width, height, zodiacConfig, Math.min(1.0, progressRatio * 1.4));
+    }
+
+    // 1.7 MICRO-CALLIGRAPHY FINGERPRINT HEART SEAL
+    if (fingerprintConfig && fingerprintConfig.enabled) {
+      drawFingerprintHeartSeal(ctx, width, height, fingerprintConfig, Math.min(1.0, progressRatio * 1.3));
+    }
+
     // Soft atmospheric mist for Prussian Blue watercolor paper
     if (themeStyle === 'prussian_blue' || themeStyle === 'rain_storm') {
       ctx.strokeStyle = 'rgba(2, 132, 199, 0.12)';
@@ -870,7 +886,7 @@ export default function ScribbleVideoRenderer({
       height - 20
     );
     ctx.restore();
-  }, [getThemePalette, themeStyle, titleText, drawLuxuryFountainPen, showArtistHand, celestialConfig]);
+  }, [getThemePalette, themeStyle, titleText, drawLuxuryFountainPen, showArtistHand, celestialConfig, zodiacConfig, fingerprintConfig]);
 
   // Main animation frame loop
   useEffect(() => {

@@ -6,9 +6,13 @@ import CouplePhotoUploader from '@/components/CouplePhotoUploader';
 import ScribbleVideoRenderer from '@/components/ScribbleVideoRenderer';
 import InstagramMusicPicker from '@/components/InstagramMusicPicker';
 import CelestialMapPicker from '@/components/CelestialMapPicker';
+import ZodiacFusionPicker from '@/components/ZodiacFusionPicker';
+import FingerprintHeartPicker from '@/components/FingerprintHeartPicker';
 import { getMultilingualList, TranslatedItem } from '@/lib/languages';
 import { MusicTrackItem } from '@/lib/musicTracks';
 import { CelestialMapConfig, DEFAULT_CELESTIAL_CONFIG } from '@/lib/celestialStarMap';
+import { ZodiacFusionConfig, DEFAULT_ZODIAC_CONFIG } from '@/lib/zodiacConstellations';
+import { FingerprintHeartConfig, DEFAULT_FINGERPRINT_CONFIG } from '@/lib/fingerprintHeart';
 import {
   Sparkles,
   Music,
@@ -84,6 +88,8 @@ export default function Home() {
   const [customAudioUrl, setCustomAudioUrl] = useState<string | null>(null);
   const [customAudioName, setCustomAudioName] = useState<string | null>(null);
   const [celestialConfig, setCelestialConfig] = useState<CelestialMapConfig>(DEFAULT_CELESTIAL_CONFIG);
+  const [zodiacConfig, setZodiacConfig] = useState<ZodiacFusionConfig>(DEFAULT_ZODIAC_CONFIG);
+  const [fingerprintConfig, setFingerprintConfig] = useState<FingerprintHeartConfig>(DEFAULT_FINGERPRINT_CONFIG);
 
   const [items, setItems] = useState<TranslatedItem[]>([]);
   const [formErrors, setFormErrors] = useState<{ photo?: string; title?: string; theme?: string }>({});
@@ -400,12 +406,22 @@ export default function Home() {
           {/* Card 4: Celestial Star Map Layer (Optional / Anniversary) */}
           <CelestialMapPicker config={celestialConfig} onChange={setCelestialConfig} />
 
-          {/* Card 5: Background Music Selection (Optional) */}
+          {/* Card 5: Zodiac Soulmate Constellation Fusion (Optional) */}
+          <ZodiacFusionPicker config={zodiacConfig} onChange={setZodiacConfig} />
+
+          {/* Card 6: Micro-Calligraphy Fingerprint Heart Seal (Optional) */}
+          <FingerprintHeartPicker
+            config={fingerprintConfig}
+            onChange={setFingerprintConfig}
+            defaultNames={titleText}
+          />
+
+          {/* Card 7: Background Music Selection (Optional) */}
           <div className="bg-[#0b1226]/90 border border-[#1e2a4a] rounded-3xl p-4 sm:p-6 shadow-xl shadow-black/25 backdrop-blur-md">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2.5">
                 <span className="w-6 h-6 rounded-full bg-[#1b64f2] text-white text-xs font-bold flex items-center justify-center shadow-[0_0_8px_rgba(27,100,242,0.5)]">
-                  5
+                  7
                 </span>
                 <div className="flex items-center gap-2">
                   <Music size={16} className="text-cyan-400" />
@@ -469,6 +485,8 @@ export default function Home() {
           musicTrack={musicTrack}
           customMusicUrl={customAudioUrl}
           celestialConfig={celestialConfig}
+          zodiacConfig={zodiacConfig}
+          fingerprintConfig={fingerprintConfig}
           onBackToEdit={() => setCurrentView('form')}
         />
       )}

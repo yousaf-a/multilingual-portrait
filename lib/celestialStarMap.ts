@@ -631,3 +631,4 @@ export function drawCelestialStarMap(
 
   ctx.restore();
 }
+

@@ -44,6 +44,7 @@ export interface AnimeEpisode {
     avatar: string;
     isVillain?: boolean;
     narration?: boolean;
+    visualFocus?: 'naruto' | 'luffy' | 'ichigo' | 'asta' | 'madara' | 'doflamingo' | 'aizen' | 'lucius' | 'all_heroes' | 'rift';
     text: string;
     bgVibe: string;
   }[];
@@ -169,10 +170,103 @@ export const HERO_POWERUPS: Record<string, HeroPowerup> = {
     unlockedAttackDesc: 'A colossal sweeping slash that severs the concept of temporal control, restoring flow of time and shattering the boss.',
     auraColor: '#059669',
     quote: "Even if you stop time itself, MY LEGS WON'T STOP RUNNING! Liebe, let's cut through their destiny!!"
+  },
+  convergence: {
+    heroId: 'all',
+    formName: 'Sanctuary Quad-Convergence: Tetra-Resonance',
+    japaneseName: '四界共鳴・神域の盟約',
+    buildupStory: 'Standing beneath Tokyo Tower, Naruto, Luffy, Ichigo, and Asta combine Chakra, Haki, Reishi, and Anti-Magic into an impenetrable spherical defense dome, establishing the Sanctuary Village to shield humanity from the four dimensional overlords.',
+    awakeningTrigger: 'Unison of four different dimensions bound by one oath to protect innocent lives.',
+    statBoostMultiplier: 2.5,
+    unlockedAttack: 'Tetra-Dimensional Grand Cross: Sanctuary Break',
+    unlockedAttackDesc: 'A colossal combined attack of Rasengan, Red Hawk, Getsuga Tensho, and Anti-Magic Slash that seals dimensional rifts.',
+    auraColor: '#38bdf8',
+    quote: "No matter what universe we came from, this world and its people are under our protection!!"
   }
 };
 
 export const ANIME_EPISODES: AnimeEpisode[] = [
+  {
+    id: 'ep_0',
+    episodeNumber: 0,
+    title: 'The Great Convergence: How the Heroes Arrived',
+    japaneseTitle: '第0話：次元融合・英雄集結の序曲',
+    heroId: 'naruto',
+    villainId: 'madara',
+    synopsis: 'A cosmic fracture collapses four anime universes into contemporary Tokyo, 2026. Watch the cinematic origin story of how Naruto, Luffy, Ichigo, and Asta arrived, adopted modern tactical streetwear, connected their powers, and founded the Sanctuary Village.',
+    scenes: [
+      {
+        speaker: 'Narrator',
+        avatar: '📜',
+        narration: true,
+        visualFocus: 'rift',
+        text: 'Tokyo, 2026. In the dead of night, a catastrophic anomaly rips across the upper atmosphere. A joint forbidden experiment between Madara, Aizen, Lucius, and Doflamingo shatters the cosmic seal separating realities. Four legendary anime worlds collapse into modern Earth.',
+        bgVibe: '#080c1a'
+      },
+      {
+        speaker: 'Naruto Uzumaki',
+        avatar: '🍥',
+        visualFocus: 'naruto',
+        text: 'I was testing a space-time sealing scroll outside Konoha when the sky folded into a black hole! When I opened my eyes, rain was pouring down on Shibuya Crossing. My old jumpsuit was shredded by the dimensional pressure, so I geared up with this modern waterproof tactical jacket and chest rig. And get this: the city’s underground electric lines respond directly to my Chakra!',
+        bgVibe: '#1c1307'
+      },
+      {
+        speaker: 'Monkey D. Luffy',
+        avatar: '🍖',
+        visualFocus: 'luffy',
+        text: 'The Sunny got sucked into a giant whirlpool in the Grand Line, and next thing I knew, I washed up right on the docks of Yokohama! Dockworkers thought I was doing acrobatics! I traded for this sweet crimson biker leather vest and cargo pants, but I kept my straw hat safe. These giant container cranes and steel buildings are the best swing vines I’ve ever seen!',
+        bgVibe: '#1a0808'
+      },
+      {
+        speaker: 'Ichigo Kurosaki',
+        avatar: '⚔️',
+        visualFocus: 'ichigo',
+        text: 'Aizen bypassed the Senkaimon and routed the Garganta directly through Tokyo’s trans-oceanic fiber-optic internet cables. I plummeted onto a skyscraper helipad in Shinjuku. Threw on this dark tactical high-collar trench coat to blend into the city skyline. I can feel it: the city’s digital networks are humming with concentrated spiritual particles.',
+        bgVibe: '#0d0a1c'
+      },
+      {
+        speaker: 'Asta',
+        avatar: '🗡️',
+        visualFocus: 'asta',
+        text: 'Lucius tried to freeze me in a time singularity, but my Anti-Magic canceled out his spell! The gravitational rebound shot me through the clouds and I crashed into an athletic training gym on Tokyo’s perimeter! Grabbed this heavy training hoodie and slung the Demon-Slayer blade across my back. No matter what world or era I’m in, giving up is NEVER an option!',
+        bgVibe: '#061a12'
+      },
+      {
+        speaker: 'Narrator',
+        avatar: '📜',
+        narration: true,
+        visualFocus: 'all_heroes',
+        text: 'Drawn by the violent seismic tremors shaking the capital, the four strangers converged beneath the towering lattice of Tokyo Tower. At first, weapons were drawn in defensive tension... but when the sky turned crimson and the dimensional alarms screamed, their warrior instincts recognized kindred spirits.',
+        bgVibe: '#111827'
+      },
+      {
+        speaker: 'Naruto Uzumaki',
+        avatar: '🍥',
+        visualFocus: 'all_heroes',
+        text: 'Shinobi, Pirate, Soul Reaper, Magic Knight... our worlds might be across the rift, but the people living here have families, dreams, and futures to protect! Let’s combine our powers right here, raise the Sanctuary Village, and crush these bosses together!',
+        bgVibe: '#1e140a'
+      },
+      {
+        speaker: 'Monkey D. Luffy',
+        avatar: '🍖',
+        visualFocus: 'all_heroes',
+        text: 'SHISHISHI! That’s what I’m talking about! Madara, Doflamingo, Aizen, Lucius — whoever tries to hurt this sanctuary is gonna get their butt kicked all the way into next week! ALLIANCE FORMED!!',
+        bgVibe: '#240b0b'
+      }
+    ],
+    powerup: {
+      heroId: 'all',
+      formName: 'Sanctuary Quad-Convergence: Tetra-Resonance',
+      japaneseName: '四界共鳴・神域の盟約',
+      buildupStory: 'Standing beneath Tokyo Tower, Naruto, Luffy, Ichigo, and Asta combine Chakra, Haki, Reishi, and Anti-Magic into an impenetrable spherical defense dome, establishing the Sanctuary Village to shield humanity from the four dimensional overlords.',
+      awakeningTrigger: 'Unison of four different dimensions bound by one oath to protect innocent lives.',
+      statBoostMultiplier: 2.5,
+      unlockedAttack: 'Tetra-Dimensional Grand Cross: Sanctuary Break',
+      unlockedAttackDesc: 'A colossal combined attack of Rasengan, Red Hawk, Getsuga Tensho, and Anti-Magic Slash that seals dimensional rifts.',
+      auraColor: '#38bdf8',
+      quote: "No matter what universe we came from, this world and its people are under our protection!!"
+    }
+  },
   {
     id: 'ep_1',
     episodeNumber: 1,

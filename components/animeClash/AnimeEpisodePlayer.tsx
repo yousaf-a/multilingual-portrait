@@ -17,19 +17,23 @@ import {
   Flame,
   ArrowLeft,
   Tv,
-  BookOpen
+  BookOpen,
+  Shield,
+  Zap
 } from 'lucide-react';
 
 interface AnimeEpisodePlayerProps {
   onStartBossFight: (episode: AnimeEpisode) => void;
   onClose: () => void;
+  initialEpisodeIndex?: number;
 }
 
 export default function AnimeEpisodePlayer({
   onStartBossFight,
-  onClose
+  onClose,
+  initialEpisodeIndex = 0
 }: AnimeEpisodePlayerProps) {
-  const [selectedEpIndex, setSelectedEpIndex] = useState(0);
+  const [selectedEpIndex, setSelectedEpIndex] = useState(initialEpisodeIndex);
   const [currentSceneIdx, setCurrentSceneIdx] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
   const [viewMode, setViewMode] = useState<'video' | 'reader'>('video');
@@ -37,6 +41,8 @@ export default function AnimeEpisodePlayer({
   const [countdown, setCountdown] = useState<number | null>(null);
 
   const episode = ANIME_EPISODES[selectedEpIndex] || ANIME_EPISODES[0];
+  const isPrologue = episode.episodeNumber === 0;
+
   const hero = HEROES_CATALOG[episode.heroId] || HEROES_CATALOG.naruto;
   const villain = ANIME_VILLAINS[episode.villainId] || ANIME_VILLAINS.madara;
   const powerup = episode.powerup;
@@ -58,7 +64,6 @@ export default function AnimeEpisodePlayer({
         audioCtxRef.current.resume();
       }
 
-      // Stop previous
       stopBgmAudio();
 
       const ctx = audioCtxRef.current;
@@ -66,8 +71,8 @@ export default function AnimeEpisodePlayer({
       master.gain.setValueAtTime(0.12, ctx.currentTime);
       master.connect(ctx.destination);
 
-      // Deep dramatic anime pad drone (Root + Fifth)
-      const baseFreq = episode.heroId === 'naruto' ? 110 : episode.heroId === 'luffy' ? 130 : episode.heroId === 'ichigo' ? 98 : 123;
+      // Deep dramatic anime pad drone
+      const baseFreq = isPrologue ? 104 : episode.heroId === 'naruto' ? 110 : episode.heroId === 'luffy' ? 130 : episode.heroId === 'ichigo' ? 98 : 123;
       const freqs = [baseFreq, baseFreq * 1.5, baseFreq * 2];
 
       freqs.forEach((f, i) => {
@@ -76,7 +81,6 @@ export default function AnimeEpisodePlayer({
         osc.type = i === 0 ? 'sawtooth' : 'triangle';
         osc.frequency.setValueAtTime(f, ctx.currentTime);
 
-        // Lowpass filter for warm cinematic feel
         const filter = ctx.createBiquadFilter();
         filter.type = 'lowpass';
         filter.frequency.setValueAtTime(450 + i * 150, ctx.currentTime);
@@ -90,7 +94,7 @@ export default function AnimeEpisodePlayer({
         bgmOscNodesRef.current.push({ osc, gain });
       });
     } catch {
-      // Audio autoplay gracefully handled if restricted
+      // Handled
     }
   };
 
@@ -128,7 +132,6 @@ export default function AnimeEpisodePlayer({
     }
   };
 
-  // Toggle Audio
   const toggleAudio = () => {
     if (isAudioMuted) {
       setIsAudioMuted(false);
@@ -153,32 +156,34 @@ export default function AnimeEpisodePlayer({
     if (!isPlaying || viewMode !== 'video') return;
 
     if (isFinalScene) {
-      // Climax reached: Start 5-second countdown to Boss Fight
-      setCountdown(5);
-      const countdownInterval = setInterval(() => {
-        setCountdown((prev) => {
-          if (prev === null || prev <= 1) {
-            clearInterval(countdownInterval);
-            onStartBossFight(episode);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
+      // If prologue finished, prompt battle or replay; if combat episode, start countdown
+      if (!isPrologue) {
+        setCountdown(5);
+        const countdownInterval = setInterval(() => {
+          setCountdown((prev) => {
+            if (prev === null || prev <= 1) {
+              clearInterval(countdownInterval);
+              onStartBossFight(episode);
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
 
-      return () => clearInterval(countdownInterval);
+        return () => clearInterval(countdownInterval);
+      }
+      return;
     }
 
-    // Advance scene every 5 seconds
+    // Auto advance scenes every 5.5s
     const timer = setTimeout(() => {
       setCurrentSceneIdx((prev) => prev + 1);
       playImpactSound();
-    }, 5200);
+    }, 5500);
 
     return () => clearTimeout(timer);
-  }, [isPlaying, currentSceneIdx, viewMode, isFinalScene, episode, onStartBossFight]);
+  }, [isPlaying, currentSceneIdx, viewMode, isFinalScene, episode, isPrologue, onStartBossFight]);
 
-  // Handle Switch Episode
   const handleSelectEpisode = (idx: number) => {
     setSelectedEpIndex(idx);
     setCurrentSceneIdx(0);
@@ -212,6 +217,16 @@ export default function AnimeEpisodePlayer({
     if (!isAudioMuted) {
       startBgmAudio();
     }
+  };
+
+  // Helper to determine active speaker artwork
+  const getSpeakerImage = () => {
+    if (currentScene.visualFocus === 'naruto') return HEROES_CATALOG.naruto.image;
+    if (currentScene.visualFocus === 'luffy') return HEROES_CATALOG.luffy.image;
+    if (currentScene.visualFocus === 'ichigo') return HEROES_CATALOG.ichigo.image;
+    if (currentScene.visualFocus === 'asta') return HEROES_CATALOG.asta.image;
+    if (currentScene.isVillain) return villain.image;
+    return hero.image;
   };
 
   return (
@@ -257,10 +272,11 @@ export default function AnimeEpisodePlayer({
           </div>
         </div>
 
-        {/* 4 Episode Selector Tabs */}
-        <div className="flex items-center gap-1.5 overflow-x-auto">
+        {/* Episode Selector Tabs */}
+        <div className="flex items-center gap-1.5 overflow-x-auto py-1">
           {ANIME_EPISODES.map((ep, idx) => {
             const isSelected = selectedEpIndex === idx;
+            const isEp0 = ep.episodeNumber === 0;
             return (
               <button
                 key={ep.id}
@@ -268,14 +284,25 @@ export default function AnimeEpisodePlayer({
                 onClick={() => handleSelectEpisode(idx)}
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 ${
                   isSelected
-                    ? 'bg-gradient-to-r from-red-600 to-amber-500 text-white shadow-lg ring-2 ring-red-500/40'
+                    ? isEp0
+                      ? 'bg-gradient-to-r from-purple-600 via-pink-600 to-amber-500 text-white shadow-lg ring-2 ring-pink-500/50'
+                      : 'bg-gradient-to-r from-red-600 to-amber-500 text-white shadow-lg ring-2 ring-red-500/40'
                     : 'bg-[#0e172f] text-slate-400 hover:text-white border border-[#1e2a4a]'
                 }`}
               >
-                <span>EP {ep.episodeNumber}:</span>
-                <span className="capitalize">{ep.heroId}</span>
-                <span className="text-slate-500">vs</span>
-                <span className="capitalize">{ep.villainId}</span>
+                {isEp0 ? (
+                  <>
+                    <span className="text-amber-300 font-black">🎬 ORIGIN MOVIE</span>
+                    <span className="text-[10px] text-pink-200">(Prologue)</span>
+                  </>
+                ) : (
+                  <>
+                    <span>EP {ep.episodeNumber}:</span>
+                    <span className="capitalize">{ep.heroId}</span>
+                    <span className="text-slate-500">vs</span>
+                    <span className="capitalize">{ep.villainId}</span>
+                  </>
+                )}
               </button>
             );
           })}
@@ -286,13 +313,13 @@ export default function AnimeEpisodePlayer({
       {viewMode === 'video' ? (
         <div className="flex flex-col gap-3">
           {/* CinemaScope 16:9 Anime Screen */}
-          <div className="relative w-full aspect-video max-h-[520px] rounded-3xl overflow-hidden border-2 border-[#1e3a6a] shadow-[0_0_40px_rgba(30,58,106,0.5)] bg-black flex flex-col justify-between">
+          <div className="relative w-full aspect-video max-h-[530px] rounded-3xl overflow-hidden border-2 border-[#1e3a6a] shadow-[0_0_45px_rgba(30,58,106,0.6)] bg-black flex flex-col justify-between">
             {/* Top Letterbox Cinema Bar */}
-            <div className="z-20 w-full h-10 bg-gradient-to-b from-black via-black/80 to-transparent flex items-center justify-between px-5 text-white">
+            <div className="z-20 w-full h-11 bg-gradient-to-b from-black via-black/85 to-transparent flex items-center justify-between px-5 text-white">
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
                 <span className="text-[11px] font-mono tracking-widest text-slate-300 font-bold uppercase">
-                  EPISODE {episode.episodeNumber} • {episode.japaneseTitle}
+                  {isPrologue ? 'ORIGIN MOVIE' : `EPISODE ${episode.episodeNumber}`} • {episode.japaneseTitle}
                 </span>
               </div>
               <div className="flex items-center gap-2">
@@ -310,7 +337,7 @@ export default function AnimeEpisodePlayer({
 
             {/* DYNAMIC SCENE VISUAL CHOREOGRAPHY */}
             <div className="absolute inset-0 z-0 overflow-hidden flex items-center justify-center">
-              {/* Background Glow */}
+              {/* Atmospheric Background Glow */}
               <div
                 className="absolute inset-0 transition-all duration-1000"
                 style={{
@@ -328,9 +355,175 @@ export default function AnimeEpisodePlayer({
                 }}
               />
 
-              {/* Scene Character Staging */}
-              {currentScene.narration ? (
-                /* Dual Confrontation Silhouette Standoff */
+              {/* SCENE TYPE RENDERING */}
+              {currentScene.visualFocus === 'all_heroes' ? (
+                /* 4-HERO TETRA ALLIANCE QUAD SHOWCASE */
+                <div className="relative w-full h-full flex flex-col items-center justify-center px-4 animate-in zoom-in-95 duration-700">
+                  <div className="text-center mb-3">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-cyan-400 bg-cyan-950/80 px-3 py-1 rounded-full border border-cyan-700">
+                      ✦ TETRA-DIMENSIONAL SANCTUARY ALLIANCE ✦
+                    </span>
+                    <h3 className="text-sm sm:text-base font-black text-white mt-1 italic">
+                      Four Worlds Collide • Bound Under Tokyo Tower
+                    </h3>
+                  </div>
+
+                  {/* 4 Heroes Alignment Grid */}
+                  <div className="grid grid-cols-4 gap-2 sm:gap-4 max-w-2xl w-full px-2">
+                    {/* Naruto */}
+                    <div className="flex flex-col items-center group">
+                      <div className="relative">
+                        <div className="absolute -inset-1 rounded-2xl bg-amber-500/40 blur-md animate-pulse" />
+                        <img
+                          src={HEROES_CATALOG.naruto.image}
+                          alt="Naruto"
+                          className="relative w-18 h-24 sm:w-28 sm:h-36 object-cover object-top rounded-2xl border-2 border-amber-400 shadow-xl"
+                        />
+                      </div>
+                      <span className="text-[10px] sm:text-xs font-bold text-amber-300 mt-1.5">Naruto</span>
+                      <span className="text-[8px] sm:text-[9px] text-amber-400 font-mono">Chakra / Shibuya</span>
+                    </div>
+
+                    {/* Luffy */}
+                    <div className="flex flex-col items-center group">
+                      <div className="relative">
+                        <div className="absolute -inset-1 rounded-2xl bg-red-500/40 blur-md animate-pulse" />
+                        <img
+                          src={HEROES_CATALOG.luffy.image}
+                          alt="Luffy"
+                          className="relative w-18 h-24 sm:w-28 sm:h-36 object-cover object-top rounded-2xl border-2 border-red-500 shadow-xl"
+                        />
+                      </div>
+                      <span className="text-[10px] sm:text-xs font-bold text-red-300 mt-1.5">Luffy</span>
+                      <span className="text-[8px] sm:text-[9px] text-red-400 font-mono">Haki / Yokohama</span>
+                    </div>
+
+                    {/* Ichigo */}
+                    <div className="flex flex-col items-center group">
+                      <div className="relative">
+                        <div className="absolute -inset-1 rounded-2xl bg-indigo-500/40 blur-md animate-pulse" />
+                        <img
+                          src={HEROES_CATALOG.ichigo.image}
+                          alt="Ichigo"
+                          className="relative w-18 h-24 sm:w-28 sm:h-36 object-cover object-top rounded-2xl border-2 border-indigo-400 shadow-xl"
+                        />
+                      </div>
+                      <span className="text-[10px] sm:text-xs font-bold text-indigo-300 mt-1.5">Ichigo</span>
+                      <span className="text-[8px] sm:text-[9px] text-indigo-400 font-mono">Reishi / Shinjuku</span>
+                    </div>
+
+                    {/* Asta */}
+                    <div className="flex flex-col items-center group">
+                      <div className="relative">
+                        <div className="absolute -inset-1 rounded-2xl bg-emerald-500/40 blur-md animate-pulse" />
+                        <img
+                          src={HEROES_CATALOG.asta.image}
+                          alt="Asta"
+                          className="relative w-18 h-24 sm:w-28 sm:h-36 object-cover object-top rounded-2xl border-2 border-emerald-400 shadow-xl"
+                        />
+                      </div>
+                      <span className="text-[10px] sm:text-xs font-bold text-emerald-300 mt-1.5">Asta</span>
+                      <span className="text-[8px] sm:text-[9px] text-emerald-400 font-mono">Anti-Magic / Outer</span>
+                    </div>
+                  </div>
+                </div>
+              ) : currentScene.visualFocus === 'naruto' ? (
+                /* NARUTO IN SHIBUYA CROSSING */
+                <div className="relative flex flex-col items-center justify-center animate-in zoom-in-95 duration-700">
+                  <div className="relative">
+                    <div className="absolute -inset-8 rounded-full bg-amber-500/40 blur-2xl animate-pulse" />
+                    <img
+                      src={HEROES_CATALOG.naruto.image}
+                      alt="Naruto Uzumaki"
+                      className="relative w-64 h-80 sm:w-80 sm:h-96 object-cover object-top rounded-3xl border-4 border-amber-400 shadow-[0_0_35px_rgba(251,191,36,0.5)]"
+                    />
+                  </div>
+                  <div className="mt-3 px-4 py-1 rounded-full bg-black/80 border border-amber-400/50 text-amber-300 text-xs font-extrabold tracking-wider flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+                    <span>NARUTO UZUMAKI • SHIBUYA CROSSING (CHAKRA CONDUIT)</span>
+                  </div>
+                </div>
+              ) : currentScene.visualFocus === 'luffy' ? (
+                /* LUFFY AT YOKOHAMA CONTAINER DOCKS */
+                <div className="relative flex flex-col items-center justify-center animate-in zoom-in-95 duration-700">
+                  <div className="relative">
+                    <div className="absolute -inset-8 rounded-full bg-red-600/40 blur-2xl animate-pulse" />
+                    <img
+                      src={HEROES_CATALOG.luffy.image}
+                      alt="Monkey D. Luffy"
+                      className="relative w-64 h-80 sm:w-80 sm:h-96 object-cover object-top rounded-3xl border-4 border-red-500 shadow-[0_0_35px_rgba(239,68,68,0.5)]"
+                    />
+                  </div>
+                  <div className="mt-3 px-4 py-1 rounded-full bg-black/80 border border-red-500/50 text-red-300 text-xs font-extrabold tracking-wider flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
+                    <span>MONKEY D. LUFFY • YOKOHAMA DOCKS (CONQUEROR'S HAKI)</span>
+                  </div>
+                </div>
+              ) : currentScene.visualFocus === 'ichigo' ? (
+                /* ICHIGO IN SHINJUKU FIBER-GRID */
+                <div className="relative flex flex-col items-center justify-center animate-in zoom-in-95 duration-700">
+                  <div className="relative">
+                    <div className="absolute -inset-8 rounded-full bg-indigo-600/40 blur-2xl animate-pulse" />
+                    <img
+                      src={HEROES_CATALOG.ichigo.image}
+                      alt="Ichigo Kurosaki"
+                      className="relative w-64 h-80 sm:w-80 sm:h-96 object-cover object-top rounded-3xl border-4 border-indigo-500 shadow-[0_0_35px_rgba(99,102,241,0.5)]"
+                    />
+                  </div>
+                  <div className="mt-3 px-4 py-1 rounded-full bg-black/80 border border-indigo-500/50 text-indigo-300 text-xs font-extrabold tracking-wider flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-indigo-400 animate-ping" />
+                    <span>ICHIGO KUROSAKI • SHINJUKU FIBER-GRID (REISHI DENSITY)</span>
+                  </div>
+                </div>
+              ) : currentScene.visualFocus === 'asta' ? (
+                /* ASTA IN TOKYO METROPOLITAN PERIMETER */
+                <div className="relative flex flex-col items-center justify-center animate-in zoom-in-95 duration-700">
+                  <div className="relative">
+                    <div className="absolute -inset-8 rounded-full bg-emerald-600/40 blur-2xl animate-pulse" />
+                    <img
+                      src={HEROES_CATALOG.asta.image}
+                      alt="Asta"
+                      className="relative w-64 h-80 sm:w-80 sm:h-96 object-cover object-top rounded-3xl border-4 border-emerald-500 shadow-[0_0_35px_rgba(16,185,129,0.5)]"
+                    />
+                  </div>
+                  <div className="mt-3 px-4 py-1 rounded-full bg-black/80 border border-emerald-500/50 text-emerald-300 text-xs font-extrabold tracking-wider flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                    <span>ASTA • TOKYO OUTSKIRTS (ANTI-MAGIC SINGULARITY)</span>
+                  </div>
+                </div>
+              ) : currentScene.visualFocus === 'rift' ? (
+                /* COSMIC DIMENSIONAL RIFT OVER METROPOLIS */
+                <div className="relative w-full h-full flex items-center justify-around px-8 animate-in fade-in duration-700">
+                  <div className="flex flex-col items-center transform -translate-x-4 scale-95 opacity-80">
+                    <img
+                      src={ANIME_VILLAINS.madara.image}
+                      alt="Madara"
+                      className="w-40 h-56 sm:w-52 sm:h-72 object-cover object-top rounded-3xl border-2 border-red-500/60 shadow-2xl"
+                    />
+                    <span className="text-xs font-bold text-red-400 mt-2">Madara &amp; Syndicate</span>
+                  </div>
+
+                  {/* Rift Void Storm */}
+                  <div className="flex flex-col items-center">
+                    <div className="w-20 h-20 rounded-full bg-purple-600/30 flex items-center justify-center border-2 border-purple-500 animate-pulse">
+                      <Zap size={32} className="text-yellow-300 animate-bounce" />
+                    </div>
+                    <span className="text-xs font-black text-purple-300 mt-2 tracking-widest text-center">
+                      COSMIC RIFT 2026<br />SPACE-TIME FRACTURE
+                    </span>
+                  </div>
+
+                  <div className="flex flex-col items-center transform translate-x-4 scale-95 opacity-80">
+                    <img
+                      src={ANIME_VILLAINS.aizen.image}
+                      alt="Aizen"
+                      className="w-40 h-56 sm:w-52 sm:h-72 object-cover object-top rounded-3xl border-2 border-indigo-500/60 shadow-2xl"
+                    />
+                    <span className="text-xs font-bold text-indigo-400 mt-2">Aizen &amp; Cyber-Hogyoku</span>
+                  </div>
+                </div>
+              ) : currentScene.narration ? (
+                /* Dual Standoff */
                 <div className="relative w-full h-full flex items-center justify-around px-8 animate-in fade-in duration-700">
                   <div className="flex flex-col items-center transform -translate-x-4 scale-95 opacity-80">
                     <img
@@ -341,7 +534,6 @@ export default function AnimeEpisodePlayer({
                     <span className="text-xs font-bold text-cyan-300 mt-2">{hero.name}</span>
                   </div>
 
-                  {/* Lightning Rift Clash in Center */}
                   <div className="flex flex-col items-center">
                     <div className="w-16 h-16 rounded-full bg-red-600/30 flex items-center justify-center border-2 border-red-500 animate-pulse">
                       <Sword size={28} className="text-amber-300 animate-bounce" />
@@ -361,10 +553,9 @@ export default function AnimeEpisodePlayer({
                   </div>
                 </div>
               ) : currentScene.isVillain ? (
-                /* Villain Solo Cinematic Camera Zoom */
-                <div className="relative flex flex-col items-center justify-center animate-in zoom-in-95 fade-in duration-700">
+                /* Villain Solo */
+                <div className="relative flex flex-col items-center justify-center animate-in zoom-in-95 duration-700">
                   <div className="relative">
-                    {/* Dark Ominous Aura */}
                     <div
                       className="absolute -inset-6 rounded-full blur-2xl opacity-75 animate-pulse"
                       style={{ backgroundColor: villain.color }}
@@ -381,10 +572,9 @@ export default function AnimeEpisodePlayer({
                   </div>
                 </div>
               ) : (
-                /* Hero Solo Cinematic Camera Zoom */
-                <div className="relative flex flex-col items-center justify-center animate-in zoom-in-95 fade-in duration-700">
+                /* Hero Solo */
+                <div className="relative flex flex-col items-center justify-center animate-in zoom-in-95 duration-700">
                   <div className="relative">
-                    {/* Radiant Powerup Aura */}
                     <div
                       className="absolute -inset-6 rounded-full blur-2xl opacity-80 animate-pulse"
                       style={{ backgroundColor: powerup.auraColor }}
@@ -483,32 +673,43 @@ export default function AnimeEpisodePlayer({
                   ))}
                 </div>
 
-                {/* Boss Battle Direct Launch Button */}
-                <button
-                  type="button"
-                  onClick={() => onStartBossFight(episode)}
-                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-red-600 via-rose-500 to-amber-500 hover:brightness-110 text-white font-black text-xs flex items-center gap-1.5 shadow-[0_0_18px_rgba(239,68,68,0.7)] transition cursor-pointer animate-pulse"
-                >
-                  <Sword size={14} />
-                  <span>{countdown !== null ? `FIGHT IN ${countdown}s` : 'START BOSS FIGHT'}</span>
-                </button>
+                {/* Action button: Fight Boss or Next Episode */}
+                {isPrologue ? (
+                  <button
+                    type="button"
+                    onClick={() => handleSelectEpisode(1)}
+                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-amber-500 hover:brightness-110 text-white font-black text-xs flex items-center gap-1.5 shadow-[0_0_18px_rgba(236,72,153,0.7)] transition cursor-pointer"
+                  >
+                    <Sword size={14} />
+                    <span>START EPISODE 1: NARUTO</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => onStartBossFight(episode)}
+                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-red-600 via-rose-500 to-amber-500 hover:brightness-110 text-white font-black text-xs flex items-center gap-1.5 shadow-[0_0_18px_rgba(239,68,68,0.7)] transition cursor-pointer animate-pulse"
+                  >
+                    <Sword size={14} />
+                    <span>{countdown !== null ? `FIGHT IN ${countdown}s` : 'START BOSS FIGHT'}</span>
+                  </button>
+                )}
               </div>
             </div>
           </div>
 
-          {/* Episode Info & Powerup Highlights Strip */}
+          {/* Episode Info Strip */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {/* Hero Awakening Preview */}
+            {/* Left Card */}
             <div className="p-4 rounded-3xl bg-[#0b1226]/90 border border-amber-500/30 flex items-center gap-3">
               <img
-                src={hero.image}
-                alt={hero.name}
+                src={getSpeakerImage()}
+                alt="Active Character"
                 className="w-16 h-20 rounded-2xl object-cover object-top border-2 border-amber-400 shadow-lg shrink-0"
               />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5 text-amber-400 text-xs font-bold">
                   <Flame size={13} />
-                  <span>AWAKENING: {powerup.formName}</span>
+                  <span>{isPrologue ? 'TETRA ALLIANCE FORMATION' : `AWAKENING: ${powerup.formName}`}</span>
                 </div>
                 <div className="text-[11px] text-slate-300 mt-1 line-clamp-2">
                   {powerup.buildupStory}
@@ -519,24 +720,24 @@ export default function AnimeEpisodePlayer({
               </div>
             </div>
 
-            {/* Target Boss Preview */}
-            <div className="p-4 rounded-3xl bg-[#0b1226]/90 border border-red-500/30 flex items-center gap-3">
+            {/* Right Card */}
+            <div className="p-4 rounded-3xl bg-[#0b1226]/90 border border-purple-500/30 flex items-center gap-3">
               <img
-                src={villain.image}
-                alt={villain.name}
-                className="w-16 h-20 rounded-2xl object-cover object-top border-2 border-red-500 shadow-lg shrink-0"
+                src={isPrologue ? ANIME_VILLAINS.madara.image : villain.image}
+                alt="Target Boss"
+                className="w-16 h-20 rounded-2xl object-cover object-top border-2 border-purple-500 shadow-lg shrink-0"
               />
               <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between text-red-400 text-xs font-bold">
-                  <span>TARGET BOSS: {villain.name}</span>
-                  <span className="text-[10px] text-red-300 bg-red-950/80 px-2 py-0.5 rounded-full border border-red-800">
+                <div className="flex items-center justify-between text-purple-400 text-xs font-bold">
+                  <span>{isPrologue ? 'TARGET THREAT: 4 DIMENSIONAL BOSSES' : `TARGET BOSS: ${villain.name}`}</span>
+                  <span className="text-[10px] text-purple-300 bg-purple-950/80 px-2 py-0.5 rounded-full border border-purple-800">
                     {villain.hp} HP
                   </span>
                 </div>
                 <div className="text-[11px] text-slate-300 mt-1 line-clamp-2">
                   {villain.modernRole}
                 </div>
-                <div className="text-[10px] text-red-300 font-mono mt-1">
+                <div className="text-[10px] text-purple-300 font-mono mt-1">
                   Signature: {villain.signatureMove}
                 </div>
               </div>
@@ -551,7 +752,7 @@ export default function AnimeEpisodePlayer({
             {/* Episode Header */}
             <div className="p-4 rounded-3xl bg-[#0b1226]/90 border border-[#1e2a4a] shadow-xl">
               <span className="text-[11px] font-mono text-cyan-400 font-bold uppercase tracking-wider block">
-                CANONICAL ANIME ARC • EPISODE {episode.episodeNumber}
+                {isPrologue ? 'ORIGIN PROLOGUE FILM' : `CANONICAL ANIME ARC • EPISODE ${episode.episodeNumber}`}
               </span>
               <h2 className="text-lg font-black text-white mt-0.5">{episode.title}</h2>
               <div className="text-xs text-amber-400 font-mono italic">{episode.japaneseTitle}</div>
@@ -560,10 +761,9 @@ export default function AnimeEpisodePlayer({
 
             {/* Interactive Dialogue Stage */}
             <div className="p-5 rounded-3xl bg-gradient-to-b from-[#0e1730] to-[#080d1e] border-2 border-[#1e3a6a] shadow-2xl flex flex-col justify-between min-h-[240px]">
-              {/* Speaker Header with Real Character Artwork */}
               <div className="flex items-center gap-3">
                 <img
-                  src={currentScene.isVillain ? villain.image : hero.image}
+                  src={getSpeakerImage()}
                   alt={currentScene.speaker}
                   className={`w-14 h-14 rounded-2xl object-cover object-top border-2 shadow-lg ${
                     currentScene.isVillain ? 'border-red-500' : 'border-amber-400'
@@ -584,12 +784,10 @@ export default function AnimeEpisodePlayer({
                 </div>
               </div>
 
-              {/* Line Text */}
               <p className="text-xs sm:text-sm text-slate-100 italic my-4 leading-relaxed font-serif pl-1">
                 &ldquo;{currentScene.text}&rdquo;
               </p>
 
-              {/* Stage Progress & Next */}
               <div className="flex items-center justify-between pt-3 border-t border-[#182442]">
                 <span className="text-[11px] text-slate-500 font-mono">
                   Dialogue {currentSceneIdx + 1} of {episode.scenes.length}
@@ -601,7 +799,11 @@ export default function AnimeEpisodePlayer({
                   className="py-2 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 hover:brightness-110 text-white font-bold text-xs flex items-center gap-1.5 shadow-md cursor-pointer"
                 >
                   <span>
-                    {currentSceneIdx < episode.scenes.length - 1 ? 'Continue Story' : 'Engage Boss Fight!'}
+                    {currentSceneIdx < episode.scenes.length - 1
+                      ? 'Continue Story'
+                      : isPrologue
+                      ? 'Proceed to Episode 1'
+                      : 'Engage Boss Fight!'}
                   </span>
                   <ChevronRight size={14} />
                 </button>
@@ -609,14 +811,14 @@ export default function AnimeEpisodePlayer({
             </div>
           </div>
 
-          {/* Right Column: Hero Powerup & Villain Boss Profile (5 Cols) */}
+          {/* Right Column */}
           <div className="lg:col-span-5 flex flex-col gap-3">
-            {/* Legendary Powerup Awakening Card */}
+            {/* Powerup Card */}
             <div className="p-4 rounded-3xl bg-gradient-to-br from-[#1c130d] via-[#121c2e] to-[#080d1e] border border-amber-500/40 shadow-xl">
               <div className="flex items-center gap-2 mb-2">
                 <Flame size={16} className="text-amber-400" />
                 <span className="text-xs font-black text-amber-300 uppercase tracking-wider">
-                  HERO POWERUP AWAKENING
+                  {isPrologue ? 'SANCTUARY VILLAGE FORMATION' : 'HERO POWERUP AWAKENING'}
                 </span>
               </div>
 
@@ -636,7 +838,7 @@ export default function AnimeEpisodePlayer({
 
               <div className="p-2.5 rounded-xl bg-black/40 border border-amber-500/20 text-[10px] text-amber-200 space-y-1">
                 <div>
-                  <strong>Awakening Trigger:</strong> {powerup.awakeningTrigger}
+                  <strong>Origin Trigger:</strong> {powerup.awakeningTrigger}
                 </div>
                 <div>
                   <strong>Ultimate Move:</strong> {powerup.unlockedAttack}
@@ -644,11 +846,11 @@ export default function AnimeEpisodePlayer({
               </div>
             </div>
 
-            {/* Villain Boss Threat Card */}
+            {/* Threat Card */}
             <div className="p-4 rounded-3xl bg-[#0b1226]/90 border border-red-500/30 shadow-xl">
               <div className="flex items-center justify-between mb-1.5">
                 <span className="text-[10px] font-bold text-red-400 tracking-wider uppercase">
-                  TARGET BOSS INVASION
+                  {isPrologue ? 'SYNDICATE INVASION CRISIS' : 'TARGET BOSS INVASION'}
                 </span>
                 <span className="text-xs text-red-300 font-bold">{villain.hp} HP</span>
               </div>
@@ -667,14 +869,13 @@ export default function AnimeEpisodePlayer({
 
               <p className="text-[11px] text-slate-300 leading-snug">{villain.modernRole}</p>
 
-              {/* Launch Boss Fight Button */}
               <button
                 type="button"
-                onClick={() => onStartBossFight(episode)}
+                onClick={() => (isPrologue ? handleSelectEpisode(1) : onStartBossFight(episode))}
                 className="mt-3 w-full py-3 rounded-2xl bg-gradient-to-r from-red-600 via-rose-500 to-amber-500 hover:brightness-110 text-white font-black text-xs flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(239,68,68,0.5)] transition cursor-pointer"
               >
                 <Sword size={15} />
-                <span>START ANIME BOSS FIGHT NOW!</span>
+                <span>{isPrologue ? 'START EPISODE 1 BATTLE' : 'START ANIME BOSS FIGHT NOW!'}</span>
               </button>
             </div>
           </div>

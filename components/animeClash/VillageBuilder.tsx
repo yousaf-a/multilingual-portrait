@@ -31,7 +31,9 @@ import {
   ArrowUpCircle,
   BookOpen,
   Info,
-  Maximize2
+  Maximize2,
+  Tv,
+  Play
 } from 'lucide-react';
 
 interface VillageBuilderProps {
@@ -286,6 +288,35 @@ export default function VillageBuilder({
             <span>⚔️ Attack / Raid!</span>
           </button>
         </div>
+      </div>
+
+      {/* Origin Anime Movie Banner */}
+      <div className="p-3.5 rounded-3xl bg-gradient-to-r from-purple-950/80 via-[#0b1329] to-pink-950/80 border border-purple-500/40 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white shadow-lg shrink-0">
+            <Tv size={20} />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-black uppercase tracking-widest text-pink-400 bg-pink-950/80 px-2.5 py-0.5 rounded-full border border-pink-700">
+                PROLOGUE ANIME FILM
+              </span>
+              <span className="text-xs font-bold text-white">How the Heroes Arrived in Tokyo 2026</span>
+            </div>
+            <p className="text-[11px] text-slate-300 mt-0.5">
+              Watch Naruto, Luffy, Ichigo &amp; Asta arrive through the space-time rift and form the Sanctuary Alliance!
+            </p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={onOpenStory}
+          className="whitespace-nowrap px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:brightness-110 text-white font-extrabold text-xs flex items-center gap-1.5 shadow-lg shadow-purple-600/30 transition cursor-pointer"
+        >
+          <Play size={13} fill="currentColor" />
+          <span>Play Origin Video</span>
+        </button>
       </div>
 
       {/* 2. MODE NAVIGATION TABS */}

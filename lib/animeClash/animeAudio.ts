@@ -173,9 +173,12 @@ class AnimeAudioManager {
       } else if (heroId === 'inosuke') {
         utterance.pitch = 1.32;
         utterance.rate = 1.25;
-      } else if (heroId === 'tsunade') {
-        utterance.pitch = 1.1;
-        utterance.rate = 0.98;
+      } else if (heroId === 'levi') {
+        utterance.pitch = 0.85;
+        utterance.rate = 1.05;
+      } else if (heroId === 'mereoleona') {
+        utterance.pitch = 1.25;
+        utterance.rate = 1.25;
       } else if (heroId === 'yoruichi') {
         utterance.pitch = 1.16;
         utterance.rate = 1.12;

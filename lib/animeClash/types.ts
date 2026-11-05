@@ -10,6 +10,23 @@ export type AnimeFranchise =
   | 'jujutsu_kaisen'
   | 'attack_on_titan';
 
+export type HeroTierRank = 'normal' | 'epic' | 'goat';
+
+export interface HeroFormVariant {
+  id: HeroTierRank;
+  name: string;
+  badge: string; // e.g. "🥉 Normal Form", "🥈 Epic Awakening", "👑 GOAT Mode"
+  title: string;
+  attackMultiplier: number;
+  hpMultiplier: number;
+  auraColor: string;
+  auraVfx: 'fire' | 'lightning' | 'shadow' | 'frost' | 'divine' | 'wind' | 'chakra';
+  customSkill: string;
+  customUltimate: string;
+  catchphrase: string;
+  catchphraseJp: string;
+}
+
 export interface HeroData {
   id: string;
   name: string;
@@ -33,6 +50,8 @@ export interface HeroData {
   ultimateCooldown: number; // seconds
   color: string;
   accentColor: string;
+  tierRank?: HeroTierRank;
+  forms?: HeroFormVariant[];
 }
 
 export interface TroopData {

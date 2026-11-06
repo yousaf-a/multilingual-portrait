@@ -45,6 +45,9 @@ import AnimeRaidArena from './AnimeRaidArena';
 import BaseDefenseSimulator from './BaseDefenseSimulator';
 import SanctuaryOrbitalHub from './SanctuaryOrbitalHub';
 import Hero360Showcase from './Hero360Showcase';
+import NarutoStoryQuestModal from './NarutoStoryQuestModal';
+import PainBossBattleModal from './PainBossBattleModal';
+import { CHAPTER_1_NARUTO_QUESTS, ChapterQuest } from '@/lib/animeClash/narutoChapterQuests';
 import { animeAudio } from '@/lib/animeClash/animeAudio';
 import {
   Shield,
@@ -132,6 +135,8 @@ export default function VillageBuilder({
   const [show360Showcase, setShow360Showcase] = useState(false);
   const [showcaseHeroId, setShowcaseHeroId] = useState('naruto');
   const [voiceShoutBanner, setVoiceShoutBanner] = useState<{ kanji: string; romaji: string; trans: string } | null>(null);
+  const [showNarutoStoryModal, setShowNarutoStoryModal] = useState(false);
+  const [showPainBossModal, setShowPainBossModal] = useState(false);
   const [raidResult, setRaidResult] = useState<{
     stars: number;
     destruction: number;
@@ -548,6 +553,62 @@ export default function VillageBuilder({
     });
   };
 
+  // Chapter 1 Naruto Campaign Quest Handlers
+  const completedStoryQuests = villageState.completedStoryQuests || [];
+  const activeNarutoQuest =
+    CHAPTER_1_NARUTO_QUESTS.find((q) => !completedStoryQuests.includes(q.id)) ||
+    CHAPTER_1_NARUTO_QUESTS[CHAPTER_1_NARUTO_QUESTS.length - 1];
+
+  const handleCompleteNarutoQuest = (quest: ChapterQuest) => {
+    if (completedStoryQuests.includes(quest.id)) return;
+
+    const nextCompleted = [...completedStoryQuests, quest.id];
+    let nextUnlockedHeroes = [...villageState.unlockedHeroes];
+    if (quest.rewards.unlockHeroId && !nextUnlockedHeroes.includes(quest.rewards.unlockHeroId)) {
+      nextUnlockedHeroes.push(quest.rewards.unlockHeroId);
+    }
+
+    onUpdateVillage({
+      ...villageState,
+      berries: villageState.berries + quest.rewards.berries,
+      chakra: villageState.chakra + quest.rewards.chakra,
+      reishi: villageState.reishi + quest.rewards.reishi,
+      completedStoryQuests: nextCompleted,
+      unlockedHeroes: nextUnlockedHeroes
+    });
+    animeAudio.playUpgradeSuccess();
+  };
+
+  const handlePainBossVictory = (rewards: { berries: number; chakra: number; reishi: number; unlockedHeroId?: string }) => {
+    const nextCompleted = completedStoryQuests.includes('naruto_q25')
+      ? completedStoryQuests
+      : [...completedStoryQuests, 'naruto_q25'];
+
+    const currentChapters = villageState.completedChapters || [];
+    const nextChapters = currentChapters.includes('chapter_1')
+      ? currentChapters
+      : [...currentChapters, 'chapter_1'];
+
+    let nextUnlockedHeroes = [...villageState.unlockedHeroes];
+    if (rewards.unlockedHeroId && !nextUnlockedHeroes.includes(rewards.unlockedHeroId)) {
+      nextUnlockedHeroes.push(rewards.unlockedHeroId);
+    }
+
+    onUpdateVillage({
+      ...villageState,
+      level: Math.max(villageState.level, 2), // Auto-unlocks Chapter 2 Town Hall level!
+      currentChapter: 2, // UNLOCKS CHAPTER 2 (ONE PIECE)!
+      berries: villageState.berries + rewards.berries,
+      chakra: villageState.chakra + rewards.chakra,
+      reishi: villageState.reishi + rewards.reishi,
+      completedStoryQuests: nextCompleted,
+      completedChapters: nextChapters,
+      unlockedHeroes: nextUnlockedHeroes
+    });
+    setShowPainBossModal(false);
+    animeAudio.playUpgradeSuccess();
+  };
+
   // Troops & Raid Logistics
   const totalTroopsCount = Object.values(villageState.trainedTroops || {}).reduce((a, b) => a + b, 0);
   const armyCampCap = getArmyCampCapForHQ(villageState.level);
@@ -898,20 +959,45 @@ export default function VillageBuilder({
           </div>
         </div>
 
-        {/* Center: Guided Objective Pill (Solves "What to do next") */}
-        <button
-          type="button"
-          onClick={() => setActiveBuildTab('roadmap')}
-          className="hidden md:flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/15 border border-amber-500/40 hover:bg-amber-500/25 transition cursor-pointer text-xs"
-        >
-          <span className="text-amber-400">🎯</span>
-          <span className="text-amber-200 font-medium">
-            Next Goal: <strong className="text-white">{nextHeroName ? `Upgrade HQ to Lv ${nextHQLevel} (Unlocks ${nextHeroName}!)` : `Upgrade HQ to Lv ${nextHQLevel} (Expands Army)`}</strong>
-          </span>
-          <span className="text-[10px] text-amber-400 font-bold ml-1 bg-amber-500/20 px-2 py-0.5 rounded-full">
-            View HQ &rarr;
-          </span>
-        </button>
+        {/* Center: Chapter 1 Naruto Campaign & Guided Objective Pills */}
+        <div className="hidden lg:flex items-center gap-2.5">
+          <button
+            type="button"
+            onClick={() => {
+              setShowNarutoStoryModal(true);
+              animeAudio.playButtonClick();
+            }}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-orange-600/25 via-amber-600/25 to-red-600/25 border border-orange-500/50 hover:brightness-125 transition cursor-pointer text-xs shadow-[0_0_20px_rgba(249,115,22,0.3)] animate-pulse"
+            title="Open Chapter 1: Naruto Story Campaign (25 Quests)"
+          >
+            <span className="text-base">🍥</span>
+            <div className="flex flex-col text-left">
+              <span className="text-[9px] text-orange-300 font-mono font-bold leading-none">
+                CH. 1: NARUTO ({completedStoryQuests.length}/25)
+              </span>
+              <span className="text-[11px] font-black text-white leading-tight line-clamp-1 max-w-[170px]">
+                {activeNarutoQuest.title}
+              </span>
+            </div>
+            <span className="text-[9px] text-slate-950 font-black bg-gradient-to-r from-amber-400 to-yellow-300 px-2 py-0.5 rounded-full shadow">
+              Quests &rarr;
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveBuildTab('roadmap')}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/15 border border-amber-500/40 hover:bg-amber-500/25 transition cursor-pointer text-xs"
+          >
+            <span className="text-amber-400">🎯</span>
+            <span className="text-amber-200 font-medium text-[11px]">
+              Next Goal: <strong className="text-white">{nextHeroName ? `Upgrade HQ to Lv ${nextHQLevel} (Unlocks ${nextHeroName}!)` : `Upgrade HQ to Lv ${nextHQLevel}`}</strong>
+            </span>
+            <span className="text-[9px] text-amber-400 font-bold ml-0.5 bg-amber-500/20 px-1.5 py-0.5 rounded-full">
+              HQ &rarr;
+            </span>
+          </button>
+        </div>
 
         {/* Right: Resources & Quick Harvest */}
         <div className="flex items-center gap-2 sm:gap-3">
@@ -2374,6 +2460,28 @@ export default function VillageBuilder({
           </button>
         </div>
       </div>
+
+      {/* CHAPTER 1: NARUTO 25-QUEST CAMPAIGN MODAL */}
+      {showNarutoStoryModal && (
+        <NarutoStoryQuestModal
+          villageState={villageState}
+          onClose={() => setShowNarutoStoryModal(false)}
+          onCompleteQuest={handleCompleteNarutoQuest}
+          onStartPainBoss={() => {
+            setShowNarutoStoryModal(false);
+            setShowPainBossModal(true);
+          }}
+        />
+      )}
+
+      {/* SIX PATHS OF PAIN FINAL BOSS CLIMAX MODAL */}
+      {showPainBossModal && (
+        <PainBossBattleModal
+          villageState={villageState}
+          onClose={() => setShowPainBossModal(false)}
+          onVictory={handlePainBossVictory}
+        />
+      )}
     </div>
   );
 }

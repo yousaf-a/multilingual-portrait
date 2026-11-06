@@ -259,9 +259,9 @@ export default function VillageBuilder({
       const elapsed = (Date.now() - startTime) / 1000;
 
       const width = 820;
-      const height = 440;
+      const height = 480;
       const originX = width / 2;
-      const originY = 65;
+      const originY = 120;
 
       if (canvas.width !== width || canvas.height !== height) {
         canvas.width = width;
@@ -374,7 +374,7 @@ export default function VillageBuilder({
     const clickY = (clientY - rect.top) * scaleY;
 
     const originX = canvas.width / 2;
-    const originY = 65;
+    const originY = 120;
 
     const { gridX, gridY } = fromIso(clickX, clickY, originX, originY);
 
@@ -1440,7 +1440,7 @@ export default function VillageBuilder({
               <canvas
                 ref={canvasRef}
                 width={820}
-                height={440}
+                height={480}
                 onClick={handleCanvasClick}
                 onTouchEnd={handleCanvasTouch}
                 className="w-full h-auto block cursor-crosshair select-none touch-manipulation max-h-[520px] object-cover"

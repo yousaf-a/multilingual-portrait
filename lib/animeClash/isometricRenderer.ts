@@ -115,22 +115,24 @@ export function drawHokageMonument(
   const rockHighlight = isNight ? '#94a3b8' : isTwilight ? '#fbbf24' : isRain ? '#5eead4' : '#e6ccb2';
   const pineGreen = isNight ? '#04221b' : isTwilight ? '#241320' : isRain ? '#09261f' : '#14532d';
 
+  const cliffBaseY = Math.max(125, originY + 15);
+
   // 1. Massive Mountain Cliff Range Silhouette
   ctx.beginPath();
-  ctx.moveTo(0, 130);
-  ctx.lineTo(0, 38);
-  ctx.lineTo(90, 24);
-  ctx.lineTo(190, 14);
-  ctx.lineTo(290, 8);
-  ctx.lineTo(410, 5);
-  ctx.lineTo(530, 8);
-  ctx.lineTo(650, 14);
-  ctx.lineTo(740, 26);
-  ctx.lineTo(width, 42);
-  ctx.lineTo(width, 130);
+  ctx.moveTo(0, cliffBaseY);
+  ctx.lineTo(0, 42);
+  ctx.lineTo(90, 26);
+  ctx.lineTo(190, 16);
+  ctx.lineTo(290, 10);
+  ctx.lineTo(410, 6);
+  ctx.lineTo(530, 10);
+  ctx.lineTo(650, 16);
+  ctx.lineTo(740, 28);
+  ctx.lineTo(width, 45);
+  ctx.lineTo(width, cliffBaseY);
   ctx.closePath();
 
-  const cliffGrad = ctx.createLinearGradient(0, 0, 0, 130);
+  const cliffGrad = ctx.createLinearGradient(0, 0, 0, cliffBaseY);
   cliffGrad.addColorStop(0, rockLight);
   cliffGrad.addColorStop(0.5, rockMid);
   cliffGrad.addColorStop(1, rockDark);
@@ -145,10 +147,10 @@ export function drawHokageMonument(
   // 2. Pine Forest Silhouettes perched on Top Ridge
   ctx.fillStyle = pineGreen;
   const ridgePines = [
-    { x: 35, y: 32, s: 8 }, { x: 80, y: 25, s: 10 }, { x: 140, y: 18, s: 9 },
-    { x: 210, y: 12, s: 11 }, { x: 320, y: 7, s: 10 }, { x: 410, y: 5, s: 12 },
-    { x: 480, y: 7, s: 11 }, { x: 570, y: 11, s: 12 }, { x: 670, y: 17, s: 10 },
-    { x: 740, y: 26, s: 9 }, { x: 795, y: 38, s: 8 }
+    { x: 35, y: 36, s: 8 }, { x: 80, y: 28, s: 10 }, { x: 140, y: 20, s: 9 },
+    { x: 210, y: 14, s: 11 }, { x: 320, y: 9, s: 10 }, { x: 410, y: 6, s: 12 },
+    { x: 480, y: 8, s: 11 }, { x: 570, y: 13, s: 12 }, { x: 670, y: 19, s: 10 },
+    { x: 740, y: 28, s: 9 }, { x: 795, y: 40, s: 8 }
   ];
   ridgePines.forEach((p) => {
     ctx.beginPath();
@@ -165,8 +167,7 @@ export function drawHokageMonument(
     ctx.fill();
   });
 
-  // 3. Four Hokage Carved Stone Faces (Positioned cleanly away from top-left pill)
-  // cx positions: Hashirama: 265, Tobirama: 385, Hiruzen: 505, Minato: 635
+  // 3. Four Hokage Carved Stone Faces Helper Function
   const drawFaceContour = (
     cx: number,
     cy: number,
@@ -178,13 +179,13 @@ export function drawHokageMonument(
     // Ambient Occlusion Drop Shadow under carved chin
     ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
     ctx.beginPath();
-    ctx.ellipse(cx, cy + 38, 28, 12, 0, 0, Math.PI * 2);
+    ctx.ellipse(cx, cy + 34, 26, 11, 0, 0, Math.PI * 2);
     ctx.fill();
 
     // Base Stone Head Shape (Monumental Scale)
     ctx.fillStyle = rockMid;
     ctx.beginPath();
-    ctx.ellipse(cx, cy + 10, 24, 28, 0, 0, Math.PI * 2);
+    ctx.ellipse(cx, cy + 8, 22, 26, 0, 0, Math.PI * 2);
     ctx.fill();
 
     // Stone Rim Chisel Highlight
@@ -196,10 +197,10 @@ export function drawHokageMonument(
     renderDetails();
 
     // High-Contrast Name Badge Plaque
-    const badgeW = 68;
+    const badgeW = 74;
     const badgeH = 14;
-    const badgeY = cy + 40;
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
+    const badgeY = cy + 36;
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
     ctx.beginPath();
     ctx.roundRect(cx - badgeW / 2, badgeY, badgeW, badgeH, 6);
     ctx.fill();
@@ -216,77 +217,77 @@ export function drawHokageMonument(
   };
 
   // 1st Hokage: Hashirama Senju (初代火影・千手柱間)
-  drawFaceContour(265, 38, '初代', 'Hashirama', () => {
+  drawFaceContour(245, 68, '初代', 'Hashirama', () => {
     // Flowing Stone Hair falling along both sides
     ctx.fillStyle = rockDark;
     ctx.beginPath();
-    ctx.moveTo(246, 22);
-    ctx.quadraticCurveTo(236, 44, 240, 62);
-    ctx.lineTo(248, 59);
-    ctx.quadraticCurveTo(244, 38, 252, 26);
+    ctx.moveTo(226, 52);
+    ctx.quadraticCurveTo(216, 74, 220, 92);
+    ctx.lineTo(228, 89);
+    ctx.quadraticCurveTo(224, 68, 232, 56);
     ctx.closePath();
     ctx.fill();
 
     ctx.beginPath();
-    ctx.moveTo(284, 22);
-    ctx.quadraticCurveTo(294, 44, 290, 62);
-    ctx.lineTo(282, 59);
-    ctx.quadraticCurveTo(286, 38, 278, 26);
+    ctx.moveTo(264, 52);
+    ctx.quadraticCurveTo(274, 74, 270, 92);
+    ctx.lineTo(262, 89);
+    ctx.quadraticCurveTo(266, 68, 258, 56);
     ctx.closePath();
     ctx.fill();
 
     // Carved Headband Across Forehead
     ctx.fillStyle = rockLight;
-    ctx.fillRect(252, 22, 26, 7);
+    ctx.fillRect(232, 52, 26, 7);
     ctx.strokeStyle = rockDark;
     ctx.lineWidth = 1;
-    ctx.strokeRect(252, 22, 26, 7);
+    ctx.strokeRect(232, 52, 26, 7);
 
     // Carved Leaf Swirl Crest on Headband
     ctx.strokeStyle = rockHighlight;
     ctx.lineWidth = 1.2;
     ctx.beginPath();
-    ctx.arc(265, 25.5, 2.8, 0, Math.PI * 1.7);
+    ctx.arc(245, 55.5, 2.8, 0, Math.PI * 1.7);
     ctx.stroke();
 
     // Strong Stern Eyebrows & Eyes
     ctx.strokeStyle = rockDark;
     ctx.lineWidth = 1.6;
     ctx.beginPath();
-    ctx.moveTo(255, 33);
-    ctx.lineTo(262, 35);
-    ctx.moveTo(268, 35);
-    ctx.lineTo(275, 33);
+    ctx.moveTo(235, 63);
+    ctx.lineTo(242, 65);
+    ctx.moveTo(248, 65);
+    ctx.lineTo(255, 63);
     ctx.stroke();
 
     ctx.fillStyle = rockDark;
-    ctx.fillRect(256, 36, 6, 2.5);
-    ctx.fillRect(268, 36, 6, 2.5);
+    ctx.fillRect(236, 66, 6, 2.5);
+    ctx.fillRect(248, 66, 6, 2.5);
 
     // Nose Bridge & Determined Protector Mouth
     ctx.strokeStyle = rockDark;
     ctx.lineWidth = 1.4;
     ctx.beginPath();
-    ctx.moveTo(265, 34);
-    ctx.lineTo(264, 43);
-    ctx.lineTo(268, 43);
-    ctx.moveTo(259, 48);
-    ctx.lineTo(271, 48);
+    ctx.moveTo(245, 64);
+    ctx.lineTo(244, 73);
+    ctx.lineTo(248, 73);
+    ctx.moveTo(239, 78);
+    ctx.lineTo(251, 78);
     ctx.stroke();
   });
 
   // 2nd Hokage: Tobirama Senju (二代目火影・千手扉間)
-  drawFaceContour(385, 34, '二代', 'Tobirama', () => {
+  drawFaceContour(365, 62, '二代', 'Tobirama', () => {
     // 5 Spiky Jagged Stone Hair Tufts
     ctx.fillStyle = rockLight;
     const spikes = [
-      { x: 366, y: 20 }, { x: 375, y: 12 }, { x: 385, y: 9 },
-      { x: 395, y: 12 }, { x: 404, y: 20 }
+      { x: 346, y: 48 }, { x: 355, y: 40 }, { x: 365, y: 37 },
+      { x: 375, y: 40 }, { x: 384, y: 48 }
     ];
     ctx.beginPath();
-    ctx.moveTo(364, 26);
+    ctx.moveTo(344, 54);
     spikes.forEach((sp) => ctx.lineTo(sp.x, sp.y));
-    ctx.lineTo(406, 26);
+    ctx.lineTo(386, 54);
     ctx.closePath();
     ctx.fill();
     ctx.strokeStyle = rockDark;
@@ -296,23 +297,23 @@ export function drawHokageMonument(
     // Happuri Forehead Armor with Flared Cheek Guards
     ctx.fillStyle = rockHighlight;
     ctx.beginPath();
-    ctx.rect(372, 22, 26, 7);
+    ctx.rect(352, 50, 26, 7);
     ctx.fill();
     ctx.stroke();
 
     // Triangular Downward Cheek Armor Plates
     ctx.beginPath();
-    ctx.moveTo(372, 26);
-    ctx.lineTo(368, 46);
-    ctx.lineTo(373, 42);
+    ctx.moveTo(352, 54);
+    ctx.lineTo(348, 74);
+    ctx.lineTo(353, 70);
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
 
     ctx.beginPath();
-    ctx.moveTo(398, 26);
-    ctx.lineTo(402, 46);
-    ctx.lineTo(397, 42);
+    ctx.moveTo(378, 54);
+    ctx.lineTo(382, 74);
+    ctx.lineTo(377, 70);
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
@@ -321,33 +322,33 @@ export function drawHokageMonument(
     ctx.strokeStyle = rockDark;
     ctx.lineWidth = 1.6;
     ctx.beginPath();
-    ctx.moveTo(376, 33);
-    ctx.lineTo(382, 35);
-    ctx.moveTo(388, 35);
-    ctx.lineTo(394, 33);
+    ctx.moveTo(356, 61);
+    ctx.lineTo(362, 63);
+    ctx.moveTo(368, 63);
+    ctx.lineTo(374, 61);
     ctx.stroke();
 
     // Crimson Red Clan Facial Markings
     ctx.strokeStyle = '#dc2626';
     ctx.lineWidth = 1.4;
     ctx.beginPath();
-    ctx.moveTo(374, 39);
-    ctx.lineTo(378, 43);
-    ctx.moveTo(396, 39);
-    ctx.lineTo(392, 43);
-    ctx.moveTo(385, 45);
-    ctx.lineTo(385, 51);
+    ctx.moveTo(354, 67);
+    ctx.lineTo(358, 71);
+    ctx.moveTo(376, 67);
+    ctx.lineTo(372, 71);
+    ctx.moveTo(365, 73);
+    ctx.lineTo(365, 79);
     ctx.stroke();
   });
 
   // 3rd Hokage: Hiruzen Sarutobi (三代目火影・猿飛ヒルゼン)
-  drawFaceContour(505, 29, '三代', 'Hiruzen', () => {
+  drawFaceContour(485, 54, '三代', 'Hiruzen', () => {
     // Grand Triangular Hokage Hat (Flared red fabric with white brim)
     ctx.fillStyle = '#dc2626';
     ctx.beginPath();
-    ctx.moveTo(505, 4);
-    ctx.lineTo(532, 23);
-    ctx.lineTo(478, 23);
+    ctx.moveTo(485, 20);
+    ctx.lineTo(512, 43);
+    ctx.lineTo(458, 43);
     ctx.closePath();
     ctx.fill();
     ctx.strokeStyle = '#991b1b';
@@ -356,35 +357,35 @@ export function drawHokageMonument(
 
     // White Hat Drape Ribbon
     ctx.fillStyle = '#f8fafc';
-    ctx.fillRect(482, 21, 46, 5);
+    ctx.fillRect(462, 41, 46, 5);
 
     // Iconic Kanji "火" on Hat Center
-    ctx.font = '900 11px serif';
+    ctx.font = '900 12px serif';
     ctx.fillStyle = '#ffffff';
     ctx.textAlign = 'center';
-    ctx.fillText('火', 505, 17);
+    ctx.fillText('火', 485, 37);
 
     // Aging Face Lines & Wise Eyes
     ctx.strokeStyle = rockDark;
     ctx.lineWidth = 1.1;
     ctx.beginPath();
-    ctx.moveTo(496, 27);
-    ctx.lineTo(501, 28);
-    ctx.moveTo(509, 28);
-    ctx.lineTo(514, 27);
+    ctx.moveTo(476, 49);
+    ctx.lineTo(481, 50);
+    ctx.moveTo(489, 50);
+    ctx.lineTo(494, 49);
     // Crow's feet
-    ctx.moveTo(494, 32);
-    ctx.lineTo(497, 32);
-    ctx.moveTo(513, 32);
-    ctx.lineTo(516, 32);
+    ctx.moveTo(474, 54);
+    ctx.lineTo(477, 54);
+    ctx.moveTo(493, 54);
+    ctx.lineTo(496, 54);
     ctx.stroke();
 
     // Pointed Goatee Beard on Chin
     ctx.fillStyle = rockLight;
     ctx.beginPath();
-    ctx.moveTo(501, 44);
-    ctx.lineTo(505, 51);
-    ctx.lineTo(509, 44);
+    ctx.moveTo(481, 66);
+    ctx.lineTo(485, 73);
+    ctx.lineTo(489, 66);
     ctx.closePath();
     ctx.fill();
 
@@ -392,30 +393,30 @@ export function drawHokageMonument(
     ctx.strokeStyle = '#78350f';
     ctx.lineWidth = 1.5;
     ctx.beginPath();
-    ctx.moveTo(507, 43);
-    ctx.lineTo(515, 46);
+    ctx.moveTo(487, 65);
+    ctx.lineTo(495, 68);
     ctx.stroke();
 
     const smokePhase = ((animTime * 1.5) % 2) / 2;
     ctx.fillStyle = `rgba(241, 245, 249, ${0.5 * (1 - smokePhase)})`;
     ctx.beginPath();
-    ctx.arc(516 + Math.sin(animTime * 2.5) * 3, 44 - smokePhase * 14, 2.5 + smokePhase * 4, 0, Math.PI * 2);
+    ctx.arc(496 + Math.sin(animTime * 2.5) * 3, 66 - smokePhase * 16, 2.5 + smokePhase * 4, 0, Math.PI * 2);
     ctx.fill();
   });
 
   // 4th Hokage: Minato Namikaze (四代目火影・波風ミナト)
-  drawFaceContour(635, 35, '四代', 'Minato', () => {
+  drawFaceContour(605, 60, '四代', 'Minato', () => {
     // Dynamic Spiky Bangs jutting outwards
     ctx.fillStyle = rockHighlight;
     const mSpikes = [
-      { x: 615, y: 22 }, { x: 610, y: 32 },
-      { x: 620, y: 14 }, { x: 632, y: 9 }, { x: 644, y: 10 },
-      { x: 656, y: 16 }, { x: 660, y: 26 }, { x: 655, y: 36 }
+      { x: 585, y: 47 }, { x: 580, y: 57 },
+      { x: 590, y: 39 }, { x: 602, y: 34 }, { x: 614, y: 35 },
+      { x: 626, y: 41 }, { x: 630, y: 51 }, { x: 625, y: 61 }
     ];
     ctx.beginPath();
-    ctx.moveTo(617, 32);
+    ctx.moveTo(587, 57);
     mSpikes.forEach((sp) => ctx.lineTo(sp.x, sp.y));
-    ctx.lineTo(653, 32);
+    ctx.lineTo(623, 57);
     ctx.closePath();
     ctx.fill();
     ctx.strokeStyle = rockDark;
@@ -424,23 +425,23 @@ export function drawHokageMonument(
 
     // Leaf Headband Plate
     ctx.fillStyle = rockLight;
-    ctx.fillRect(622, 23, 26, 6);
+    ctx.fillRect(592, 48, 26, 6);
     ctx.strokeStyle = rockDark;
-    ctx.strokeRect(622, 23, 26, 6);
+    ctx.strokeRect(592, 48, 26, 6);
 
     // Dynamic Long Side Bangs Framing Jaw
     ctx.fillStyle = rockHighlight;
     ctx.beginPath();
-    ctx.moveTo(618, 28);
-    ctx.lineTo(613, 46);
-    ctx.lineTo(621, 41);
+    ctx.moveTo(588, 53);
+    ctx.lineTo(583, 71);
+    ctx.lineTo(591, 66);
     ctx.closePath();
     ctx.fill();
 
     ctx.beginPath();
-    ctx.moveTo(652, 28);
-    ctx.lineTo(657, 46);
-    ctx.lineTo(649, 41);
+    ctx.moveTo(622, 53);
+    ctx.lineTo(627, 71);
+    ctx.lineTo(619, 66);
     ctx.closePath();
     ctx.fill();
 
@@ -448,21 +449,21 @@ export function drawHokageMonument(
     ctx.strokeStyle = rockDark;
     ctx.lineWidth = 1.4;
     ctx.beginPath();
-    ctx.moveTo(626, 33);
-    ctx.lineTo(632, 34);
-    ctx.moveTo(638, 34);
-    ctx.lineTo(644, 33);
-    ctx.moveTo(630, 44);
-    ctx.lineTo(640, 44);
+    ctx.moveTo(596, 58);
+    ctx.lineTo(602, 59);
+    ctx.moveTo(608, 59);
+    ctx.lineTo(614, 58);
+    ctx.moveTo(600, 69);
+    ctx.lineTo(610, 69);
     ctx.stroke();
 
     // High Standing White Hokage Collar with Flame Trim
     ctx.fillStyle = '#ffffff';
     ctx.beginPath();
-    ctx.moveTo(620, 49);
-    ctx.lineTo(614, 59);
-    ctx.lineTo(656, 59);
-    ctx.lineTo(650, 49);
+    ctx.moveTo(590, 74);
+    ctx.lineTo(584, 84);
+    ctx.lineTo(626, 84);
+    ctx.lineTo(620, 74);
     ctx.closePath();
     ctx.fill();
     ctx.strokeStyle = '#dc2626';
@@ -471,12 +472,12 @@ export function drawHokageMonument(
   });
 
   // 4. Rolling Mist Layer at Cliff Base
-  const mistGrad = ctx.createLinearGradient(0, 85, 0, 125);
+  const mistGrad = ctx.createLinearGradient(0, cliffBaseY - 35, 0, cliffBaseY + 10);
   mistGrad.addColorStop(0, 'rgba(0, 0, 0, 0)');
   mistGrad.addColorStop(0.5, isNight ? 'rgba(15, 23, 42, 0.55)' : 'rgba(255, 255, 255, 0.35)');
   mistGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
   ctx.fillStyle = mistGrad;
-  ctx.fillRect(0, 85, width, 40);
+  ctx.fillRect(0, cliffBaseY - 35, width, 45);
 
   ctx.restore();
 }

@@ -163,17 +163,47 @@ export default function VillageBuilder({
     return () => clearInterval(timer);
   }, []);
 
-  // Auto-launch prologue guide for fresh players
+  // Auto-place canonical Konohagakure landmarks (Ichiraku Ramen & Team 7 Posts) if missing from current base
   useEffect(() => {
-    try {
-      const hasSeenPrologue = typeof window !== 'undefined' ? localStorage.getItem('animeClash_prologue_seen') : 'true';
-      if (!hasSeenPrologue && (!villageState.completedStoryQuests || villageState.completedStoryQuests.length === 0)) {
-        setShowPrologueModal(true);
+    if (!villageState.buildings || villageState.buildings.length === 0) return;
+    const hasRamen = villageState.buildings.some((b) => b.type === 'ichiraku_ramen');
+    const hasTeam7 = villageState.buildings.some((b) => b.type === 'team7_posts');
+
+    if (!hasRamen || !hasTeam7) {
+      const updatedBuildings = [...villageState.buildings];
+      if (!hasRamen) {
+        updatedBuildings.push({
+          id: 'ichiraku_ramen_stand',
+          type: 'ichiraku_ramen',
+          name: 'Ichiraku Ramen Stand (一楽ラーメン)',
+          level: 1,
+          x: 3,
+          y: 7,
+          hp: 900,
+          maxHp: 900,
+          color: '#ea580c',
+          icon: '🍜',
+          productionRate: 25,
+          resourceProduced: 'chakra'
+        });
       }
-    } catch {
-      // ignore
+      if (!hasTeam7) {
+        updatedBuildings.push({
+          id: 'team7_training_posts',
+          type: 'team7_posts',
+          name: 'Team 7 Sparring Posts (第7班・修練場)',
+          level: 1,
+          x: 7,
+          y: 3,
+          hp: 750,
+          maxHp: 750,
+          color: '#84cc16',
+          icon: '🪵'
+        });
+      }
+      onUpdateVillage({ ...villageState, buildings: updatedBuildings });
     }
-  }, [villageState.completedStoryQuests]);
+  }, [villageState.buildings]);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const animRef = useRef<number | null>(null);

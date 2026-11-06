@@ -2032,11 +2032,11 @@ export default function VillageBuilder({
           <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-3xl bg-[#0b1226]/90 border border-[#1e2a4a]">
             <div>
               <h3 className="text-base font-extrabold text-white flex items-center gap-2">
-                <Sword size={18} className="text-red-400" />
-                <span>Army Camp &amp; Syndicate Outpost Raid</span>
+                <Sword size={18} className="text-cyan-400" />
+                <span>Leaf Shinobi Barracks &amp; Hokage Mission Desk</span>
               </h3>
               <p className="text-xs text-slate-400 mt-0.5">
-                Train anime troops in your barracks and launch real-time village assaults against the evil Syndicate to loot resources!
+                Train Leaf Village shinobi squads in your barracks and deploy on official D-to-S rank missions for the Hokage to secure essential supplies!
               </p>
             </div>
             <div className="flex items-center gap-3">

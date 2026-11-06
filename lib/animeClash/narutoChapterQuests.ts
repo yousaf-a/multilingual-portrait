@@ -1,6 +1,8 @@
 // Anime Clash: Neo-Village Chronicles - Chapter 1: Naruto Uzumaki (Konohagakure Campaign)
 // 25 Canonical Story Quests across 4 Iconic Arcs with Free Audio & Progression Mechanics
 
+import { PlayerVillageState } from './types';
+
 export interface QuestTask {
   id: string;
   description: string;
@@ -649,3 +651,78 @@ export const CHAPTER_1_NARUTO_QUESTS: ChapterQuest[] = [
     isBossQuest: true
   }
 ];
+
+// Evaluates actual in-game village state for slow & steady non-cheat progression
+export function evaluateQuestTaskProgress(
+  task: QuestTask,
+  villageState: PlayerVillageState
+): { current: number; target: number; isMet: boolean } {
+  const target = task.targetCount;
+  let current = 0;
+
+  switch (task.type) {
+    case 'build': {
+      if (task.targetKey) {
+        current = villageState.buildings.filter(
+          (b) =>
+            b.type === task.targetKey ||
+            (task.targetKey === 'wall' && (b.type === 'defense_wall' || (b.type as string) === 'wall'))
+        ).length;
+      }
+      break;
+    }
+    case 'upgrade': {
+      if (task.targetKey === 'naruto') {
+        current = villageState.heroLevels?.['naruto'] || 1;
+      } else if (task.targetKey === 'hq') {
+        current = villageState.level;
+      } else if (task.targetKey === 'dojo') {
+        const dojo = villageState.buildings.find((b) => (b.type as string) === 'dojo' || b.type === 'hero_altar');
+        current = dojo ? dojo.level : 0;
+      }
+      break;
+    }
+    case 'train': {
+      if (task.targetKey) {
+        current = villageState.trainedTroops?.[task.targetKey] || 0;
+      } else {
+        current = Object.values(villageState.trainedTroops || {}).reduce((a, b) => a + b, 0);
+      }
+      break;
+    }
+    case 'special': {
+      const desc = task.description.toLowerCase();
+      if (desc.includes('chakra')) {
+        current = villageState.chakra;
+      } else if (desc.includes('patrol guard')) {
+        current = villageState.activeHeroId ? 1 : 0;
+      } else {
+        current = target;
+      }
+      break;
+    }
+    case 'miniboss':
+    case 'battle': {
+      if (task.targetKey && villageState.defeatedMiniBosses?.includes(task.targetKey)) {
+        current = target;
+      } else if (task.targetKey) {
+        current = 0;
+      } else {
+        current = target;
+      }
+      break;
+    }
+    case 'boss': {
+      current = villageState.defeatedMiniBosses?.includes('six_paths_pain') ? 1 : 0;
+      break;
+    }
+    default:
+      current = 0;
+  }
+
+  return {
+    current,
+    target,
+    isMet: current >= target
+  };
+}

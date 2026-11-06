@@ -2,23 +2,24 @@
 
 import React, { useState } from 'react';
 import { PlayerVillageState } from '@/lib/animeClash/types';
-import { CHAPTER_1_NARUTO_QUESTS, ChapterQuest } from '@/lib/animeClash/narutoChapterQuests';
+import {
+  CHAPTER_1_NARUTO_QUESTS,
+  ChapterQuest,
+  evaluateQuestTaskProgress
+} from '@/lib/animeClash/narutoChapterQuests';
 import { freeAnimeAudio } from '@/lib/animeClash/freeAnimeAudio';
 import {
   BookOpen,
-  Check,
   Award,
   X,
   Sparkles,
-  ChevronRight,
   Shield,
-  Zap,
   Volume2,
   Lock,
   Skull,
-  Flame,
   CheckCircle2,
-  AlertCircle
+  ArrowRight,
+  Swords
 } from 'lucide-react';
 
 interface NarutoStoryQuestModalProps {
@@ -26,36 +27,51 @@ interface NarutoStoryQuestModalProps {
   onClose: () => void;
   onCompleteQuest: (quest: ChapterQuest) => void;
   onStartPainBoss: () => void;
+  onNavigateTab?: (tab: 'village' | 'shop' | 'heroes' | 'roadmap' | 'battle') => void;
 }
 
 export default function NarutoStoryQuestModal({
   villageState,
   onClose,
   onCompleteQuest,
-  onStartPainBoss
+  onStartPainBoss,
+  onNavigateTab
 }: NarutoStoryQuestModalProps) {
-  // Find the first uncompleted quest, or default to quest 1
+  // Find first uncompleted quest
   const completedIds = (villageState.completedStoryQuests || []) as string[];
-  const firstUnfinished = CHAPTER_1_NARUTO_QUESTS.find((q) => !completedIds.includes(q.id)) || CHAPTER_1_NARUTO_QUESTS[0];
+  const firstUnfinished =
+    CHAPTER_1_NARUTO_QUESTS.find((q) => !completedIds.includes(q.id)) ||
+    CHAPTER_1_NARUTO_QUESTS[0];
 
   const [selectedQuest, setSelectedQuest] = useState<ChapterQuest>(firstUnfinished);
   const [selectedArc, setSelectedArc] = useState<number>(firstUnfinished.arcNumber);
 
   const isCurrentQuestCompleted = completedIds.includes(selectedQuest.id);
   const currentQuestIdx = CHAPTER_1_NARUTO_QUESTS.findIndex((q) => q.id === selectedQuest.id);
-  const isUnlocked = currentQuestIdx === 0 || completedIds.includes(CHAPTER_1_NARUTO_QUESTS[currentQuestIdx - 1]?.id);
+  const isUnlocked =
+    currentQuestIdx === 0 || completedIds.includes(CHAPTER_1_NARUTO_QUESTS[currentQuestIdx - 1]?.id);
 
   // Filter quests by selected Arc
   const arcQuests = CHAPTER_1_NARUTO_QUESTS.filter((q) => q.arcNumber === selectedArc);
 
-  const handleReadDialogue = (text: string, mood?: 'normal' | 'angry' | 'sad' | 'determined' | 'dramatic') => {
+  // Evaluate task completion in real-time
+  const taskEvaluations = selectedQuest.tasks.map((task) => ({
+    task,
+    ...evaluateQuestTaskProgress(task, villageState)
+  }));
+
+  const allObjectivesCompleted = taskEvaluations.every((t) => t.isMet);
+
+  const handleReadDialogue = (
+    text: string,
+    mood?: 'normal' | 'angry' | 'sad' | 'determined' | 'dramatic'
+  ) => {
     freeAnimeAudio.speakDialogue(text, mood);
   };
 
   return (
     <div className="fixed inset-0 z-50 bg-black/88 backdrop-blur-xl flex items-center justify-center p-3 sm:p-5 select-none animate-in fade-in">
       <div className="relative w-full max-w-5xl bg-[#070b18] border border-amber-500/40 rounded-3xl shadow-[0_0_80px_rgba(245,158,11,0.25)] overflow-hidden flex flex-col md:flex-row max-h-[92vh]">
-        
         {/* Left Side: Chapter & Arc Navigation */}
         <div className="w-full md:w-80 border-b md:border-b-0 md:border-r border-[#16203d] p-4 bg-[#050814] flex flex-col">
           <div className="flex items-center justify-between mb-3">
@@ -192,26 +208,111 @@ export default function NarutoStoryQuestModal({
               </div>
             </div>
 
-            {/* Quest Objectives & Tasks */}
+            {/* Mini-Boss Encounter Alert (If present in quest) */}
+            {selectedQuest.miniBoss && (
+              <div className="mb-5 p-3 rounded-2xl bg-gradient-to-r from-red-950/70 via-slate-900 to-amber-950/40 border border-red-500/40 flex items-center justify-between gap-3 shadow-md">
+                <div className="flex items-center gap-2.5">
+                  <span className="text-2xl p-1.5 rounded-xl bg-black/50 border border-red-500/30">
+                    {selectedQuest.miniBoss.avatar}
+                  </span>
+                  <div>
+                    <div className="text-xs font-black text-red-300 uppercase tracking-wide flex items-center gap-1.5">
+                      <Skull size={13} className="text-red-400" />
+                      <span>{selectedQuest.miniBoss.name}</span>
+                    </div>
+                    <div className="text-[10px] text-slate-400">
+                      {selectedQuest.miniBoss.title} &bull; HP: {selectedQuest.miniBoss.hp.toLocaleString()}
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    onNavigateTab?.('battle');
+                  }}
+                  className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-red-600 to-orange-600 hover:brightness-110 text-white font-black text-[10px] uppercase shadow transition cursor-pointer flex items-center gap-1 shrink-0"
+                >
+                  <Swords size={12} />
+                  <span>Fight in Arena</span>
+                </button>
+              </div>
+            )}
+
+            {/* Quest Objectives & Tasks (With Real-Time Status & Action Shortcuts) */}
             <div className="space-y-2.5 mb-5">
-              <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                <Shield size={14} className="text-cyan-400" /> Mission Objectives
-              </h4>
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <Shield size={14} className="text-cyan-400" /> Mission Objectives (Village Requirements)
+                </h4>
+                <span className="text-[10px] text-amber-300 font-mono">
+                  {taskEvaluations.filter((t) => t.isMet).length} / {taskEvaluations.length} Completed
+                </span>
+              </div>
+
               <div className="space-y-2">
-                {selectedQuest.tasks.map((task) => (
+                {taskEvaluations.map(({ task, current, target, isMet }) => (
                   <div
                     key={task.id}
-                    className="p-3 rounded-2xl bg-[#0f1938] border border-cyan-500/20 flex items-center justify-between text-xs"
+                    className={`p-3 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs transition ${
+                      isMet
+                        ? 'bg-emerald-950/25 border-emerald-500/40 text-emerald-200 shadow-sm'
+                        : 'bg-[#0f1938] border-cyan-500/20 text-slate-200'
+                    }`}
                   >
                     <div className="flex items-center gap-2.5">
-                      <span className="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-400/40 flex items-center justify-center font-bold text-[10px]">
-                        ✓
+                      <span
+                        className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${
+                          isMet
+                            ? 'bg-emerald-500 text-slate-950 shadow-[0_0_10px_rgba(16,185,129,0.5)]'
+                            : 'bg-slate-800 text-slate-400 border border-white/10'
+                        }`}
+                      >
+                        {isMet ? '✓' : '○'}
                       </span>
-                      <span className="text-slate-200">{task.description}</span>
+                      <div>
+                        <div className="font-bold text-white text-[12px]">{task.description}</div>
+                        <div className="text-[10px] font-mono mt-0.5 flex items-center gap-1.5">
+                          <span className="text-slate-400">Village Progress:</span>
+                          <strong className={isMet ? 'text-emerald-400' : 'text-amber-400'}>
+                            {current}
+                          </strong>
+                          <span className="text-slate-500">/</span>
+                          <span className="text-slate-300">{target}</span>
+                          {isMet && (
+                            <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 font-bold">
+                              FULFILLED
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                    <span className="font-mono text-cyan-300 text-[11px] font-bold">
-                      Goal: {task.targetCount}
-                    </span>
+
+                    {/* Direct Shortcut to Village Build Shop / Army / Upgrade if task is incomplete */}
+                    {!isMet && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onClose();
+                          if (task.type === 'build') onNavigateTab?.('shop');
+                          else if (task.type === 'train') onNavigateTab?.('heroes');
+                          else if (task.type === 'upgrade') onNavigateTab?.('heroes');
+                          else if (task.type === 'battle' || task.type === 'miniboss') onNavigateTab?.('battle');
+                        }}
+                        className="self-end sm:self-auto px-3 py-1.5 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:brightness-110 text-white font-bold text-[10px] uppercase shadow transition cursor-pointer shrink-0 flex items-center gap-1"
+                      >
+                        <span>
+                          {task.type === 'build'
+                            ? '🔨 Open Build Shop'
+                            : task.type === 'train'
+                            ? '🥷 Train in Army'
+                            : task.type === 'upgrade'
+                            ? '⚡ Upgrade in Heroes'
+                            : '⚔️ Enter Battle Arena'}
+                        </span>
+                        <ArrowRight size={11} />
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
@@ -236,7 +337,7 @@ export default function NarutoStoryQuestModal({
             </div>
           </div>
 
-          {/* Action Footer Button */}
+          {/* Action Footer: Strict Non-Cheat Verification */}
           <div className="pt-4 border-t border-white/10 mt-4">
             {selectedQuest.isBossQuest ? (
               <button
@@ -255,19 +356,28 @@ export default function NarutoStoryQuestModal({
                 <CheckCircle2 size={16} />
                 <span>MISSION COMPLETED &bull; WILL OF FIRE SECURED</span>
               </div>
-            ) : (
+            ) : allObjectivesCompleted ? (
               <button
                 type="button"
                 onClick={() => onCompleteQuest(selectedQuest)}
-                className="w-full py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:brightness-110 text-slate-950 font-black text-xs uppercase tracking-wider shadow-md transition cursor-pointer flex items-center justify-center gap-2"
+                className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-400 hover:brightness-110 text-slate-950 font-black text-xs uppercase tracking-wider shadow-[0_0_25px_rgba(16,185,129,0.5)] transition cursor-pointer flex items-center justify-center gap-2 animate-bounce"
               >
-                <Sparkles size={15} />
-                <span>Complete Mission &amp; Claim Rewards</span>
+                <Sparkles size={16} />
+                <span>All Objectives Met! Claim Mission Rewards &amp; Advance Story</span>
               </button>
+            ) : (
+              <div className="p-3 rounded-2xl bg-slate-900/90 border border-amber-500/30 text-amber-300 text-xs text-center flex flex-col items-center justify-center gap-1 font-mono">
+                <div className="flex items-center gap-1.5 font-bold">
+                  <Lock size={13} className="text-amber-400" />
+                  <span>LOCKED: Complete All Village Tasks Slow &amp; Steady First</span>
+                </div>
+                <p className="text-[10px] text-slate-400">
+                  Build the required structures in Konoha and train troops in your Army Camp to fulfill this mission!
+                </p>
+              </div>
             )}
           </div>
         </div>
-
       </div>
     </div>
   );

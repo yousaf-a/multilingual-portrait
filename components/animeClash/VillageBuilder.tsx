@@ -47,7 +47,8 @@ import SanctuaryOrbitalHub from './SanctuaryOrbitalHub';
 import Hero360Showcase from './Hero360Showcase';
 import NarutoStoryQuestModal from './NarutoStoryQuestModal';
 import PainBossBattleModal from './PainBossBattleModal';
-import { CHAPTER_1_NARUTO_QUESTS, ChapterQuest } from '@/lib/animeClash/narutoChapterQuests';
+import AnimeStoryPrologueModal from './AnimeStoryPrologueModal';
+import { CHAPTER_1_NARUTO_QUESTS, ChapterQuest, evaluateQuestTaskProgress } from '@/lib/animeClash/narutoChapterQuests';
 import { animeAudio } from '@/lib/animeClash/animeAudio';
 import {
   Shield,
@@ -137,6 +138,7 @@ export default function VillageBuilder({
   const [voiceShoutBanner, setVoiceShoutBanner] = useState<{ kanji: string; romaji: string; trans: string } | null>(null);
   const [showNarutoStoryModal, setShowNarutoStoryModal] = useState(false);
   const [showPainBossModal, setShowPainBossModal] = useState(false);
+  const [showPrologueModal, setShowPrologueModal] = useState(false);
   const [raidResult, setRaidResult] = useState<{
     stars: number;
     destruction: number;
@@ -154,6 +156,18 @@ export default function VillageBuilder({
     }, 1000);
     return () => clearInterval(timer);
   }, []);
+
+  // Auto-launch prologue guide for fresh players
+  useEffect(() => {
+    try {
+      const hasSeenPrologue = typeof window !== 'undefined' ? localStorage.getItem('animeClash_prologue_seen') : 'true';
+      if (!hasSeenPrologue && (!villageState.completedStoryQuests || villageState.completedStoryQuests.length === 0)) {
+        setShowPrologueModal(true);
+      }
+    } catch {
+      // ignore
+    }
+  }, [villageState.completedStoryQuests]);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const animRef = useRef<number | null>(null);
@@ -960,7 +974,7 @@ export default function VillageBuilder({
         </div>
 
         {/* Center: Chapter 1 Naruto Campaign & Guided Objective Pills */}
-        <div className="hidden lg:flex items-center gap-2.5">
+        <div className="hidden lg:flex items-center gap-2">
           <button
             type="button"
             onClick={() => {
@@ -975,7 +989,7 @@ export default function VillageBuilder({
               <span className="text-[9px] text-orange-300 font-mono font-bold leading-none">
                 CH. 1: NARUTO ({completedStoryQuests.length}/25)
               </span>
-              <span className="text-[11px] font-black text-white leading-tight line-clamp-1 max-w-[170px]">
+              <span className="text-[11px] font-black text-white leading-tight line-clamp-1 max-w-[160px]">
                 {activeNarutoQuest.title}
               </span>
             </div>
@@ -986,15 +1000,25 @@ export default function VillageBuilder({
 
           <button
             type="button"
+            onClick={() => {
+              setShowPrologueModal(true);
+              animeAudio.playButtonClick();
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-500/15 border border-blue-400/40 hover:bg-blue-500/25 transition cursor-pointer text-xs text-blue-300"
+            title="How the Game Works & Story Lore"
+          >
+            <BookOpen size={13} />
+            <span className="font-bold">Story &amp; Guide</span>
+          </button>
+
+          <button
+            type="button"
             onClick={() => setActiveBuildTab('roadmap')}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/15 border border-amber-500/40 hover:bg-amber-500/25 transition cursor-pointer text-xs"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/15 border border-amber-500/40 hover:bg-amber-500/25 transition cursor-pointer text-xs"
           >
             <span className="text-amber-400">🎯</span>
             <span className="text-amber-200 font-medium text-[11px]">
-              Next Goal: <strong className="text-white">{nextHeroName ? `Upgrade HQ to Lv ${nextHQLevel} (Unlocks ${nextHeroName}!)` : `Upgrade HQ to Lv ${nextHQLevel}`}</strong>
-            </span>
-            <span className="text-[9px] text-amber-400 font-bold ml-0.5 bg-amber-500/20 px-1.5 py-0.5 rounded-full">
-              HQ &rarr;
+              HQ Lv {villageState.level}
             </span>
           </button>
         </div>
@@ -1215,6 +1239,64 @@ export default function VillageBuilder({
       {/* 3. MAIN INTERACTIVE CONTENT: ISOMETRIC VILLAGE OR SANCTUARY ORBITAL HUB */}
       {activeBuildTab === 'village' && (
         <>
+          {/* PERSISTENT LIVING ANIME MISSION BANNER */}
+          <div className="w-full bg-gradient-to-r from-[#0d1733] via-[#091024] to-[#0d1733] border-2 border-orange-500/40 rounded-2xl p-3 sm:p-4 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-3 animate-in fade-in">
+            <div className="flex items-start gap-3">
+              <span className="text-3xl sm:text-4xl p-2 rounded-2xl bg-orange-500/20 border border-orange-400/40 shrink-0">
+                🍥
+              </span>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-orange-300 px-2 py-0.5 rounded-full bg-orange-950 border border-orange-500/50">
+                    CHAPTER 1 &bull; QUEST {activeNarutoQuest.questNumber} OF 25
+                  </span>
+                  <span className="text-xs font-mono text-cyan-300">
+                    [{activeNarutoQuest.japaneseKanji}]
+                  </span>
+                </div>
+                <h3 className="text-sm sm:text-base font-black text-white mt-1">
+                  {activeNarutoQuest.title}
+                </h3>
+                {/* Active Tasks Checklist with Live Counts */}
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-1.5 text-xs text-slate-300">
+                  {activeNarutoQuest.tasks.map((task) => {
+                    const evalRes = evaluateQuestTaskProgress(task, villageState);
+                    return (
+                      <span
+                        key={task.id}
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl border text-[11px] font-mono ${
+                          evalRes.isMet
+                            ? 'bg-emerald-950/40 border-emerald-500/50 text-emerald-300'
+                            : 'bg-black/50 border-white/10 text-slate-300'
+                        }`}
+                      >
+                        <span>{evalRes.isMet ? '✅' : '⏳'}</span>
+                        <span className="text-white font-medium">{task.description}:</span>
+                        <strong className={evalRes.isMet ? 'text-emerald-400' : 'text-amber-400'}>
+                          {evalRes.current}/{evalRes.target}
+                        </strong>
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Action Buttons */}
+            <div className="flex items-center gap-2 self-end md:self-auto shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowNarutoStoryModal(true);
+                  animeAudio.playButtonClick();
+                }}
+                className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:brightness-110 text-slate-950 font-black text-xs shadow-md flex items-center gap-1.5 transition cursor-pointer"
+              >
+                <span>📜 View Quest &amp; Dialogue</span>
+              </button>
+            </div>
+          </div>
+
           <div className={villageViewMode === 'orbit_hub' ? 'block' : 'hidden'}>
             <SanctuaryOrbitalHub
               villageState={villageState}
@@ -2471,6 +2553,18 @@ export default function VillageBuilder({
             setShowNarutoStoryModal(false);
             setShowPainBossModal(true);
           }}
+          onNavigateTab={(tab) => {
+            if (tab === 'battle') {
+              setActiveBuildTab('attack');
+              setVillageViewMode('grid');
+            } else if (tab === 'village') {
+              setActiveBuildTab('shop');
+              setVillageViewMode('grid');
+            } else {
+              setActiveBuildTab(tab as any);
+              setVillageViewMode('grid');
+            }
+          }}
         />
       )}
 
@@ -2480,6 +2574,21 @@ export default function VillageBuilder({
           villageState={villageState}
           onClose={() => setShowPainBossModal(false)}
           onVictory={handlePainBossVictory}
+        />
+      )}
+
+      {/* ANIME STORY PROLOGUE & GAMEPLAY GUIDE MODAL */}
+      {showPrologueModal && (
+        <AnimeStoryPrologueModal
+          onClose={() => {
+            setShowPrologueModal(false);
+            try { localStorage.setItem('animeClash_prologue_seen', 'true'); } catch {}
+          }}
+          onStartPlaying={() => {
+            setShowPrologueModal(false);
+            try { localStorage.setItem('animeClash_prologue_seen', 'true'); } catch {}
+            setShowNarutoStoryModal(true);
+          }}
         />
       )}
     </div>

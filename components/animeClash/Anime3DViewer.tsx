@@ -217,15 +217,24 @@ export default function Anime3DViewer({
     frontMesh.castShadow = true;
     figureGroup.add(frontMesh);
 
-    // Back Face (Authentic rear turnaround view or battle silhouette)
+    // Back Face (Authentic rear turnaround view or mirrored battle silhouette)
+    const backTex = hero.turnaround?.back
+      ? textureLoader.load(hero.turnaround.back.replace('.jpg', '.png'))
+      : frontTexture.clone();
+    if (!hero.turnaround?.back) {
+      backTex.wrapS = THREE.RepeatWrapping;
+      backTex.repeat.x = -1;
+    }
+    backTex.colorSpace = THREE.SRGBColorSpace;
+
     const backMat = new THREE.MeshStandardMaterial({
-      map: backTexture,
+      map: backTex,
       transparent: true,
       alphaTest: 0.08,
       roughness: 0.45,
       metalness: 0.1,
       side: THREE.BackSide,
-      color: hero.turnaround?.back ? 0xffffff : 0x111827 // Darker battle silhouette if no explicit back turnaround
+      color: hero.turnaround?.back ? 0xffffff : 0xdddddd
     });
 
     const backPlaneGeo = new THREE.PlaneGeometry(figWidth, figHeight);
@@ -249,7 +258,28 @@ export default function Anime3DViewer({
     haloMesh.position.set(0, 1.15, -0.08); // Floating safely behind upper torso
     figureGroup.add(haloMesh);
 
-    // 8. Volumetric Particle Ascension Aura System
+    // 8. Orbiting Satellite Energy Orbs (Epic & GOAT forms)
+    const orbGroup = new THREE.Group();
+    characterRoot.add(orbGroup);
+    const orbCount = selectedRank === 'goat' ? 4 : selectedRank === 'epic' ? 2 : 0;
+    const orbMeshes: THREE.Mesh[] = [];
+
+    const orbGeo = new THREE.SphereGeometry(0.065, 16, 16);
+    const orbMat = new THREE.MeshStandardMaterial({
+      color: heroAccentColor,
+      emissive: heroAccentColor,
+      emissiveIntensity: selectedRank === 'goat' ? 1.8 : 1.2,
+      roughness: 0.2,
+      metalness: 0.8
+    });
+
+    for (let i = 0; i < orbCount; i++) {
+      const orb = new THREE.Mesh(orbGeo, orbMat);
+      orbGroup.add(orb);
+      orbMeshes.push(orb);
+    }
+
+    // 9. Volumetric Particle Ascension Aura System
     const particleCount = 130;
     const particleGeo = new THREE.BufferGeometry();
     const particlePos = new Float32Array(particleCount * 3);
@@ -344,6 +374,15 @@ export default function Anime3DViewer({
       haloMesh.rotation.z += 0.006;
       haloMesh.rotation.y = Math.sin(elapsed * 1.5) * 0.08;
 
+      // Orbiting Satellites Motion
+      orbMeshes.forEach((orb, i) => {
+        const orbAngle = elapsed * 1.6 + (i * Math.PI * 2) / (orbCount || 1);
+        const radius = 0.72 + Math.sin(elapsed * 2.2 + i) * 0.06;
+        orb.position.x = Math.cos(orbAngle) * radius;
+        orb.position.z = Math.sin(orbAngle) * radius;
+        orb.position.y = 0.95 + Math.sin(elapsed * 2.8 + i * 1.8) * 0.22;
+      });
+
       // 3. Tier Transformation Aura Vibrancy
       if (rank === 'goat') {
         particleMat.size = 0.095;
@@ -412,6 +451,8 @@ export default function Anime3DViewer({
       backMat.dispose();
       haloGeo.dispose();
       haloMat.dispose();
+      orbGeo.dispose();
+      orbMat.dispose();
       particleGeo.dispose();
       particleMat.dispose();
     };

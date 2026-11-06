@@ -201,6 +201,7 @@ export interface PlayerVillageState {
   activeHeroId: string;
   completedChapters: string[];
   completedStoryQuests?: string[]; // IDs of completed quests (e.g. naruto_q1 ... naruto_q25)
+  defeatedMiniBosses?: string[]; // IDs of defeated mini-bosses (e.g. demon_brothers, zabuza, gaara)
   currentChapter?: number; // 1 = Naruto (Leaf), 2 = One Piece, etc.
   heroLevels?: Record<string, number>; // Level of each hero (1 to 30)
   trainedTroops?: Record<string, number>; // Army camp troop counts

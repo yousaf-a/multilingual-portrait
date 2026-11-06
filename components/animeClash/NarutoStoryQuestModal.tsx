@@ -8,6 +8,7 @@ import {
   evaluateQuestTaskProgress
 } from '@/lib/animeClash/narutoChapterQuests';
 import { freeAnimeAudio } from '@/lib/animeClash/freeAnimeAudio';
+import AnimeEpisodeCinematicModal from './AnimeEpisodeCinematicModal';
 import {
   BookOpen,
   Award,
@@ -218,34 +219,57 @@ export default function NarutoStoryQuestModal({
             {/* Cinematic Anime Episode Intro Banner */}
             <div className="mb-5 p-4 rounded-3xl bg-gradient-to-r from-[#1c0c05] via-[#120822] to-[#08112e] border border-orange-500/40 relative overflow-hidden shadow-xl">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 relative z-10">
-                <div className="flex-1">
-                  <div className="flex flex-wrap items-center gap-2 mb-1">
-                    <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-orange-500/25 text-orange-400 border border-orange-500/40 font-mono flex items-center gap-1">
-                      <Film size={11} />
-                      <span>EPISODE {selectedQuest.questNumber} INTRO</span>
-                    </span>
-                    <span className="text-[11px] font-mono text-cyan-300">
-                      {selectedQuest.japaneseKanji}
+                <div className="flex items-start gap-3.5 flex-1">
+                  <div className="relative w-14 h-14 rounded-2xl overflow-hidden border-2 border-orange-400/50 bg-black/80 shrink-0 shadow-md flex items-center justify-center">
+                    <img
+                      src={
+                        selectedQuest.animeIntro?.speaker?.toLowerCase().includes('kakashi')
+                          ? '/anime-heroes/kakashi_portrait.jpg'
+                          : selectedQuest.animeIntro?.speaker?.toLowerCase().includes('zabuza')
+                          ? '/anime-heroes/zabuza_portrait.jpg'
+                          : selectedQuest.animeIntro?.speaker?.toLowerCase().includes('jiraiya')
+                          ? '/anime-heroes/jiraiya_portrait.jpg'
+                          : selectedQuest.animeIntro?.speaker?.toLowerCase().includes('pain')
+                          ? '/anime-heroes/pain_portrait.jpg'
+                          : '/anime-heroes/naruto-heroic.png'
+                      }
+                      alt="Speaker"
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLElement).style.display = 'none';
+                      }}
+                    />
+                    <span className="absolute inset-0 flex items-center justify-center text-xl pointer-events-none">
+                      {selectedQuest.animeIntro?.speakerAvatar || '🥷'}
                     </span>
                   </div>
-                  <h4 className="text-sm sm:text-base font-black text-white">
-                    {selectedQuest.animeIntro?.subTitle || selectedQuest.title}
-                  </h4>
-                  <p className="text-xs text-slate-300 mt-1 line-clamp-2 leading-relaxed">
-                    {selectedQuest.animeIntro?.synopsis}
-                  </p>
-                  <div className="mt-2 text-[11px] text-amber-300/90 font-serif italic">
-                    &ldquo;{selectedQuest.animeIntro?.dramaticQuote}&rdquo; &mdash; <strong>{selectedQuest.animeIntro?.speaker}</strong>
+
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
+                      <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-orange-500/25 text-orange-400 border border-orange-500/40 font-mono flex items-center gap-1">
+                        <Film size={11} />
+                        <span>EPISODE {selectedQuest.questNumber} PROLOGUE</span>
+                      </span>
+                      <span className="text-[11px] font-mono text-cyan-300">
+                        {selectedQuest.japaneseKanji}
+                      </span>
+                    </div>
+                    <h4 className="text-sm sm:text-base font-black text-white">
+                      {selectedQuest.animeIntro?.subTitle || selectedQuest.title}
+                    </h4>
+                    <div className="mt-1 text-[11px] text-amber-300/90 font-serif italic">
+                      &ldquo;{selectedQuest.animeIntro?.dramaticQuote}&rdquo; &mdash; <strong>{selectedQuest.animeIntro?.speaker}</strong>
+                    </div>
                   </div>
                 </div>
 
                 <button
                   type="button"
                   onClick={handlePlayEpisodeIntro}
-                  className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-orange-600 via-amber-500 to-yellow-400 hover:brightness-110 text-slate-950 font-black text-xs uppercase tracking-wider shadow-[0_0_25px_rgba(249,115,22,0.6)] transition cursor-pointer flex items-center gap-2 shrink-0 animate-pulse"
+                  className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-orange-600 via-amber-500 to-yellow-400 hover:brightness-110 text-slate-950 font-black text-xs uppercase tracking-wider shadow-[0_0_25px_rgba(249,115,22,0.6)] transition cursor-pointer flex items-center gap-2 shrink-0 animate-pulse"
                 >
                   <Play size={14} className="fill-slate-950" />
-                  <span>Watch Anime Intro</span>
+                  <span>Play Anime Intro &amp; Cutscene</span>
                 </button>
               </div>
             </div>
@@ -451,75 +475,14 @@ export default function NarutoStoryQuestModal({
       </div>
       {/* CINEMASCOPE ANIME EPISODE INTRO THEATER OVERLAY */}
       {showCinemaIntro && (
-        <div className="fixed inset-0 z-50 bg-black/98 flex flex-col justify-between animate-in fade-in duration-300 select-none">
-          {/* Top Cinema Letterbox Bar */}
-          <div className="h-16 sm:h-20 bg-black w-full border-b border-white/10 flex items-center justify-between px-6 z-20">
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping" />
-              <span className="text-xs font-mono uppercase tracking-widest text-slate-400">
-                TV TOKYO &bull; SHONEN ANIME BROADCAST PRESENTATION
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={() => setShowCinemaIntro(false)}
-              className="px-3.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs cursor-pointer transition flex items-center gap-1"
-            >
-              <span>Skip Intro</span>
-              <X size={14} />
-            </button>
-          </div>
-
-          {/* Center 16:9 Cinema Viewport */}
-          <div className="flex-1 flex flex-col items-center justify-center p-6 text-center max-w-4xl mx-auto relative z-10">
-            <div className="text-amber-400 text-xs sm:text-sm font-mono tracking-widest uppercase mb-2 animate-bounce">
-              {selectedQuest.arcName} &bull; EPISODE {selectedQuest.questNumber}
-            </div>
-
-            <div className="text-3xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-400 to-red-500 tracking-wider drop-shadow-[0_0_35px_rgba(249,115,22,0.8)] font-serif mb-2">
-              {selectedQuest.japaneseKanji}
-            </div>
-
-            <h1 className="text-xl sm:text-3xl font-black text-white tracking-wide mb-6">
-              {selectedQuest.animeIntro?.subTitle || selectedQuest.title}
-            </h1>
-
-            {/* Character Quote Box */}
-            <div className="p-5 rounded-3xl bg-black/60 border-2 border-orange-500/50 max-w-2xl backdrop-blur-md shadow-[0_0_50px_rgba(249,115,22,0.3)] mb-6">
-              <div className="text-3xl mb-2">{selectedQuest.animeIntro?.speakerAvatar}</div>
-              <p className="text-sm sm:text-base text-amber-200 font-serif italic leading-relaxed">
-                &ldquo;{selectedQuest.animeIntro?.dramaticQuote}&rdquo;
-              </p>
-              <div className="text-xs text-orange-400 font-mono font-bold mt-2 uppercase tracking-wider">
-                &mdash; {selectedQuest.animeIntro?.speaker}
-              </div>
-            </div>
-
-            {/* High Stakes Situational Briefing */}
-            <p className="text-xs sm:text-sm text-slate-300 max-w-xl leading-relaxed mb-6 font-mono">
-              {selectedQuest.animeIntro?.cinematicStakes}
-            </p>
-
-            <button
-              type="button"
-              onClick={() => setShowCinemaIntro(false)}
-              className="px-8 py-3.5 rounded-full bg-gradient-to-r from-orange-600 via-amber-500 to-yellow-400 hover:brightness-110 text-slate-950 font-black text-sm uppercase tracking-wider shadow-[0_0_35px_rgba(249,115,22,0.8)] transition cursor-pointer flex items-center gap-2 transform hover:scale-105"
-            >
-              <Swords size={18} />
-              <span>Enter Village &amp; Begin Mission</span>
-            </button>
-          </div>
-
-          {/* Bottom Cinema Letterbox Bar */}
-          <div className="h-16 sm:h-20 bg-black w-full border-t border-white/10 flex items-center justify-between px-6 z-20">
-            <span className="text-[11px] text-slate-500 font-mono">
-              THE WAY OF THE SHINOBI &bull; WILL OF FIRE CAMPAIGN
-            </span>
-            <span className="text-[11px] text-amber-400/80 font-mono">
-              STEREO SOUND (WEB AUDIO DSP)
-            </span>
-          </div>
-        </div>
+        <AnimeEpisodeCinematicModal
+          quest={selectedQuest}
+          onClose={() => setShowCinemaIntro(false)}
+          onEnterVillageMission={() => {
+            setShowCinemaIntro(false);
+            onClose();
+          }}
+        />
       )}
     </div>
   );

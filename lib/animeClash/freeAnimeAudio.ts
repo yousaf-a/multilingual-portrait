@@ -241,6 +241,120 @@ class FreeAnimeAudioEngine {
     });
   }
 
+  // 7. SWORD UNSHEATHE & CLASH SHING
+  playSwordClash() {
+    const ctx = this.getAudioContext();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(3200, now);
+    osc.frequency.exponentialRampToValueAtTime(800, now + 0.45);
+
+    gain.gain.setValueAtTime(0.35, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.5);
+  }
+
+  // 8. JUTSU HAND SIGN WHOOSH
+  playJutsuWhoosh() {
+    const ctx = this.getAudioContext();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+
+    const bufferSize = ctx.sampleRate * 0.25;
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = Math.random() * 2 - 1;
+    }
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(600, now);
+    filter.frequency.exponentialRampToValueAtTime(1800, now + 0.15);
+    filter.Q.value = 3;
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.4, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(ctx.destination);
+    noise.start(now);
+  }
+
+  // 9. AMBIENT SHONEN PROLOGUE BGM LOOP
+  private bgmInterval: NodeJS.Timeout | null = null;
+  private isBgmPlaying = false;
+
+  startAnimePrologueBgm() {
+    if (this.isBgmPlaying) return;
+    this.isBgmPlaying = true;
+    const ctx = this.getAudioContext();
+    if (!ctx) return;
+
+    // Pentatonic battle progression notes (D Minor / In-sen scale)
+    const scale = [293.66, 311.13, 392.0, 440.0, 523.25, 587.33];
+    let step = 0;
+
+    const tick = () => {
+      if (!this.isBgmPlaying) return;
+      const now = ctx.currentTime;
+      const freq = scale[step % scale.length];
+      step++;
+
+      // Pluck note
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, now);
+
+      gain.gain.setValueAtTime(0.08, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.45);
+
+      // Taiko sub pulse every 4 steps
+      if (step % 4 === 0) {
+        const kick = ctx.createOscillator();
+        const kickGain = ctx.createGain();
+        kick.type = 'sine';
+        kick.frequency.setValueAtTime(95, now);
+        kick.frequency.exponentialRampToValueAtTime(35, now + 0.35);
+        kickGain.gain.setValueAtTime(0.25, now);
+        kickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.38);
+        kick.connect(kickGain);
+        kickGain.connect(ctx.destination);
+        kick.start(now);
+        kick.stop(now + 0.38);
+      }
+    };
+
+    tick();
+    this.bgmInterval = setInterval(tick, 380);
+  }
+
+  stopAnimePrologueBgm() {
+    this.isBgmPlaying = false;
+    if (this.bgmInterval) {
+      clearInterval(this.bgmInterval);
+      this.bgmInterval = null;
+    }
+  }
+
   // 6. CLIENT-SIDE VOICE SYNTHESIS (100% Free Browser Web Speech API)
   speakDialogue(text: string, mood?: 'normal' | 'angry' | 'sad' | 'determined' | 'dramatic') {
     if (typeof window === 'undefined' || !window.speechSynthesis) return;

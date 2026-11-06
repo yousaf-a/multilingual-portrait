@@ -54,13 +54,32 @@ export default function NarutoStoryQuestModal({
   // Filter quests by selected Arc
   const arcQuests = CHAPTER_1_NARUTO_QUESTS.filter((q) => q.arcNumber === selectedArc);
 
-  // Evaluate task completion in real-time
-  const taskEvaluations = selectedQuest.tasks.map((task) => ({
-    task,
-    ...evaluateQuestTaskProgress(task, villageState)
-  }));
+  // Evaluate task completion: if already completed, all objectives are fulfilled history!
+  const taskEvaluations = selectedQuest.tasks.map((task) => {
+    if (isCurrentQuestCompleted) {
+      return {
+        task,
+        current: task.targetCount,
+        target: task.targetCount,
+        isMet: true
+      };
+    }
+    return {
+      task,
+      ...evaluateQuestTaskProgress(task, villageState)
+    };
+  });
 
   const allObjectivesCompleted = taskEvaluations.every((t) => t.isMet);
+
+  const handleClaimReward = () => {
+    onCompleteQuest(selectedQuest);
+    const nextQuest = CHAPTER_1_NARUTO_QUESTS[currentQuestIdx + 1];
+    if (nextQuest) {
+      setSelectedQuest(nextQuest);
+      setSelectedArc(nextQuest.arcNumber);
+    }
+  };
 
   const handleReadDialogue = (
     text: string,
@@ -359,7 +378,7 @@ export default function NarutoStoryQuestModal({
             ) : allObjectivesCompleted ? (
               <button
                 type="button"
-                onClick={() => onCompleteQuest(selectedQuest)}
+                onClick={handleClaimReward}
                 className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-400 hover:brightness-110 text-slate-950 font-black text-xs uppercase tracking-wider shadow-[0_0_25px_rgba(16,185,129,0.5)] transition cursor-pointer flex items-center justify-center gap-2 animate-bounce"
               >
                 <Sparkles size={16} />

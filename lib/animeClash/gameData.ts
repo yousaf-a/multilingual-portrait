@@ -779,9 +779,9 @@ export const TROOPS_CATALOG: TroopData[] = [
 
 export const INITIAL_VILLAGE_BUILDINGS: BuildingInstance[] = [
   {
-    id: 'core_1',
+    id: 'hokage_residence_core',
     type: 'command_core',
-    name: 'Neo-Hokage Command Core',
+    name: 'Hokage Residence (Leaf Town Hall Lv. 1)',
     level: 1,
     x: 5,
     y: 5,
@@ -789,132 +789,29 @@ export const INITIAL_VILLAGE_BUILDINGS: BuildingInstance[] = [
     maxHp: 1800,
     color: '#f97316',
     icon: '🏛️'
-  },
-  {
-    id: 'chakra_1',
-    type: 'chakra_turbine',
-    name: 'Chakra Hydro-Turbine',
-    level: 1,
-    x: 3,
-    y: 4,
-    hp: 550,
-    maxHp: 550,
-    productionRate: 15,
-    resourceProduced: 'chakra',
-    color: '#06b6d4',
-    icon: '🌀'
-  },
-  {
-    id: 'berry_1',
-    type: 'berry_treasury',
-    name: 'Berry Vault',
-    level: 1,
-    x: 7,
-    y: 4,
-    hp: 600,
-    maxHp: 600,
-    productionRate: 20,
-    resourceProduced: 'berries',
-    color: '#eab308',
-    icon: '💰'
-  },
-  {
-    id: 'reishi_1',
-    type: 'reishi_siphon',
-    name: 'Spiritual Reishi Battery',
-    level: 1,
-    x: 5,
-    y: 3,
-    hp: 500,
-    maxHp: 500,
-    productionRate: 12,
-    resourceProduced: 'reishi',
-    color: '#a855f7',
-    icon: '🔮'
-  },
-  {
-    id: 'cannon_1',
-    type: 'haki_cannon',
-    name: 'Haki Rail Cannon',
-    level: 1,
-    x: 3,
-    y: 7,
-    hp: 750,
-    maxHp: 750,
-    attack: 45,
-    range: 5,
-    color: '#ef4444',
-    icon: '💣'
-  },
-  {
-    id: 'mortar_1',
-    type: 'paper_mortar',
-    name: 'Paper-Bomb Mortar',
-    level: 1,
-    x: 7,
-    y: 7,
-    hp: 650,
-    maxHp: 650,
-    attack: 55,
-    range: 6.5,
-    color: '#f59e0b',
-    icon: '💥'
-  },
-  {
-    id: 'wall_1',
-    type: 'defense_wall',
-    name: 'Titanium Wall',
-    level: 1,
-    x: 4,
-    y: 6,
-    hp: 850,
-    maxHp: 850,
-    color: '#64748b',
-    icon: '🧱'
-  },
-  {
-    id: 'wall_2',
-    type: 'defense_wall',
-    name: 'Titanium Wall',
-    level: 1,
-    x: 5,
-    y: 6,
-    hp: 850,
-    maxHp: 850,
-    color: '#64748b',
-    icon: '🧱'
-  },
-  {
-    id: 'wall_3',
-    type: 'defense_wall',
-    name: 'Titanium Wall',
-    level: 1,
-    x: 6,
-    y: 6,
-    hp: 850,
-    maxHp: 850,
-    color: '#64748b',
-    icon: '🧱'
   }
 ];
 
 export const INITIAL_PLAYER_STATE: PlayerVillageState = {
   level: 1,
   berries: 650,
-  chakra: 500,
-  reishi: 400,
+  chakra: 450,
+  reishi: 0, // Unlocked when advancing to Bleach Soul Society
   maxStorage: 2500,
   buildings: INITIAL_VILLAGE_BUILDINGS,
   unlockedHeroes: ['naruto'],
   activeHeroId: 'naruto',
   completedChapters: [],
+  completedStoryQuests: [],
+  defeatedMiniBosses: [],
+  currentChapter: 1,
   heroLevels: { naruto: 1 },
-  trainedTroops: { konoha_ninja: 8, strawhat_brawler: 4, shinigami_patrol: 4, black_bulls_mage: 2 },
-  weatherMode: 'night',
+  trainedTroops: {}, // Fresh start: train your genin in Quest 1!
+  weatherMode: 'day',
   activeGuildId: 'hidden_leaf',
-  guildContribution: 120,
-  playerName: 'Marou (Me)',
-  sanctuaryTag: '#SANCTUARY-MAROU-1',
+  guildContribution: 0,
+  playerName: 'Shinobi Hokage (You)',
+  sanctuaryTag: '#LEAF-001',
   lastHarvestTime: 0
 };
 

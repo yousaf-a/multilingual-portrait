@@ -30,7 +30,7 @@ import {
   getHeroStatsForLevel,
   getHeroUpgradeCost
 } from '@/lib/animeClash/gameData';
-import { recordCrossUserRaid } from '@/lib/animeClash/accountManager';
+import { recordCrossUserRaid, resetToChapterOneFreshStart } from '@/lib/animeClash/accountManager';
 import {
   toIso,
   fromIso,
@@ -88,7 +88,8 @@ import {
   Home,
   User,
   LogOut,
-  Compass
+  Compass,
+  RotateCcw
 } from 'lucide-react';
 
 interface VillageBuilderProps {
@@ -790,24 +791,70 @@ export default function VillageBuilder({
       }
     }
 
+    let bName = 'Structure';
+    let bHp = 700;
+    let bColor = '#3b82f6';
+    let bIcon = '🏛️';
+    let bAtk: number | undefined;
+    let bRange: number | undefined;
+    let bProd: number | undefined;
+    let bRes: 'berries' | 'chakra' | 'reishi' | undefined;
+
+    if (type === 'hero_altar') {
+      bName = 'Ninja Academy (Training Ground)';
+      bHp = 950;
+      bColor = '#f97316';
+      bIcon = '🏯';
+    } else if (type === 'defense_wall') {
+      bName = 'Leaf Palisade Wall';
+      bHp = 850;
+      bColor = '#78350f';
+      bIcon = '🧱';
+    } else if (type === 'chakra_turbine') {
+      bName = 'Chakra Hydro-Turbine';
+      bHp = 600;
+      bColor = '#06b6d4';
+      bIcon = '🌀';
+      bProd = 15;
+      bRes = 'chakra';
+    } else if (type === 'berry_treasury') {
+      bName = 'Konoha Berry Vault';
+      bHp = 650;
+      bColor = '#eab308';
+      bIcon = '💰';
+      bProd = 20;
+      bRes = 'berries';
+    } else if (type === 'paper_mortar') {
+      bName = 'Paper-Bomb Mortar';
+      bHp = 650;
+      bColor = '#f59e0b';
+      bIcon = '💥';
+      bAtk = 60;
+      bRange = 6.5;
+    } else if (type === 'haki_cannon') {
+      bName = 'Haki Rail Cannon';
+      bHp = 750;
+      bColor = '#ef4444';
+      bIcon = '💣';
+      bAtk = 50;
+      bRange = 5.0;
+    }
+
     const newBuilding: BuildingInstance = {
       id: `${type}_${Date.now()}`,
       type,
-      name:
-        type === 'haki_cannon'
-          ? 'Haki Rail Cannon'
-          : type === 'paper_mortar'
-          ? 'Paper-Bomb Mortar'
-          : 'Titanium Wall',
+      name: bName,
       level: 1,
       x: freeX,
       y: freeY,
-      hp: type === 'defense_wall' ? 850 : 700,
-      maxHp: type === 'defense_wall' ? 850 : 700,
-      attack: type === 'haki_cannon' ? 50 : type === 'paper_mortar' ? 60 : undefined,
-      range: type === 'haki_cannon' ? 5 : type === 'paper_mortar' ? 6.5 : undefined,
-      color: type === 'haki_cannon' ? '#ef4444' : type === 'paper_mortar' ? '#f59e0b' : '#64748b',
-      icon: type === 'haki_cannon' ? '💣' : type === 'paper_mortar' ? '💥' : '🧱'
+      hp: bHp,
+      maxHp: bHp,
+      attack: bAtk,
+      range: bRange,
+      productionRate: bProd,
+      resourceProduced: bRes,
+      color: bColor,
+      icon: bIcon
     };
 
     onUpdateVillage({
@@ -1009,6 +1056,22 @@ export default function VillageBuilder({
           >
             <BookOpen size={13} />
             <span className="font-bold">Story &amp; Guide</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              if (window.confirm("Start All-New Chapter 1 Fresh? This resets your village, quests to 0/25, and lets you experience the campaign from scratch!")) {
+                const fresh = resetToChapterOneFreshStart(currentUser?.id || 'user_naruto');
+                onUpdateVillage(fresh);
+                animeAudio.playUpgradeSuccess();
+              }
+            }}
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-rose-500/15 border border-rose-400/40 hover:bg-rose-500/25 transition cursor-pointer text-xs text-rose-300"
+            title="Wipe and start fresh from Chapter 1 (Konoha)"
+          >
+            <RotateCcw size={12} />
+            <span className="font-bold">Reset Ch. 1</span>
           </button>
 
           <button
@@ -1628,55 +1691,133 @@ export default function VillageBuilder({
         </div>
       )}
 
-      {/* 6. DEFENSE SHOP TAB */}
+      {/* 6. DEFENSE & VILLAGE BUILD SHOP TAB */}
       {activeBuildTab === 'shop' && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="bg-[#0b1226]/90 border border-[#1e2a4a] rounded-3xl p-5 shadow-xl flex flex-col justify-between">
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between p-4 rounded-3xl bg-[#0b1226]/90 border border-[#1e2a4a]">
             <div>
-              <div className="text-3xl mb-2">💣</div>
-              <h4 className="text-sm font-bold text-white">Haki Rail Cannon</h4>
-              <p className="text-xs text-slate-400 mt-1">Heavy single-target defense turret infused with Armament Haki.</p>
-              <div className="text-xs text-red-400 font-semibold mt-2">⚔️ 50 Attack DMG &bull; 750 HP</div>
+              <h3 className="text-base font-extrabold text-white flex items-center gap-2">
+                <span>🔨</span>
+                <span>Konohagakure Building Shop</span>
+              </h3>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Construct training academies, defenses, resource collectors, and fortified walls to expand your village and complete chapter quests slow &amp; steady.
+              </p>
             </div>
             <button
               type="button"
-              onClick={() => handleConstructBuilding('haki_cannon', 250, 'berries')}
-              className="mt-4 w-full py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs cursor-pointer"
+              onClick={() => setActiveBuildTab('village')}
+              className="text-xs text-slate-300 hover:text-white px-3 py-1.5 rounded-xl bg-[#1e293b]"
             >
-              Construct (💰 250 Berries)
+              Return to Map
             </button>
           </div>
 
-          <div className="bg-[#0b1226]/90 border border-[#1e2a4a] rounded-3xl p-5 shadow-xl flex flex-col justify-between">
-            <div>
-              <div className="text-3xl mb-2">💥</div>
-              <h4 className="text-sm font-bold text-white">Paper-Bomb Mortar</h4>
-              <p className="text-xs text-slate-400 mt-1">Konoha AOE explosive tag launcher for swarm attacks.</p>
-              <div className="text-xs text-amber-400 font-semibold mt-2">💥 60 AOE DMG &bull; 650 HP</div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* 1. NINJA ACADEMY (TRAINING GROUND) - QUEST 1 REQUIREMENT */}
+            <div className="bg-[#0b1226]/90 border border-orange-500/40 rounded-3xl p-5 shadow-xl flex flex-col justify-between relative overflow-hidden">
+              <span className="absolute top-3 right-3 text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-300 border border-orange-500/40">
+                QUEST 1 GOAL
+              </span>
+              <div>
+                <div className="text-3xl mb-2">🏯</div>
+                <h4 className="text-sm font-bold text-white">Ninja Academy (Training Ground)</h4>
+                <p className="text-xs text-slate-400 mt-1">Konoha shinobi academy where young genin train basic jutsu and physical combat.</p>
+                <div className="text-xs text-orange-400 font-semibold mt-2">🥋 Shinobi Hub &bull; 950 HP</div>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleConstructBuilding('hero_altar', 120, 'berries')}
+                className="mt-4 w-full py-2.5 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 hover:brightness-110 text-white font-bold text-xs cursor-pointer shadow-md"
+              >
+                Construct (💰 120 Berries)
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={() => handleConstructBuilding('paper_mortar', 200, 'chakra')}
-              className="mt-4 w-full py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs cursor-pointer"
-            >
-              Construct (🌀 200 Chakra)
-            </button>
-          </div>
 
-          <div className="bg-[#0b1226]/90 border border-[#1e2a4a] rounded-3xl p-5 shadow-xl flex flex-col justify-between">
-            <div>
-              <div className="text-3xl mb-2">🧱</div>
-              <h4 className="text-sm font-bold text-white">Titanium Fortified Wall</h4>
-              <p className="text-xs text-slate-400 mt-1">High-durability reinforced barrier to channel enemy routes.</p>
-              <div className="text-xs text-slate-300 font-semibold mt-2">🛡️ 850 HP Absorption</div>
+            {/* 2. LEAF PALISADE WALL - QUEST 2 REQUIREMENT */}
+            <div className="bg-[#0b1226]/90 border border-[#1e2a4a] rounded-3xl p-5 shadow-xl flex flex-col justify-between">
+              <div>
+                <div className="text-3xl mb-2">🧱</div>
+                <h4 className="text-sm font-bold text-white">Leaf Palisade Wall</h4>
+                <p className="text-xs text-slate-400 mt-1">Reinforced wooden perimeter barrier protecting Konoha against rogue ninjas.</p>
+                <div className="text-xs text-slate-300 font-semibold mt-2">🛡️ 850 HP Absorption</div>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleConstructBuilding('defense_wall', 40, 'berries')}
+                className="mt-4 w-full py-2.5 rounded-xl bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs cursor-pointer"
+              >
+                Construct (💰 40 Berries)
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={() => handleConstructBuilding('defense_wall', 80, 'berries')}
-              className="mt-4 w-full py-2.5 rounded-xl bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs cursor-pointer"
-            >
-              Construct (💰 80 Berries)
-            </button>
+
+            {/* 3. CHAKRA HYDRO-TURBINE */}
+            <div className="bg-[#0b1226]/90 border border-cyan-500/30 rounded-3xl p-5 shadow-xl flex flex-col justify-between">
+              <div>
+                <div className="text-3xl mb-2">🌀</div>
+                <h4 className="text-sm font-bold text-white">Chakra Hydro-Turbine</h4>
+                <p className="text-xs text-slate-400 mt-1">Harvests elemental river flow to produce pure blue chakra for troops and jutsu.</p>
+                <div className="text-xs text-cyan-400 font-semibold mt-2">⚡ +15 Chakra / min &bull; 600 HP</div>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleConstructBuilding('chakra_turbine', 100, 'berries')}
+                className="mt-4 w-full py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs cursor-pointer"
+              >
+                Construct (💰 100 Berries)
+              </button>
+            </div>
+
+            {/* 4. KONOHA BERRY VAULT */}
+            <div className="bg-[#0b1226]/90 border border-amber-500/30 rounded-3xl p-5 shadow-xl flex flex-col justify-between">
+              <div>
+                <div className="text-3xl mb-2">💰</div>
+                <h4 className="text-sm font-bold text-white">Konoha Berry Vault</h4>
+                <p className="text-xs text-slate-400 mt-1">Secure underground treasury holding mission bounty ryo and commerce taxes.</p>
+                <div className="text-xs text-amber-400 font-semibold mt-2">🪙 +20 Berries / min &bull; 650 HP</div>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleConstructBuilding('berry_treasury', 80, 'chakra')}
+                className="mt-4 w-full py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs cursor-pointer"
+              >
+                Construct (🌀 80 Chakra)
+              </button>
+            </div>
+
+            {/* 5. PAPER-BOMB MORTAR */}
+            <div className="bg-[#0b1226]/90 border border-[#1e2a4a] rounded-3xl p-5 shadow-xl flex flex-col justify-between">
+              <div>
+                <div className="text-3xl mb-2">💥</div>
+                <h4 className="text-sm font-bold text-white">Paper-Bomb Mortar</h4>
+                <p className="text-xs text-slate-400 mt-1">Konoha AOE explosive tag launcher for repelling enemy swarms.</p>
+                <div className="text-xs text-amber-400 font-semibold mt-2">💥 60 AOE DMG &bull; 650 HP</div>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleConstructBuilding('paper_mortar', 180, 'chakra')}
+                className="mt-4 w-full py-2.5 rounded-xl bg-orange-700 hover:bg-orange-600 text-white font-bold text-xs cursor-pointer"
+              >
+                Construct (🌀 180 Chakra)
+              </button>
+            </div>
+
+            {/* 6. HAKI RAIL CANNON */}
+            <div className="bg-[#0b1226]/90 border border-[#1e2a4a] rounded-3xl p-5 shadow-xl flex flex-col justify-between">
+              <div>
+                <div className="text-3xl mb-2">💣</div>
+                <h4 className="text-sm font-bold text-white">Haki Rail Cannon</h4>
+                <p className="text-xs text-slate-400 mt-1">Heavy single-target defense turret infused with Armament Haki.</p>
+                <div className="text-xs text-red-400 font-semibold mt-2">⚔️ 50 Attack DMG &bull; 750 HP</div>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleConstructBuilding('haki_cannon', 250, 'berries')}
+                className="mt-4 w-full py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs cursor-pointer"
+              >
+                Construct (💰 250 Berries)
+              </button>
+            </div>
           </div>
         </div>
       )}

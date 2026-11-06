@@ -663,11 +663,37 @@ export function evaluateQuestTaskProgress(
   switch (task.type) {
     case 'build': {
       if (task.targetKey) {
-        current = villageState.buildings.filter(
-          (b) =>
-            b.type === task.targetKey ||
-            (task.targetKey === 'wall' && (b.type === 'defense_wall' || (b.type as string) === 'wall'))
-        ).length;
+        const key = task.targetKey.toLowerCase();
+        if (key === 'dojo' || key === 'arena' || key === 'academy' || key === 'hero_altar') {
+          current = villageState.buildings.filter(
+            (b) =>
+              b.type === 'hero_altar' ||
+              (b.type as string) === 'dojo' ||
+              b.name.toLowerCase().includes('academy') ||
+              b.name.toLowerCase().includes('dojo') ||
+              b.name.toLowerCase().includes('arena')
+          ).length;
+        } else if (key === 'wall') {
+          current = villageState.buildings.filter(
+            (b) => b.type === 'defense_wall' || (b.type as string) === 'wall'
+          ).length;
+        } else if (key === 'cannon' || key === 'archer_tower') {
+          current = villageState.buildings.filter(
+            (b) => b.type === 'haki_cannon' || b.type === 'paper_mortar' || b.type === 'kido_spire' || (b.type as string) === 'cannon'
+          ).length;
+        } else if (key === 'hospital' || key === 'monolith') {
+          current = villageState.buildings.filter(
+            (b) => b.type === 'chakra_turbine' || b.type === 'hero_altar' || (b.type as string) === key
+          ).length;
+        } else if (key === 'treasury') {
+          current = villageState.buildings.filter(
+            (b) => b.type === 'berry_treasury' || b.type === 'chakra_turbine'
+          ).length;
+        } else {
+          current = villageState.buildings.filter(
+            (b) => b.type === task.targetKey || b.name.toLowerCase().includes(key)
+          ).length;
+        }
       }
       break;
     }
@@ -683,7 +709,13 @@ export function evaluateQuestTaskProgress(
       break;
     }
     case 'train': {
-      if (task.targetKey) {
+      const key = (task.targetKey || '').toLowerCase();
+      if (key === 'shinobi' || key === 'ninja' || key === 'genin' || key === 'konoha_genin') {
+        current =
+          (villageState.trainedTroops?.['konoha_genin'] || 0) +
+          (villageState.trainedTroops?.['konoha_ninja'] || 0) +
+          (villageState.trainedTroops?.['shinobi'] || 0);
+      } else if (task.targetKey) {
         current = villageState.trainedTroops?.[task.targetKey] || 0;
       } else {
         current = Object.values(villageState.trainedTroops || {}).reduce((a, b) => a + b, 0);

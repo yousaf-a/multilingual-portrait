@@ -1,9 +1,9 @@
 import { UserAccount, PlayerVillageState, RaidBattleReport } from './types';
 import { INITIAL_PLAYER_STATE, DEFAULT_FRIEND_BASES, HERO_UNLOCK_HQ_REQUIREMENTS } from './gameData';
 
-const ACCOUNTS_STORAGE_KEY = 'anime_clash_accounts_registry_v1';
-const ACTIVE_USER_ID_KEY = 'anime_clash_active_user_id_v1';
-const USER_VILLAGE_PREFIX = 'anime_clash_user_village_state_';
+const ACCOUNTS_STORAGE_KEY = 'anime_clash_accounts_registry_v2';
+const ACTIVE_USER_ID_KEY = 'anime_clash_active_user_id_v2';
+const USER_VILLAGE_PREFIX = 'anime_clash_user_village_state_v2_';
 
 // Initial pre-seeded accounts for multiplayer demo
 export const DEFAULT_ACCOUNTS: UserAccount[] = [
@@ -343,5 +343,35 @@ export function recordCrossUserRaid(
 
     saveUserVillageState(defenderUserId, updatedState);
   } catch (_) {}
+}
+
+/**
+ * Hard reset to Chapter 1: The Hidden Leaf Village fresh start
+ */
+export function resetToChapterOneFreshStart(userId: string = 'user_naruto'): PlayerVillageState {
+  const fresh: PlayerVillageState = {
+    ...INITIAL_PLAYER_STATE,
+    ownerUserId: userId,
+    playerName: 'Shinobi Hokage (You)',
+    sanctuaryTag: '#LEAF-001',
+    completedStoryQuests: [],
+    completedChapters: [],
+    defeatedMiniBosses: [],
+    trainedTroops: {},
+    buildings: INITIAL_PLAYER_STATE.buildings,
+    heroLevels: { naruto: 1 },
+    unlockedHeroes: ['naruto'],
+    currentChapter: 1,
+    berries: 650,
+    chakra: 450,
+    reishi: 0
+  };
+  saveUserVillageState(userId, fresh);
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.removeItem('animeClash_prologue_seen');
+    } catch (_) {}
+  }
+  return fresh;
 }
 

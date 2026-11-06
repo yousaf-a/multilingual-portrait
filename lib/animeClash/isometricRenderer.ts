@@ -526,9 +526,26 @@ export function drawIsoTerrain(
   // Grand Hokage Rock Monument Backdrop overlooking the village
   if (monumentImg && monumentImg.complete && monumentImg.naturalWidth > 0) {
     ctx.save();
-    // Render the high-definition cinematic anime Hokage Monument artwork
-    const backdropH = Math.max(160, originY + 25);
-    ctx.drawImage(monumentImg, 0, 0, width, backdropH);
+    // Maintain natural cinematic aspect ratio without squishing
+    const backdropH = Math.max(185, originY + 25);
+    const natW = monumentImg.naturalWidth;
+    const natH = monumentImg.naturalHeight;
+
+    // Source crop calculation: focus on the upper/middle mountain cliff with the 4 faces
+    const targetAspect = width / backdropH;
+    let sW = natW;
+    let sH = natW / targetAspect;
+    let sX = 0;
+    let sY = 0;
+
+    if (sH > natH) {
+      sH = natH;
+      sW = natH * targetAspect;
+      sX = (natW - sW) / 2;
+    }
+
+    // Draw the un-squished, pristine anime Hokage Monument
+    ctx.drawImage(monumentImg, sX, sY, sW, sH, 0, 0, width, backdropH);
 
     // Weather-reactive atmospheric tint
     if (isNight) {
@@ -543,12 +560,12 @@ export function drawIsoTerrain(
     }
 
     // Seamless atmospheric soft blend at the bottom into the village island
-    const blendGrad = ctx.createLinearGradient(0, backdropH - 50, 0, backdropH);
+    const blendGrad = ctx.createLinearGradient(0, backdropH - 55, 0, backdropH);
     blendGrad.addColorStop(0, 'rgba(0, 0, 0, 0)');
-    blendGrad.addColorStop(0.7, isNight ? 'rgba(5, 12, 24, 0.75)' : isTwilight ? 'rgba(42, 14, 40, 0.75)' : isRain ? 'rgba(7, 22, 24, 0.75)' : 'rgba(13, 45, 20, 0.75)');
+    blendGrad.addColorStop(0.65, isNight ? 'rgba(5, 12, 24, 0.75)' : isTwilight ? 'rgba(42, 14, 40, 0.75)' : isRain ? 'rgba(7, 22, 24, 0.75)' : 'rgba(13, 45, 20, 0.75)');
     blendGrad.addColorStop(1, isNight ? '#050c18' : isTwilight ? '#2a0e28' : isRain ? '#071618' : '#0d2d14');
     ctx.fillStyle = blendGrad;
-    ctx.fillRect(0, backdropH - 50, width, 50);
+    ctx.fillRect(0, backdropH - 55, width, 55);
 
     ctx.restore();
   } else {

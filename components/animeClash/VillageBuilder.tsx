@@ -272,9 +272,9 @@ export default function VillageBuilder({
       const elapsed = (Date.now() - startTime) / 1000;
 
       const width = 820;
-      const height = 480;
+      const height = 540;
       const originX = width / 2;
-      const originY = 120;
+      const originY = 170;
 
       if (canvas.width !== width || canvas.height !== height) {
         canvas.width = width;
@@ -387,7 +387,7 @@ export default function VillageBuilder({
     const clickY = (clientY - rect.top) * scaleY;
 
     const originX = canvas.width / 2;
-    const originY = 120;
+    const originY = 170;
 
     const { gridX, gridY } = fromIso(clickX, clickY, originX, originY);
 
@@ -1452,7 +1452,7 @@ export default function VillageBuilder({
             <div className="w-full rounded-3xl overflow-hidden border-2 border-[#1e3a5f] shadow-2xl relative bg-[#091522]">
               {/* Authentic Anime Hokage Monument Backdrop from Official Artwork */}
               <div
-                className="absolute top-0 left-0 right-0 h-44 bg-cover bg-top pointer-events-none opacity-90 transition-opacity duration-500"
+                className="absolute top-0 left-0 right-0 h-60 bg-cover bg-top pointer-events-none opacity-90 transition-opacity duration-500"
                 style={{ backgroundImage: `url('/anime-heroes/konoha-hokage-monument-hd.jpg')` }}
               >
                 <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-[#091522]" />
@@ -1461,10 +1461,10 @@ export default function VillageBuilder({
               <canvas
                 ref={canvasRef}
                 width={820}
-                height={480}
+                height={540}
                 onClick={handleCanvasClick}
                 onTouchEnd={handleCanvasTouch}
-                className="w-full h-auto block cursor-crosshair select-none touch-manipulation max-h-[520px] object-cover relative z-0"
+                className="w-full h-auto block cursor-crosshair select-none touch-manipulation max-h-[580px] object-cover relative z-0"
               />
 
               {/* In-Canvas Hero Guard Indicator & 360 Dojo Pill */}

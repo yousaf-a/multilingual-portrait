@@ -346,6 +346,31 @@ export function drawIsoTerrain(
   ctx.lineWidth = 1.5;
   ctx.stroke();
 
+  // Shimenawa Sacred Twisted Rice Rope with Fluttering Shide Streamers
+  ctx.strokeStyle = '#d97706';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(tx - 20, ty - 22);
+  ctx.quadraticCurveTo(tx, ty - 18, tx + 15, ty - 22);
+  ctx.stroke();
+
+  // 3 Fluttering Zigzag Shide Paper Streamers swinging with wind
+  const shideOffsets = [-12, -1, 10];
+  shideOffsets.forEach((so) => {
+    const shideSway = Math.sin(animTime * 3.2 + so) * 2.2;
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.moveTo(tx + so, ty - 20);
+    ctx.lineTo(tx + so + shideSway + 3, ty - 12);
+    ctx.lineTo(tx + so + shideSway - 1, ty - 7);
+    ctx.lineTo(tx + so + shideSway + 2, ty - 2);
+    ctx.lineTo(tx + so + shideSway, ty - 2);
+    ctx.lineTo(tx + so + shideSway - 3, ty - 7);
+    ctx.lineTo(tx + so + shideSway + 1, ty - 12);
+    ctx.closePath();
+    ctx.fill();
+  });
+
   // Perimeter Japanese Pine Trees with Layered Needles & Dropshadows
   const treeCoords = [
     { x: -1, y: 3 }, { x: -1, y: 7 }, { x: 3, y: -1 }, { x: 8, y: -1 },
@@ -439,6 +464,21 @@ export function drawIsoTerrain(
     ctx.ellipse(0, 0, 4.8, 2.4, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
+  }
+  ctx.restore();
+
+  // 5.5 Floating Fireflies (Glowing Amber/Cyan bio-luminescent dots drifting over the grass)
+  ctx.save();
+  for (let f = 0; f < 18; f++) {
+    const fx = ((f * 47 + animTime * 15 + Math.sin(animTime * 1.5 + f) * 20) % width);
+    const fy = ((f * 39 + animTime * 8 + Math.cos(animTime * 1.8 + f) * 15) % height);
+    const fPulse = (Math.sin(animTime * 4 + f * 2) + 1) / 2;
+    ctx.fillStyle = f % 2 === 0 ? `rgba(251, 191, 36, ${0.4 + fPulse * 0.5})` : `rgba(56, 189, 248, ${0.4 + fPulse * 0.5})`;
+    ctx.shadowColor = f % 2 === 0 ? '#fbbf24' : '#38bdf8';
+    ctx.shadowBlur = 8;
+    ctx.beginPath();
+    ctx.arc(fx, fy, 2 + fPulse * 1.5, 0, Math.PI * 2);
+    ctx.fill();
   }
   ctx.restore();
 
@@ -576,6 +616,21 @@ export function drawIsoBuilding(
       ctx.strokeStyle = '#fbbf24';
       ctx.lineWidth = 2.5;
       ctx.stroke();
+
+      // Animated Woodfire Chimney Smoke Puffs drifting upward
+      for (let s = 0; s < 4; s++) {
+        const sTime = animTime * 1.6 + s * 0.85;
+        const sProg = (sTime % 3) / 3;
+        const smokeX = cx - 9 + Math.sin(sTime * 2.2) * 5;
+        const smokeY = roof1Y - 14 - sProg * 28;
+        const smokeR = 3 + sProg * 6;
+        const smokeAlpha = (1 - sProg) * 0.4;
+
+        ctx.fillStyle = `rgba(226, 232, 240, ${smokeAlpha})`;
+        ctx.beginPath();
+        ctx.arc(smokeX, smokeY, smokeR, 0, Math.PI * 2);
+        ctx.fill();
+      }
 
       // Twin Swaying Red Paper Lanterns (提灯)
       const lanternSway = Math.sin(animTime * 2.8) * 2.5;
@@ -944,6 +999,129 @@ export function drawIsoBuilding(
       break;
     }
 
+    case 'hero_altar': {
+      // 🏯 Master Ninja Academy & Shinobi Training Ground (Authentic Dojo Pavilion)
+      // 1. Foundation Timber Training Deck
+      draw3DBox(ctx, cx, cy, 44, 25, 10, '#78350f', '#451a03', '#92400e');
+
+      // Tatami Sparring Mat in Front Center
+      ctx.fillStyle = '#65a30d';
+      ctx.fillRect(cx - 13, cy - 3, 26, 9);
+      ctx.strokeStyle = '#365314';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(cx - 13, cy - 3, 26, 9);
+
+      // 2. Main Dojo Shrine Hall (Vermillion Pillars + Shoji Walls)
+      draw3DBox(ctx, cx, cy - 10, 32, 18, 18, '#dc2626', '#991b1b', '#b91c1c');
+
+      // Illuminated Shoji Windows with Warm Golden Hearth Glow
+      ctx.fillStyle = '#fef08a';
+      ctx.shadowColor = '#f59e0b';
+      ctx.shadowBlur = 8;
+      ctx.fillRect(cx - 10, cy - 23, 6, 8);
+      ctx.fillRect(cx + 4, cy - 23, 6, 8);
+      ctx.shadowBlur = 0;
+
+      // 3. Sweeping Japanese Dojo Roof with Flared Golden Cornices
+      const dojoRoofW = 50;
+      const dojoRoofY = cy - 28;
+      ctx.fillStyle = '#0f172a';
+      ctx.beginPath();
+      ctx.moveTo(cx, dojoRoofY - 15);
+      ctx.lineTo(cx + dojoRoofW / 2 + 2, dojoRoofY + 2);
+      ctx.quadraticCurveTo(cx, dojoRoofY + 8, cx - dojoRoofW / 2 - 2, dojoRoofY + 2);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.strokeStyle = '#fbbf24';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Shinobi Kanji Scroll Banner: "忍" (Shinobi)
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(cx - 6, dojoRoofY + 3, 12, 8);
+      ctx.strokeStyle = '#78350f';
+      ctx.strokeRect(cx - 6, dojoRoofY + 3, 12, 8);
+      ctx.font = 'bold 7px sans-serif';
+      ctx.fillStyle = '#dc2626';
+      ctx.textAlign = 'center';
+      ctx.fillText('忍', cx, dojoRoofY + 9);
+
+      // 4. ANIMATED WOODEN TRAINING DUMMY (Karakuri Dummy)
+      const dummyX = cx + 18;
+      const dummyY = cy - 3;
+      // Dummy Timber Post
+      ctx.fillStyle = '#78350f';
+      ctx.fillRect(dummyX - 2, dummyY - 17, 4, 17);
+      // Spinning Arms with Wind Turbulence
+      const armSway = Math.sin(animTime * 8) * 5;
+      ctx.fillStyle = '#b45309';
+      ctx.fillRect(dummyX - 8 + armSway * 0.3, dummyY - 12, 16, 3);
+      // Dummy Target Head
+      ctx.fillStyle = '#fef08a';
+      ctx.beginPath();
+      ctx.arc(dummyX, dummyY - 19, 4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#dc2626';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      // 5. ANIMATED SHINOBI SHADOW CLONE SPARRING (Mini Ninja Clone!)
+      const cloneJump = Math.abs(Math.sin(animTime * 5)) * 8;
+      const cloneX = cx - 14 + Math.sin(animTime * 2.5) * 4;
+      const cloneY = cy + 2 - cloneJump;
+
+      // Shadow beneath clone
+      ctx.fillStyle = 'rgba(0,0,0,0.4)';
+      ctx.beginPath();
+      ctx.ellipse(cloneX, cy + 3, 5, 2.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Mini Shinobi Clone Body (Orange jumpsuit)
+      ctx.fillStyle = '#f97316';
+      ctx.beginPath();
+      ctx.arc(cloneX, cloneY - 8, 4.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Headband Metal Plate
+      ctx.fillStyle = '#94a3b8';
+      ctx.fillRect(cloneX - 3.5, cloneY - 11, 7, 2);
+
+      // Flying Practice Shuriken Arc
+      const shurikenProg = (animTime * 2.8) % 1;
+      const sx = cloneX + (dummyX - cloneX) * shurikenProg;
+      const sy = (cloneY - 8) + (dummyY - 12 - (cloneY - 8)) * shurikenProg - Math.sin(shurikenProg * Math.PI) * 14;
+
+      ctx.save();
+      ctx.translate(sx, sy);
+      ctx.rotate(animTime * 25);
+      ctx.fillStyle = '#cbd5e1';
+      ctx.beginPath();
+      ctx.moveTo(0, -3); ctx.lineTo(3, 0); ctx.lineTo(0, 3); ctx.lineTo(-3, 0);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+
+      // Impact Sparks at Training Dummy when shuriken lands
+      if (shurikenProg > 0.85) {
+        ctx.fillStyle = '#fbbf24';
+        ctx.beginPath();
+        ctx.arc(dummyX - 3, dummyY - 12, 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Clone Smoke Puff (Poof!) every 3.5s
+      const smokePhase = (animTime * 0.3) % 1;
+      if (smokePhase < 0.15) {
+        ctx.fillStyle = 'rgba(241, 245, 249, 0.6)';
+        ctx.beginPath();
+        ctx.arc(cloneX - 3, cloneY - 8, 7 * (1 - smokePhase / 0.15), 0, Math.PI * 2);
+        ctx.arc(cloneX + 4, cloneY - 10, 5 * (1 - smokePhase / 0.15), 0, Math.PI * 2);
+        ctx.fill();
+      }
+      break;
+    }
+
     default:
       draw3DBox(ctx, cx, cy, 28, 17, 13, '#475569', '#1e293b', '#64748b');
       break;
@@ -1109,6 +1287,34 @@ export function drawIsoHeroPatrol(
       spriteH
     );
     ctx.restore();
+
+    // 3.5 Animated Swirling Wind Chakra Rasengan in Naruto's Hand
+    if (heroName.toLowerCase().includes('naruto')) {
+      const rasenganAngle = animTime * 18;
+      const handX = cx + 18;
+      const handY = feetY - 34;
+
+      ctx.save();
+      ctx.translate(handX, handY);
+
+      // Glowing Azure Core
+      ctx.fillStyle = '#38bdf8';
+      ctx.shadowColor = '#0284c7';
+      ctx.shadowBlur = 14;
+      ctx.beginPath();
+      ctx.arc(0, 0, 5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Orbiting Wind Spirals
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1.2;
+      for (let a = 0; a < 3; a++) {
+        ctx.beginPath();
+        ctx.arc(0, 0, 7.5, rasenganAngle + a * ((Math.PI * 2) / 3), rasenganAngle + a * ((Math.PI * 2) / 3) + 1.2);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
   } else {
     // Stylized Anime Hero Silhouette with Hero Accent Gradient & Icon
     ctx.save();

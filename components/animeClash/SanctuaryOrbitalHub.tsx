@@ -211,10 +211,10 @@ export default function SanctuaryOrbitalHub({
         <button
           type="button"
           onClick={onSwitchToVillageGrid}
-          className="flex items-center gap-1.5 text-xs font-bold text-slate-300 hover:text-white px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 transition cursor-pointer"
+          className="flex items-center gap-1.5 text-xs font-bold text-white px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:brightness-110 border border-emerald-400/50 shadow-[0_0_15px_rgba(16,185,129,0.4)] transition cursor-pointer"
         >
-          <Layers size={13} className="text-blue-400" />
-          <span>Switch to Village Grid</span>
+          <span>🌸</span>
+          <span>Enter Konoha Village</span>
         </button>
       </div>
 

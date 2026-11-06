@@ -526,46 +526,33 @@ export function drawIsoTerrain(
   // Grand Hokage Rock Monument Backdrop overlooking the village
   if (monumentImg && monumentImg.complete && monumentImg.naturalWidth > 0) {
     ctx.save();
-    // Maintain natural cinematic aspect ratio without squishing
-    const backdropH = Math.max(185, originY + 25);
+    // Render the complete canonical anime Hokage Monument artwork with pure proportions
     const natW = monumentImg.naturalWidth;
     const natH = monumentImg.naturalHeight;
+    const drawH = (width / natW) * natH;
 
-    // Source crop calculation: focus on the upper/middle mountain cliff with the 4 faces
-    const targetAspect = width / backdropH;
-    let sW = natW;
-    let sH = natW / targetAspect;
-    let sX = 0;
-    let sY = 0;
-
-    if (sH > natH) {
-      sH = natH;
-      sW = natH * targetAspect;
-      sX = (natW - sW) / 2;
-    }
-
-    // Draw the un-squished, pristine anime Hokage Monument
-    ctx.drawImage(monumentImg, sX, sY, sW, sH, 0, 0, width, backdropH);
+    // Draw full width and height with natural anime scale
+    ctx.drawImage(monumentImg, 0, 0, natW, natH, 0, 0, width, drawH);
 
     // Weather-reactive atmospheric tint
     if (isNight) {
       ctx.fillStyle = 'rgba(6, 15, 35, 0.55)';
-      ctx.fillRect(0, 0, width, backdropH);
+      ctx.fillRect(0, 0, width, drawH);
     } else if (isTwilight) {
       ctx.fillStyle = 'rgba(95, 25, 65, 0.35)';
-      ctx.fillRect(0, 0, width, backdropH);
+      ctx.fillRect(0, 0, width, drawH);
     } else if (isRain) {
       ctx.fillStyle = 'rgba(10, 30, 35, 0.45)';
-      ctx.fillRect(0, 0, width, backdropH);
+      ctx.fillRect(0, 0, width, drawH);
     }
 
-    // Seamless atmospheric soft blend at the bottom into the village island
-    const blendGrad = ctx.createLinearGradient(0, backdropH - 55, 0, backdropH);
+    // Seamless atmospheric soft blend at the tree line into the village island
+    const blendGrad = ctx.createLinearGradient(0, originY - 45, 0, originY + 15);
     blendGrad.addColorStop(0, 'rgba(0, 0, 0, 0)');
-    blendGrad.addColorStop(0.65, isNight ? 'rgba(5, 12, 24, 0.75)' : isTwilight ? 'rgba(42, 14, 40, 0.75)' : isRain ? 'rgba(7, 22, 24, 0.75)' : 'rgba(13, 45, 20, 0.75)');
+    blendGrad.addColorStop(0.7, isNight ? 'rgba(5, 12, 24, 0.85)' : isTwilight ? 'rgba(42, 14, 40, 0.85)' : isRain ? 'rgba(7, 22, 24, 0.85)' : 'rgba(13, 45, 20, 0.85)');
     blendGrad.addColorStop(1, isNight ? '#050c18' : isTwilight ? '#2a0e28' : isRain ? '#071618' : '#0d2d14');
     ctx.fillStyle = blendGrad;
-    ctx.fillRect(0, backdropH - 55, width, 55);
+    ctx.fillRect(0, originY - 45, width, 60);
 
     ctx.restore();
   } else {
@@ -755,8 +742,8 @@ export function drawIsoTerrain(
   // 4. Perimeter Japanese Elements: Shinto Torii Gate, Stone Lanterns & Pine Trees
   ctx.save();
 
-  // Vermillion Shinto Torii Gate at Upper Entrance (gx = 5, gy = 0)
-  const toriiPos = toIso(5, 0, originX, originY);
+  // Vermillion Shinto Torii Gate at South Path Entrance (gx = 5, gy = 11)
+  const toriiPos = toIso(5, 11, originX, originY);
   const tx = toriiPos.x;
   const ty = toriiPos.y - 12;
 
@@ -819,9 +806,9 @@ export function drawIsoTerrain(
     ctx.fill();
   });
 
-  // Perimeter Japanese Pine Trees with Layered Needles & Dropshadows
+  // Perimeter Japanese Pine Trees with Layered Needles & Dropshadows (cleared from top ridge to reveal Hokage Rock)
   const treeCoords = [
-    { x: -1, y: 3 }, { x: -1, y: 7 }, { x: 3, y: -1 }, { x: 8, y: -1 },
+    { x: -1, y: 3 }, { x: -1, y: 7 },
     { x: 12, y: 4 }, { x: 12, y: 8 }, { x: 4, y: 12 }, { x: 9, y: 12 }
   ];
 

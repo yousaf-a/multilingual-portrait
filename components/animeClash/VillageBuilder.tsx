@@ -123,7 +123,7 @@ export default function VillageBuilder({
   );
 
   const [selectedBuilding, setSelectedBuilding] = useState<BuildingInstance | null>(null);
-  const [villageViewMode, setVillageViewMode] = useState<'orbit_hub' | 'grid'>('orbit_hub');
+  const [villageViewMode, setVillageViewMode] = useState<'cinematic' | 'grid' | 'orbit_hub'>('cinematic');
   const [activeBuildTab, setActiveBuildTab] = useState<'village' | 'shop' | 'heroes' | 'layouts' | 'roadmap' | 'attack' | 'guilds' | 'multiplayer'>('village');
   const [isRelocatingBuildingId, setIsRelocatingBuildingId] = useState<string | null>(null);
   const [heroInteractionQuote, setHeroInteractionQuote] = useState<string | null>(null);
@@ -209,6 +209,9 @@ export default function VillageBuilder({
   const animRef = useRef<number | null>(null);
 
   const activeHero = HEROES_CATALOG[villageState.activeHeroId] || HEROES_CATALOG.naruto;
+  const hqBuilding = villageState.buildings.find((b) => b.type === 'command_core');
+  const ramenBuilding = villageState.buildings.find((b) => b.type === 'ichiraku_ramen');
+  const team7Building = villageState.buildings.find((b) => b.type === 'team7_posts');
 
   // Active Hero Guard Patrol State
   const heroImgRef = useRef<HTMLImageElement | null>(null);
@@ -244,7 +247,7 @@ export default function VillageBuilder({
   const monumentImgRef = useRef<HTMLImageElement | null>(null);
   useEffect(() => {
     const img = new Image();
-    img.src = '/anime-heroes/konoha-hokage-monument-hd.jpg';
+    img.src = '/anime-heroes/konoha-hokage-rock-clean.jpg';
     if (img.complete && img.naturalWidth > 0) {
       monumentImgRef.current = img;
     }
@@ -272,9 +275,9 @@ export default function VillageBuilder({
       const elapsed = (Date.now() - startTime) / 1000;
 
       const width = 820;
-      const height = 540;
+      const height = 580;
       const originX = width / 2;
-      const originY = 170;
+      const originY = 220;
 
       if (canvas.width !== width || canvas.height !== height) {
         canvas.width = width;
@@ -387,7 +390,7 @@ export default function VillageBuilder({
     const clickY = (clientY - rect.top) * scaleY;
 
     const originX = canvas.width / 2;
-    const originY = 170;
+    const originY = 220;
 
     const { gridX, gridY } = fromIso(clickX, clickY, originX, originY);
 
@@ -1222,16 +1225,15 @@ export default function VillageBuilder({
             type="button"
             onClick={() => {
               setActiveBuildTab('village');
-              setVillageViewMode('orbit_hub');
+              setVillageViewMode('cinematic');
             }}
             className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
-              activeBuildTab === 'village' && villageViewMode === 'orbit_hub'
-                ? 'bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-black shadow-[0_0_15px_rgba(245,158,11,0.6)]'
+              activeBuildTab === 'village' && villageViewMode === 'cinematic'
+                ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 font-black shadow-[0_0_15px_rgba(16,185,129,0.6)]'
                 : 'text-slate-400 hover:text-white'
             }`}
           >
-            <Crown size={14} className="text-yellow-400" />
-            <span>👑 Command Hub</span>
+            <span>🌸 Anime Konoha</span>
           </button>
 
           <button
@@ -1247,7 +1249,23 @@ export default function VillageBuilder({
             }`}
           >
             <Layers size={14} />
-            <span>🏰 Base Grid & Build</span>
+            <span>📐 2.5D Tactical Grid</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setActiveBuildTab('village');
+              setVillageViewMode('orbit_hub');
+            }}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+              activeBuildTab === 'village' && villageViewMode === 'orbit_hub'
+                ? 'bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-black shadow-[0_0_15px_rgba(245,158,11,0.6)]'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Crown size={14} className="text-yellow-400" />
+            <span>👑 Command Hub</span>
           </button>
 
           <button
@@ -1442,29 +1460,264 @@ export default function VillageBuilder({
               onUpdateVillage={onUpdateVillage}
               onLaunch1v1={onLaunchBattle}
               onLaunchTrials={(_floor) => setIsArenaRaidActive(true)}
-              onSwitchToVillageGrid={() => setVillageViewMode('grid')}
+              onSwitchToVillageGrid={() => setVillageViewMode('cinematic')}
               onOpenMultiplayer={() => setActiveBuildTab('multiplayer')}
             />
           </div>
 
-          <div className={villageViewMode === 'grid' ? 'flex flex-col gap-3 w-full' : 'hidden'}>
-            {/* Real 2.5D Isometric Canvas (Widescreen Full Width) */}
-            <div className="w-full rounded-3xl overflow-hidden border-2 border-[#1e3a5f] shadow-2xl relative bg-[#091522]">
-              {/* Authentic Anime Hokage Monument Backdrop from Official Artwork */}
-              <div
-                className="absolute top-0 left-0 right-0 h-60 bg-cover bg-top pointer-events-none opacity-90 transition-opacity duration-500"
-                style={{ backgroundImage: `url('/anime-heroes/konoha-hokage-monument-hd.jpg')` }}
-              >
-                <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-[#091522]" />
+          {/* 1. CINEMATIC ANIME KONOHA VIEW (公式アニメ景観モード - 100% Canonical Living World) */}
+          <div className={villageViewMode === 'cinematic' ? 'flex flex-col gap-3 w-full animate-in fade-in duration-300' : 'hidden'}>
+            <style>{`
+              @keyframes floatSakuraLeaf {
+                0% { transform: translateY(0) translateX(0) rotate(0deg); opacity: 0.85; }
+                50% { transform: translateY(18px) translateX(22px) rotate(160deg); opacity: 1; }
+                100% { transform: translateY(38px) translateX(45px) rotate(340deg); opacity: 0.7; }
+              }
+            `}</style>
+            <div className="w-full rounded-3xl overflow-hidden border-2 border-emerald-500/40 shadow-[0_0_35px_rgba(16,185,129,0.25)] relative bg-[#091522] aspect-[16/10] sm:aspect-[16/9] min-h-[440px] max-h-[640px]">
+              {/* Full Uncropped High-Definition Canonical Anime Artwork */}
+              <img
+                src="/anime-heroes/canonical-konoha-valley.jpg"
+                alt="Konohagakure Hokage Rock & Village Valley"
+                className="w-full h-full object-cover object-center select-none pointer-events-none"
+              />
+
+              {/* Dynamic Weather & Time-of-Day Atmospheric Filter */}
+              {villageState.weatherMode === 'night' && (
+                <div className="absolute inset-0 bg-[#07132a]/45 mix-blend-multiply pointer-events-none" />
+              )}
+              {villageState.weatherMode === 'twilight' && (
+                <div className="absolute inset-0 bg-gradient-to-t from-purple-900/35 via-amber-500/20 to-transparent pointer-events-none" />
+              )}
+              {villageState.weatherMode === 'rain' && (
+                <div className="absolute inset-0 bg-slate-900/35 backdrop-blur-[0.5px] pointer-events-none" />
+              )}
+
+              {/* Drifting Sakura Cherry Blossom Petals Overlay */}
+              <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                {[...Array(14)].map((_, i) => (
+                  <span
+                    key={i}
+                    className="absolute text-pink-300 text-sm select-none"
+                    style={{
+                      top: `${(i * 17) % 92}%`,
+                      left: `${(i * 21) % 94}%`,
+                      filter: 'drop-shadow(0 0 5px rgba(244,114,182,0.8))',
+                      animation: `floatSakuraLeaf ${5 + (i % 5)}s ease-in-out infinite alternate`,
+                      animationDelay: `${i * 0.35}s`
+                    }}
+                  >
+                    🌸
+                  </span>
+                ))}
               </div>
 
+              {/* Top Left: Konohagakure Status Badge */}
+              <div className="absolute top-3 left-3 sm:top-4 sm:left-4 flex items-center gap-2 z-10">
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/80 border border-emerald-500/60 backdrop-blur-md text-xs text-emerald-300 font-bold shadow-lg">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
+                  <span>🍃 木ノ葉隠れの里 &bull; Konohagakure HQ Lv.{hqBuilding?.level || 1}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowcaseHeroId(activeHero.id);
+                    setShow360Showcase(true);
+                    animeAudio.playButtonClick();
+                  }}
+                  className="px-3 py-1.5 rounded-full bg-cyan-600/85 hover:bg-cyan-500 text-white border border-cyan-400/50 backdrop-blur-md text-xs font-bold cursor-pointer shadow flex items-center gap-1 transition"
+                  title="Inspect hero in 360° turntable with animated poses"
+                >
+                  <Compass size={13} />
+                  <span>360° Dojo</span>
+                </button>
+              </div>
+
+              {/* Top Right: View Switcher Pill */}
+              <div className="absolute top-3 right-3 sm:top-4 sm:right-4 flex items-center gap-1.5 z-10">
+                <div className="flex items-center p-1 rounded-2xl bg-black/80 backdrop-blur-md border border-white/15 shadow-xl">
+                  <button
+                    type="button"
+                    onClick={() => setVillageViewMode('cinematic')}
+                    className="px-3 py-1 rounded-xl text-xs font-black bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 shadow flex items-center gap-1 cursor-pointer"
+                  >
+                    <span>🌸 Anime View</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setVillageViewMode('grid')}
+                    className="px-3 py-1 rounded-xl text-xs font-bold text-slate-300 hover:text-white transition flex items-center gap-1 cursor-pointer"
+                  >
+                    <Layers size={12} />
+                    <span>📐 2.5D Grid</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Active Hero Standing on Hokage Residence Roof */}
+              <div className="absolute top-[48%] left-[50%] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-20 pointer-events-auto">
+                {/* Voice Speech Bubble */}
+                <div
+                  onClick={() => {
+                    setHeroInteractionQuote("Dattebayo! I'm gonna be the greatest Hokage and protect everyone in Konoha!");
+                    animeAudio.playHeroShout(activeHero.id);
+                  }}
+                  className="mb-1 px-3 py-1 rounded-2xl bg-black/85 border border-amber-400/80 text-amber-200 text-[11px] sm:text-xs font-bold shadow-xl backdrop-blur-md cursor-pointer hover:scale-105 transition flex items-center gap-1.5 animate-bounce"
+                  style={{ animationDuration: '3s' }}
+                >
+                  <span>💬</span>
+                  <span>&ldquo;{heroInteractionQuote || "I'll never go back on my word! That's my nindo!"}&rdquo;</span>
+                </div>
+
+                {/* Hero Avatar with Chakra Aura */}
+                <div
+                  onClick={() => {
+                    setShowcaseHeroId(activeHero.id);
+                    setShow360Showcase(true);
+                    animeAudio.playButtonClick();
+                  }}
+                  className="relative group cursor-pointer"
+                  title="Click to open 360° Dojo"
+                >
+                  <div className="absolute -inset-2 rounded-full bg-amber-500/40 blur-md group-hover:bg-amber-400/60 transition" />
+                  <img
+                    src={activeHero.image}
+                    alt={activeHero.name}
+                    className="w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-amber-400 shadow-2xl relative z-10 object-cover object-top hover:scale-110 transition duration-200"
+                  />
+                  <span className="absolute -bottom-1 -right-1 px-1.5 py-0.2 rounded-full bg-amber-500 text-slate-950 font-black text-[9px] shadow z-20">
+                    Lv.1
+                  </span>
+                </div>
+              </div>
+
+              {/* Interactive Landmark Pin 1: Hokage Residence (火影邸) */}
+              <button
+                type="button"
+                onClick={() => {
+                  if (hqBuilding) setSelectedBuilding(hqBuilding);
+                  animeAudio.playButtonClick();
+                }}
+                className="absolute top-[65%] left-[50%] -translate-x-1/2 -translate-y-1/2 z-20 group cursor-pointer focus:outline-none"
+              >
+                <div className="flex flex-col items-center">
+                  <div className="px-3 py-1.5 rounded-2xl bg-gradient-to-r from-red-600 to-rose-700 text-white font-black text-xs shadow-[0_0_18px_rgba(239,68,68,0.8)] border border-amber-400/70 flex items-center gap-1.5 group-hover:scale-110 transition duration-200">
+                    <span className="text-base">⛩️</span>
+                    <span>火影邸 (Hokage HQ) Lv.{hqBuilding?.level || 1}</span>
+                  </div>
+                  <span className="text-[10px] text-amber-200 font-bold bg-black/80 px-2 py-0.5 rounded-full mt-0.5 border border-white/10 group-hover:bg-black/90">
+                    Tap to Upgrade HQ
+                  </span>
+                </div>
+              </button>
+
+              {/* Interactive Landmark Pin 2: Ichiraku Ramen Stand (一楽ラーメン) */}
+              <button
+                type="button"
+                onClick={() => {
+                  const ramenB = villageState.buildings.find((b) => b.type === 'ichiraku_ramen');
+                  if (ramenB) {
+                    setSelectedBuilding(ramenB);
+                    setIsRamenModalOpen(true);
+                  }
+                  animeAudio.playButtonClick();
+                }}
+                className="absolute top-[78%] left-[34%] -translate-x-1/2 -translate-y-1/2 z-20 group cursor-pointer focus:outline-none"
+              >
+                <div className="flex flex-col items-center">
+                  <div className="px-2.5 py-1.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 text-slate-950 font-black text-xs shadow-[0_0_18px_rgba(245,158,11,0.8)] border border-yellow-300 flex items-center gap-1.5 group-hover:scale-110 transition duration-200">
+                    <span className="text-base">🍜</span>
+                    <span>一楽ラーメン (Ichiraku)</span>
+                  </div>
+                  <span className="text-[10px] text-orange-200 font-bold bg-black/80 px-2 py-0.5 rounded-full mt-0.5 border border-white/10">
+                    Eat Ramen &amp; Buffs
+                  </span>
+                </div>
+              </button>
+
+              {/* Interactive Landmark Pin 3: Team 7 Sparring Ground (第7班 演習場) */}
+              <button
+                type="button"
+                onClick={() => {
+                  const team7B = villageState.buildings.find((b) => b.type === 'team7_posts');
+                  if (team7B) {
+                    setSelectedBuilding(team7B);
+                    setIsTeam7ModalOpen(true);
+                  }
+                  animeAudio.playButtonClick();
+                }}
+                className="absolute top-[74%] left-[76%] -translate-x-1/2 -translate-y-1/2 z-20 group cursor-pointer focus:outline-none"
+              >
+                <div className="flex flex-col items-center">
+                  <div className="px-2.5 py-1.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-700 text-white font-black text-xs shadow-[0_0_18px_rgba(16,185,129,0.8)] border border-emerald-300 flex items-center gap-1.5 group-hover:scale-110 transition duration-200">
+                    <span className="text-base">🎯</span>
+                    <span>第7班 演習場 (Sparring)</span>
+                  </div>
+                  <span className="text-[10px] text-emerald-200 font-bold bg-black/80 px-2 py-0.5 rounded-full mt-0.5 border border-white/10">
+                    Bell Test &amp; Training
+                  </span>
+                </div>
+              </button>
+
+              {/* Interactive Landmark Pin 4: Shinobi Barracks & Ninja Academy */}
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveBuildTab('attack');
+                  animeAudio.playButtonClick();
+                }}
+                className="absolute top-[78%] left-[16%] -translate-x-1/2 -translate-y-1/2 z-20 group cursor-pointer focus:outline-none"
+              >
+                <div className="flex flex-col items-center">
+                  <div className="px-2.5 py-1.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-700 text-white font-black text-xs shadow-[0_0_18px_rgba(59,130,246,0.8)] border border-cyan-300 flex items-center gap-1.5 group-hover:scale-110 transition duration-200">
+                    <span className="text-base">🥷</span>
+                    <span>忍者兵舎 (Troops)</span>
+                  </div>
+                  <span className="text-[10px] text-cyan-200 font-bold bg-black/80 px-2 py-0.5 rounded-full mt-0.5 border border-white/10">
+                    Train Ninja Army
+                  </span>
+                </div>
+              </button>
+
+              {/* Interactive Landmark Pin 5: Great Leaf Gate (出撃・遠征) */}
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveBuildTab('attack');
+                  animeAudio.playButtonClick();
+                }}
+                className="absolute top-[86%] left-[86%] -translate-x-1/2 -translate-y-1/2 z-20 group cursor-pointer focus:outline-none"
+              >
+                <div className="flex flex-col items-center">
+                  <div className="px-2.5 py-1.5 rounded-2xl bg-gradient-to-r from-rose-600 to-red-700 text-white font-black text-xs shadow-[0_0_18px_rgba(244,63,94,0.8)] border border-rose-300 flex items-center gap-1.5 group-hover:scale-110 transition duration-200">
+                    <span className="text-base">⚔️</span>
+                    <span>木ノ葉の大門 (Raids)</span>
+                  </div>
+                  <span className="text-[10px] text-rose-200 font-bold bg-black/80 px-2 py-0.5 rounded-full mt-0.5 border border-white/10">
+                    Launch Outpost Raid
+                  </span>
+                </div>
+              </button>
+
+              {/* Bottom Anime Caption */}
+              <div className="absolute bottom-3 left-3 sm:left-4 text-[11px] text-slate-200 bg-black/80 px-3 py-1 rounded-full backdrop-blur-md pointer-events-none border border-white/10 flex items-center gap-1.5">
+                <span>🏔️</span>
+                <span>火影岩 (Hokage Rock Monument): 初代 Hashirama &bull; 二代 Tobirama &bull; 三代 Hiruzen &bull; 四代 Minato &bull; 五代 Tsunade</span>
+              </div>
+            </div>
+          </div>
+
+          {/* 2. 2.5D TACTICAL GRID VIEW (戦術グリッド配置モード) */}
+          <div className={villageViewMode === 'grid' ? 'flex flex-col gap-3 w-full animate-in fade-in duration-300' : 'hidden'}>
+            {/* Real 2.5D Isometric Canvas (Widescreen Full Width) */}
+            <div className="w-full rounded-3xl overflow-hidden border-2 border-[#1e3a5f] shadow-2xl relative bg-[#091522]">
               <canvas
                 ref={canvasRef}
                 width={820}
-                height={540}
+                height={580}
                 onClick={handleCanvasClick}
                 onTouchEnd={handleCanvasTouch}
-                className="w-full h-auto block cursor-crosshair select-none touch-manipulation max-h-[580px] object-cover relative z-0"
+                className="w-full h-auto block cursor-crosshair select-none touch-manipulation max-h-[600px] object-cover relative z-0"
               />
 
               {/* In-Canvas Hero Guard Indicator & 360 Dojo Pill */}
@@ -1488,9 +1741,30 @@ export default function VillageBuilder({
                 </button>
               </div>
 
+              {/* View Switcher Pill (Top Right) */}
+              <div className="absolute top-3 right-3 sm:top-4 sm:right-4 flex items-center gap-1.5 z-10">
+                <div className="flex items-center p-1 rounded-2xl bg-black/80 backdrop-blur-md border border-white/15 shadow-xl">
+                  <button
+                    type="button"
+                    onClick={() => setVillageViewMode('cinematic')}
+                    className="px-3 py-1 rounded-xl text-xs font-bold text-slate-300 hover:text-white transition flex items-center gap-1 cursor-pointer"
+                  >
+                    <span>🌸 Anime View</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setVillageViewMode('grid')}
+                    className="px-3 py-1 rounded-xl text-xs font-black bg-blue-600 text-white shadow flex items-center gap-1 cursor-pointer"
+                  >
+                    <Layers size={12} />
+                    <span>📐 2.5D Grid</span>
+                  </button>
+                </div>
+              </div>
+
               {/* Relocation Mode Banner */}
               {isRelocatingBuildingId && (
-                <div className="absolute top-3 sm:top-4 right-3 sm:right-4 flex items-center gap-2 px-3 sm:px-3.5 py-1.5 rounded-xl bg-amber-500 text-slate-950 text-xs font-black shadow-lg animate-pulse">
+                <div className="absolute top-14 right-3 sm:right-4 flex items-center gap-2 px-3 sm:px-3.5 py-1.5 rounded-xl bg-amber-500 text-slate-950 text-xs font-black shadow-lg animate-pulse z-10">
                   <Move size={14} />
                   <span>RELOCATING: Tap any green tile</span>
                   <button
@@ -1508,6 +1782,7 @@ export default function VillageBuilder({
                 💡 Tap any building to inspect/upgrade/move &bull; Tap {activeHero.name.split(' ')[0]} to interact
               </div>
             </div>
+          </div>
 
             {/* Bottom Floating Inspector Drawer for Selected Building */}
             {selectedBuilding ? (
@@ -1621,7 +1896,6 @@ export default function VillageBuilder({
                 )}
               </div>
             )}
-          </div>
         </>
       )}
 

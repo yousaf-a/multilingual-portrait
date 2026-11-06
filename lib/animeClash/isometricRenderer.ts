@@ -494,7 +494,8 @@ export function drawIsoTerrain(
   originY: number,
   gridSize: number = 12,
   weatherMode: 'day' | 'twilight' | 'night' | 'rain' = 'night',
-  animTime: number = 0
+  animTime: number = 0,
+  monumentImg: HTMLImageElement | null = null
 ) {
   const isNight = weatherMode === 'night';
   const isTwilight = weatherMode === 'twilight';
@@ -523,7 +524,36 @@ export function drawIsoTerrain(
   ctx.fillRect(0, 0, width, height);
 
   // Grand Hokage Rock Monument Backdrop overlooking the village
-  drawHokageMonument(ctx, width, height, originX, originY, weatherMode, animTime);
+  if (monumentImg && monumentImg.complete && monumentImg.naturalWidth > 0) {
+    ctx.save();
+    // Render the high-definition cinematic anime Hokage Monument artwork
+    const backdropH = Math.max(160, originY + 25);
+    ctx.drawImage(monumentImg, 0, 0, width, backdropH);
+
+    // Weather-reactive atmospheric tint
+    if (isNight) {
+      ctx.fillStyle = 'rgba(6, 15, 35, 0.55)';
+      ctx.fillRect(0, 0, width, backdropH);
+    } else if (isTwilight) {
+      ctx.fillStyle = 'rgba(95, 25, 65, 0.35)';
+      ctx.fillRect(0, 0, width, backdropH);
+    } else if (isRain) {
+      ctx.fillStyle = 'rgba(10, 30, 35, 0.45)';
+      ctx.fillRect(0, 0, width, backdropH);
+    }
+
+    // Seamless atmospheric soft blend at the bottom into the village island
+    const blendGrad = ctx.createLinearGradient(0, backdropH - 50, 0, backdropH);
+    blendGrad.addColorStop(0, 'rgba(0, 0, 0, 0)');
+    blendGrad.addColorStop(0.7, isNight ? 'rgba(5, 12, 24, 0.75)' : isTwilight ? 'rgba(42, 14, 40, 0.75)' : isRain ? 'rgba(7, 22, 24, 0.75)' : 'rgba(13, 45, 20, 0.75)');
+    blendGrad.addColorStop(1, isNight ? '#050c18' : isTwilight ? '#2a0e28' : isRain ? '#071618' : '#0d2d14');
+    ctx.fillStyle = blendGrad;
+    ctx.fillRect(0, backdropH - 50, width, 50);
+
+    ctx.restore();
+  } else {
+    drawHokageMonument(ctx, width, height, originX, originY, weatherMode, animTime);
+  }
 
   // Soft Island Plateau Drop Shadow on the Abyss below
   ctx.save();

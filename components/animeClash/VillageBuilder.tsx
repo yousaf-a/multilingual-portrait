@@ -240,6 +240,19 @@ export default function VillageBuilder({
     };
   }, [activeHero.image, activeHero.id]);
 
+  // Preload Authentic Anime Hokage Monument Panoramic Artwork
+  const monumentImgRef = useRef<HTMLImageElement | null>(null);
+  useEffect(() => {
+    const img = new Image();
+    img.src = '/anime-heroes/konoha-hokage-monument-hd.jpg';
+    if (img.complete && img.naturalWidth > 0) {
+      monumentImgRef.current = img;
+    }
+    img.onload = () => {
+      monumentImgRef.current = img;
+    };
+  }, []);
+
   // 2.5D Isometric Rendering Loop
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -270,8 +283,8 @@ export default function VillageBuilder({
 
       ctx.clearRect(0, 0, width, height);
 
-      // 1. Draw 2.5D Lush Grass Terrain & Forest Perimeter with Dynamic Weather Lighting
-      drawIsoTerrain(ctx, width, height, originX, originY, 12, villageState.weatherMode || 'night', elapsed);
+      // 1. Draw 2.5D Lush Grass Terrain & Forest Perimeter with Dynamic Weather Lighting & Hokage Monument
+      drawIsoTerrain(ctx, width, height, originX, originY, 12, villageState.weatherMode || 'night', elapsed, monumentImgRef.current);
 
       // 2. Update Animated Hero Patrol Movement along waypoints
       const hp = heroPatrolRef.current;
@@ -1437,13 +1450,21 @@ export default function VillageBuilder({
           <div className={villageViewMode === 'grid' ? 'flex flex-col gap-3 w-full' : 'hidden'}>
             {/* Real 2.5D Isometric Canvas (Widescreen Full Width) */}
             <div className="w-full rounded-3xl overflow-hidden border-2 border-[#1e3a5f] shadow-2xl relative bg-[#091522]">
+              {/* Authentic Anime Hokage Monument Backdrop from Official Artwork */}
+              <div
+                className="absolute top-0 left-0 right-0 h-44 bg-cover bg-top pointer-events-none opacity-90 transition-opacity duration-500"
+                style={{ backgroundImage: `url('/anime-heroes/konoha-hokage-monument-hd.jpg')` }}
+              >
+                <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-[#091522]" />
+              </div>
+
               <canvas
                 ref={canvasRef}
                 width={820}
                 height={480}
                 onClick={handleCanvasClick}
                 onTouchEnd={handleCanvasTouch}
-                className="w-full h-auto block cursor-crosshair select-none touch-manipulation max-h-[520px] object-cover"
+                className="w-full h-auto block cursor-crosshair select-none touch-manipulation max-h-[520px] object-cover relative z-0"
               />
 
               {/* In-Canvas Hero Guard Indicator & 360 Dojo Pill */}

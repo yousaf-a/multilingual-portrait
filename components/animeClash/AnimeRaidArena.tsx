@@ -184,8 +184,17 @@ export default function AnimeRaidArena({
   const [isGameFast, setIsGameFast] = useState(false);
 
   const [availableTroops, setAvailableTroops] = useState<Record<string, number>>(() => {
-    if (villageState.trainedTroops && Object.values(villageState.trainedTroops).some((v) => v > 0)) {
-      return { ...villageState.trainedTroops };
+    const validTroopIds = new Set(TROOPS_CATALOG.map((t) => t.id));
+    if (villageState.trainedTroops) {
+      const filtered: Record<string, number> = {};
+      let total = 0;
+      for (const [k, v] of Object.entries(villageState.trainedTroops)) {
+        if (validTroopIds.has(k) && typeof v === 'number' && v > 0) {
+          filtered[k] = v;
+          total += v;
+        }
+      }
+      if (total > 0) return filtered;
     }
     return { konoha_genin: 8, fire_chunin: 4, hyuga_striker: 2, toad_vanguard: 2 };
   });
@@ -1036,7 +1045,9 @@ export default function AnimeRaidArena({
     onFinishRaid(lootEarned.berries, lootEarned.chakra, selectedTarget.name, stars);
   };
 
-  const totalTroopsRemaining = Object.values(availableTroops).reduce((a, b) => a + b, 0);
+  const totalTroopsRemaining = Object.entries(availableTroops).reduce((acc, [k, v]) => {
+    return TROOPS_CATALOG.some((t) => t.id === k) && typeof v === 'number' ? acc + v : acc;
+  }, 0);
 
   return (
     <div className="fixed inset-0 z-50 bg-black/95 flex flex-col justify-between p-2 sm:p-4 select-none animate-in fade-in duration-300">

@@ -1,5 +1,5 @@
 import { UserAccount, PlayerVillageState, RaidBattleReport } from './types';
-import { INITIAL_PLAYER_STATE, DEFAULT_FRIEND_BASES, HERO_UNLOCK_HQ_REQUIREMENTS } from './gameData';
+import { INITIAL_PLAYER_STATE, DEFAULT_FRIEND_BASES, HERO_UNLOCK_HQ_REQUIREMENTS, TROOPS_CATALOG } from './gameData';
 
 const ACCOUNTS_STORAGE_KEY = 'anime_clash_accounts_registry_v4';
 const ACTIVE_USER_ID_KEY = 'anime_clash_active_user_id_v4';
@@ -234,6 +234,19 @@ export function getUserVillageState(userId: string): PlayerVillageState {
         });
         parsed.unlockedHeroes = Array.from(unlockedSet);
       }
+
+      // Automatically purge legacy / obsolete troops not present in current chapter's catalog
+      if (parsed.trainedTroops) {
+        const validTroopIds = new Set(TROOPS_CATALOG.map((t) => t.id));
+        const cleanedTroops: Record<string, number> = {};
+        for (const [k, v] of Object.entries(parsed.trainedTroops)) {
+          if (validTroopIds.has(k) && typeof v === 'number' && v > 0) {
+            cleanedTroops[k] = v;
+          }
+        }
+        parsed.trainedTroops = cleanedTroops;
+      }
+
       return parsed;
     }
   } catch (_) {}

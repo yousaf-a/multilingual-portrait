@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   PlayerVillageState,
   BuildingInstance,
@@ -624,9 +624,32 @@ export default function VillageBuilder({
     animeAudio.playUpgradeSuccess();
   };
 
-  // Troops & Raid Logistics
-  const totalTroopsCount = Object.values(villageState.trainedTroops || {}).reduce((a, b) => a + b, 0);
+  // Troops & Raid Logistics: strictly count valid catalog troops
+  const validTroopIds = useMemo(() => new Set(TROOPS_CATALOG.map((t) => t.id)), []);
+  const totalTroopsCount = useMemo(() => {
+    return Object.entries(villageState.trainedTroops || {}).reduce((acc, [k, v]) => {
+      return validTroopIds.has(k) && typeof v === 'number' ? acc + v : acc;
+    }, 0);
+  }, [villageState.trainedTroops, validTroopIds]);
   const armyCampCap = getArmyCampCapForHQ(villageState.level);
+
+  // Auto-clean any legacy troops lingering in active villageState from localStorage
+  useEffect(() => {
+    if (!villageState.trainedTroops) return;
+    const hasLegacy = Object.keys(villageState.trainedTroops).some((k) => !validTroopIds.has(k));
+    if (hasLegacy) {
+      const sanitized: Record<string, number> = {};
+      for (const [k, v] of Object.entries(villageState.trainedTroops)) {
+        if (validTroopIds.has(k) && typeof v === 'number' && v > 0) {
+          sanitized[k] = v;
+        }
+      }
+      onUpdateVillage({
+        ...villageState,
+        trainedTroops: sanitized
+      });
+    }
+  }, [villageState, onUpdateVillage, validTroopIds]);
 
   const handleTrainTroop = (troopId: string, count: number, cost: number, resType: 'chakra' | 'berries' | 'reishi') => {
     if (totalTroopsCount + count > armyCampCap) {

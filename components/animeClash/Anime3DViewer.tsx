@@ -456,7 +456,7 @@ export default function Anime3DViewer({
       particleGeo.dispose();
       particleMat.dispose();
     };
-  }, [hero.id, hero.color, hero.accentColor, currentHeroImg, zoomLevel]);
+  }, [hero.id, hero.color, hero.accentColor, currentHeroImg, zoomLevel, selectedRank]);
 
   // Horizontal Drag Handlers
   const handleMouseDown = (e: React.MouseEvent) => {

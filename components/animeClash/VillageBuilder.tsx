@@ -714,47 +714,6 @@ export default function VillageBuilder({
   );
   const nextHeroName = nextHeroUnlockEntry ? nextHeroUnlockEntry[1].heroName : null;
 
-  const handleUpgradeTownHallHQ = () => {
-    if (!nextHQPlan) return;
-    if (villageState.berries < nextHQPlan.upgradeCostBerries || villageState.chakra < nextHQPlan.upgradeCostChakra) {
-      alert(`Insufficient resources! Requires 💰 ${nextHQPlan.upgradeCostBerries} Berries & 🌀 ${nextHQPlan.upgradeCostChakra} Chakra.`);
-      return;
-    }
-
-    const nextLevel = villageState.level + 1;
-    let newlyUnlockedHero: HeroData | null = null;
-    const currentUnlocked = Array.from(new Set(['naruto', ...(villageState.unlockedHeroes || [])]));
-
-    if (nextLevel === 2 && !currentUnlocked.includes('luffy')) {
-      newlyUnlockedHero = HEROES_CATALOG.luffy;
-    } else if (nextLevel === 3 && !currentUnlocked.includes('ichigo')) {
-      newlyUnlockedHero = HEROES_CATALOG.ichigo;
-    } else if (nextLevel === 4 && !currentUnlocked.includes('asta')) {
-      newlyUnlockedHero = HEROES_CATALOG.asta;
-    } else if (nextLevel === 5 && !currentUnlocked.includes('gojo')) {
-      newlyUnlockedHero = HEROES_CATALOG.gojo;
-    }
-
-    if (newlyUnlockedHero && !currentUnlocked.includes(newlyUnlockedHero.id)) {
-      currentUnlocked.push(newlyUnlockedHero.id);
-    }
-    const updatedUnlocked = currentUnlocked;
-
-    if (newlyUnlockedHero) {
-      setHeroUnlockCelebration(newlyUnlockedHero);
-      animeAudio.playHeroShout(newlyUnlockedHero.id);
-    }
-
-    onUpdateVillage({
-      ...villageState,
-      level: nextLevel,
-      berries: villageState.berries - nextHQPlan.upgradeCostBerries,
-      chakra: villageState.chakra - nextHQPlan.upgradeCostChakra,
-      maxStorage: nextHQPlan.maxStorage,
-      unlockedHeroes: updatedUnlocked
-    });
-  };
-
   // Apply Preset Base Layout
   const handleApplyPresetLayout = (preset: BaseLayoutPreset) => {
     const updated = preset.applyLayout(villageState.buildings);
@@ -1074,16 +1033,12 @@ export default function VillageBuilder({
             <span className="font-bold">Reset Ch. 1</span>
           </button>
 
-          <button
-            type="button"
-            onClick={() => setActiveBuildTab('roadmap')}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/15 border border-amber-500/40 hover:bg-amber-500/25 transition cursor-pointer text-xs"
-          >
-            <span className="text-amber-400">🎯</span>
-            <span className="text-amber-200 font-medium text-[11px]">
-              HQ Lv {villageState.level}
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-orange-500/15 border border-orange-500/40 text-xs">
+            <span className="text-orange-400">🏛️</span>
+            <span className="text-orange-200 font-bold text-[11px]">
+              Ch. {villageState.currentChapter || 1}: Leaf HQ Lv {villageState.level}
             </span>
-          </button>
+          </div>
         </div>
 
         {/* Right: Resources & Quick Harvest */}
@@ -1632,16 +1587,25 @@ export default function VillageBuilder({
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={handleUpgradeTownHallHQ}
-                  className="mt-3 w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-300 hover:brightness-110 text-slate-950 font-black text-xs flex items-center justify-center gap-2 shadow-lg cursor-pointer"
-                >
-                  <ArrowUpCircle size={15} />
-                  <span>
-                    Upgrade Town Hall (💰 {nextHQPlan.upgradeCostBerries} &bull; 🌀 {nextHQPlan.upgradeCostChakra})
-                  </span>
-                </button>
+                <div className="mt-4 p-3.5 rounded-xl bg-black/60 border border-amber-500/40 text-center flex flex-col items-center gap-2">
+                  <div className="flex items-center gap-2 text-amber-300 font-mono text-xs font-bold">
+                    <Lock size={14} className="text-amber-400" />
+                    <span>LOCKED: Defeat Chapter {villageState.level} Final Boss to Advance!</span>
+                  </div>
+                  <p className="text-[11px] text-slate-300 leading-snug">
+                    HQ level is strictly tied to your anime story campaign. Defeat all 25 Chapter {villageState.level} Quests and vanquish the Final Boss to unlock Chapter {villageState.level + 1} ({nextHQPlan.title})!
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowNarutoStoryModal(true);
+                      animeAudio.playButtonClick();
+                    }}
+                    className="mt-1 px-4 py-2 rounded-xl bg-gradient-to-r from-orange-600 to-amber-500 hover:brightness-110 text-slate-950 font-black text-xs shadow-md transition cursor-pointer flex items-center gap-1.5"
+                  >
+                    <span>📜 Open Chapter {villageState.level} Story Quests ({completedStoryQuests.length}/25)</span>
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="p-4 rounded-2xl bg-black/40 border border-purple-500/40 flex items-center justify-center text-center">
@@ -2665,21 +2629,17 @@ export default function VillageBuilder({
             <span className="text-[10px] sm:text-xs font-black tracking-tight sm:tracking-wide">Friends &amp; Rivals</span>
           </button>
 
-          {/* 5. HQ PLANS & BLUEPRINTS */}
+          {/* 5. CHAPTER STORY CAMPAIGN */}
           <button
             type="button"
             onClick={() => {
-              setActiveBuildTab(activeBuildTab === 'roadmap' ? 'village' : 'roadmap');
+              setShowNarutoStoryModal(true);
               animeAudio.playButtonClick();
             }}
-            className={`flex-1 py-1.5 sm:py-2 px-1 rounded-xl sm:rounded-2xl flex flex-col items-center gap-0.5 sm:gap-1 transition cursor-pointer ${
-              activeBuildTab === 'roadmap'
-                ? 'bg-gradient-to-t from-emerald-600 to-teal-500 text-white shadow-lg ring-1 ring-emerald-400/50'
-                : 'text-slate-300 hover:text-white hover:bg-white/5'
-            }`}
+            className="flex-1 py-1.5 sm:py-2 px-1 rounded-xl sm:rounded-2xl flex flex-col items-center gap-0.5 sm:gap-1 transition cursor-pointer text-slate-300 hover:text-white hover:bg-white/5"
           >
-            <Star size={17} className={activeBuildTab === 'roadmap' ? 'text-white' : 'text-emerald-400'} />
-            <span className="text-[10px] sm:text-xs font-black tracking-tight sm:tracking-wide">HQ Plans</span>
+            <span className="text-base sm:text-lg">📜</span>
+            <span className="text-[10px] sm:text-xs font-black tracking-tight sm:tracking-wide">Story Quests</span>
           </button>
         </div>
       </div>

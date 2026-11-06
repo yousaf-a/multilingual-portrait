@@ -1,11 +1,11 @@
 import { UserAccount, PlayerVillageState, RaidBattleReport } from './types';
 import { INITIAL_PLAYER_STATE, DEFAULT_FRIEND_BASES, HERO_UNLOCK_HQ_REQUIREMENTS } from './gameData';
 
-const ACCOUNTS_STORAGE_KEY = 'anime_clash_accounts_registry_v2';
-const ACTIVE_USER_ID_KEY = 'anime_clash_active_user_id_v2';
-const USER_VILLAGE_PREFIX = 'anime_clash_user_village_state_v2_';
+const ACCOUNTS_STORAGE_KEY = 'anime_clash_accounts_registry_v4';
+const ACTIVE_USER_ID_KEY = 'anime_clash_active_user_id_v4';
+const USER_VILLAGE_PREFIX = 'anime_clash_user_village_state_v4_';
 
-// Initial pre-seeded accounts for multiplayer demo
+// Initial pre-seeded accounts: ALL start at HQ Level 1 & Chapter 1 (Konoha)
 export const DEFAULT_ACCOUNTS: UserAccount[] = [
   {
     id: 'user_naruto',
@@ -16,99 +16,41 @@ export const DEFAULT_ACCOUNTS: UserAccount[] = [
   },
   {
     id: 'user_kenji',
-    username: 'Pirate King Kenji',
-    tag: '#CORSAIR-7721',
-    avatarHeroId: 'luffy',
+    username: 'Rookie Kenji (Leaf Aspirant)',
+    tag: '#LEAF-7721',
+    avatarHeroId: 'naruto',
     createdAt: 1730000001000
   },
   {
     id: 'user_ren',
-    username: 'Soul Reaper Ren',
-    tag: '#SHINIGAMI-3309',
-    avatarHeroId: 'ichigo',
+    username: 'Shinobi Ren',
+    tag: '#LEAF-3309',
+    avatarHeroId: 'naruto',
     createdAt: 1730000002000
-  },
-  {
-    id: 'user_yuno',
-    username: 'Clover Knight Yuno',
-    tag: '#CLOVER-8812',
-    avatarHeroId: 'asta',
-    createdAt: 1730000003000
   }
 ];
 
-// Helper to build initial custom village states for pre-seeded accounts
+// Helper to build initial custom village states: Everyone starts strictly at Chapter 1 & HQ 1
 function getInitialStateForAccount(accountId: string): PlayerVillageState {
-  if (accountId === 'user_kenji') {
-    const friend = DEFAULT_FRIEND_BASES[0];
-    return {
-      level: friend.level,
-      berries: 3500,
-      chakra: 2800,
-      reishi: 2000,
-      maxStorage: 8000,
-      buildings: friend.buildings,
-      unlockedHeroes: ['naruto', 'luffy'],
-      activeHeroId: 'luffy',
-      completedChapters: ['ep0', 'ep1'],
-      heroLevels: { luffy: 3, naruto: 2 },
-      trainedTroops: { strawhat_brawler: 8, konoha_ninja: 4 },
-      weatherMode: 'twilight',
-      playerName: friend.name,
-      sanctuaryTag: friend.tag,
-      ownerUserId: accountId,
-      battleReports: []
-    };
-  }
-  if (accountId === 'user_ren') {
-    const friend = DEFAULT_FRIEND_BASES[1];
-    return {
-      level: friend.level,
-      berries: 2800,
-      chakra: 3600,
-      reishi: 3200,
-      maxStorage: 8000,
-      buildings: friend.buildings,
-      unlockedHeroes: ['naruto', 'luffy', 'ichigo'],
-      activeHeroId: 'ichigo',
-      completedChapters: ['ep0', 'ep1', 'ep2'],
-      heroLevels: { ichigo: 3, naruto: 2 },
-      trainedTroops: { shinigami_patrol: 10 },
-      weatherMode: 'night',
-      playerName: friend.name,
-      sanctuaryTag: friend.tag,
-      ownerUserId: accountId,
-      battleReports: []
-    };
-  }
-  if (accountId === 'user_yuno') {
-    const friend = DEFAULT_FRIEND_BASES[2];
-    return {
-      level: friend.level,
-      berries: 4200,
-      chakra: 3100,
-      reishi: 2400,
-      maxStorage: 10000,
-      buildings: friend.buildings,
-      unlockedHeroes: ['naruto', 'luffy', 'ichigo', 'asta'],
-      activeHeroId: 'asta',
-      completedChapters: ['ep0', 'ep1', 'ep2', 'ep3'],
-      heroLevels: { asta: 4, naruto: 2 },
-      trainedTroops: { black_bulls_mage: 6, konoha_ninja: 6 },
-      weatherMode: 'rain',
-      playerName: friend.name,
-      sanctuaryTag: friend.tag,
-      ownerUserId: accountId,
-      battleReports: []
-    };
-  }
-
-  // Default User Naruto
+  const account = DEFAULT_ACCOUNTS.find((a) => a.id === accountId);
   return {
     ...INITIAL_PLAYER_STATE,
-    ownerUserId: 'user_naruto',
-    playerName: 'Shinobi Hokage (You)',
-    sanctuaryTag: '#LEAF-101'
+    level: 1,
+    currentChapter: 1,
+    unlockedHeroes: ['naruto'],
+    activeHeroId: 'naruto',
+    heroLevels: { naruto: 1 },
+    trainedTroops: {},
+    completedChapters: [],
+    completedStoryQuests: [],
+    defeatedMiniBosses: [],
+    buildings: INITIAL_PLAYER_STATE.buildings,
+    ownerUserId: accountId,
+    playerName: account?.username || 'Shinobi Hokage (You)',
+    sanctuaryTag: account?.tag || '#LEAF-101',
+    berries: 650,
+    chakra: 450,
+    reishi: 0
   };
 }
 
@@ -274,14 +216,24 @@ export function getUserVillageState(userId: string): PlayerVillageState {
       // Ensure owner is tagged
       parsed.ownerUserId = userId;
 
-      // Always guarantee Naruto (Starter Hero) and all HQ-eligible heroes are unlocked
-      const unlockedSet = new Set(['naruto', ...(parsed.unlockedHeroes || [])]);
-      Object.entries(HERO_UNLOCK_HQ_REQUIREMENTS).forEach(([hId, req]) => {
-        if ((parsed.level || 1) >= req.hqLevel) {
-          unlockedSet.add(hId);
-        }
-      });
-      parsed.unlockedHeroes = Array.from(unlockedSet);
+      // Strictly enforce: HQ level is bound to Chapter progression! No skips or shortcuts.
+      const hasCompletedChapter1 =
+        (parsed.completedChapters || []).includes('chapter_1') ||
+        (parsed.completedStoryQuests || []).includes('naruto_q25');
+      if (!hasCompletedChapter1) {
+        parsed.level = 1;
+        parsed.currentChapter = 1;
+        parsed.unlockedHeroes = ['naruto'];
+        parsed.activeHeroId = 'naruto';
+      } else {
+        const unlockedSet = new Set(['naruto', ...(parsed.unlockedHeroes || [])]);
+        Object.entries(HERO_UNLOCK_HQ_REQUIREMENTS).forEach(([hId, req]) => {
+          if ((parsed.level || 1) >= req.hqLevel) {
+            unlockedSet.add(hId);
+          }
+        });
+        parsed.unlockedHeroes = Array.from(unlockedSet);
+      }
       return parsed;
     }
   } catch (_) {}

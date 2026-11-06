@@ -192,6 +192,55 @@ class FreeAnimeAudioEngine {
     osc.stop(now + 0.28);
   }
 
+  // 6. ANIME EPISODE TITLE CARD / CINEMATIC INTRO FANFARE
+  playEpisodeIntroFanfare() {
+    const ctx = this.getAudioContext();
+    if (!ctx) return;
+
+    const now = ctx.currentTime;
+
+    // A. Deep Taiko Drum Boom (110Hz -> 30Hz sub-bass drop)
+    const taikoOsc = ctx.createOscillator();
+    const taikoGain = ctx.createGain();
+    taikoOsc.type = 'triangle';
+    taikoOsc.frequency.setValueAtTime(120, now);
+    taikoOsc.frequency.exponentialRampToValueAtTime(32, now + 0.55);
+    taikoGain.gain.setValueAtTime(0.65, now);
+    taikoGain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+    taikoOsc.connect(taikoGain);
+    taikoGain.connect(ctx.destination);
+    taikoOsc.start(now);
+    taikoOsc.stop(now + 0.6);
+
+    // B. Hyoshigi Wooden Clap (Sharp resonant snap at +0.18s)
+    const clapOsc = ctx.createOscillator();
+    const clapGain = ctx.createGain();
+    clapOsc.type = 'sine';
+    clapOsc.frequency.setValueAtTime(2200, now + 0.18);
+    clapOsc.frequency.exponentialRampToValueAtTime(600, now + 0.28);
+    clapGain.gain.setValueAtTime(0.4, now + 0.18);
+    clapGain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+    clapOsc.connect(clapGain);
+    clapGain.connect(ctx.destination);
+    clapOsc.start(now + 0.18);
+    clapOsc.stop(now + 0.28);
+
+    // C. Ascending Shonen Brass Stabs (D4 -> F4 -> A4 -> D5 chord at +0.32s)
+    const chordNotes = [293.66, 349.23, 440.0, 587.33];
+    chordNotes.forEach((freq, idx) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(freq, now + 0.32 + idx * 0.04);
+      gain.gain.setValueAtTime(0.12, now + 0.32 + idx * 0.04);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now + 0.32 + idx * 0.04);
+      osc.stop(now + 1.25);
+    });
+  }
+
   // 6. CLIENT-SIDE VOICE SYNTHESIS (100% Free Browser Web Speech API)
   speakDialogue(text: string, mood?: 'normal' | 'angry' | 'sad' | 'determined' | 'dramatic') {
     if (typeof window === 'undefined' || !window.speechSynthesis) return;

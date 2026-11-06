@@ -96,7 +96,9 @@ export type BuildingType =
   | 'haki_cannon' // Heavy Rail Cannon
   | 'kido_spire' // Energy Shield Tower
   | 'defense_wall' // Fortified Barrier
-  | 'hero_altar'; // Hero Summoning Pedestal
+  | 'hero_altar' // Hero Summoning Pedestal / Ninja Academy
+  | 'ichiraku_ramen' // Ichiraku Ramen Feast Stand
+  | 'team7_posts'; // Team 7 Wooden Sparring Logs
 
 export interface BuildingInstance {
   id: string;

@@ -247,6 +247,40 @@ export function getUserVillageState(userId: string): PlayerVillageState {
         parsed.trainedTroops = cleanedTroops;
       }
 
+      // Automatically migrate canonical Konohagakure landmarks if missing
+      if (Array.isArray(parsed.buildings)) {
+        if (!parsed.buildings.some((b: any) => b.type === 'ichiraku_ramen')) {
+          parsed.buildings.push({
+            id: 'ichiraku_ramen_stand',
+            type: 'ichiraku_ramen',
+            name: 'Ichiraku Ramen Stand (一楽ラーメン)',
+            level: 1,
+            x: 3,
+            y: 6,
+            hp: 900,
+            maxHp: 900,
+            color: '#ea580c',
+            icon: '🍜',
+            productionRate: 25,
+            resourceProduced: 'chakra'
+          });
+        }
+        if (!parsed.buildings.some((b: any) => b.type === 'team7_posts')) {
+          parsed.buildings.push({
+            id: 'team7_training_posts',
+            type: 'team7_posts',
+            name: 'Team 7 Sparring Posts (第7班・修練場)',
+            level: 1,
+            x: 7,
+            y: 3,
+            hp: 750,
+            maxHp: 750,
+            color: '#84cc16',
+            icon: '🪵'
+          });
+        }
+      }
+
       return parsed;
     }
   } catch (_) {}

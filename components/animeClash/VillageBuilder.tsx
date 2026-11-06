@@ -141,6 +141,10 @@ export default function VillageBuilder({
   const [showNarutoStoryModal, setShowNarutoStoryModal] = useState(false);
   const [showPainBossModal, setShowPainBossModal] = useState(false);
   const [showPrologueModal, setShowPrologueModal] = useState(false);
+  const [isRamenModalOpen, setIsRamenModalOpen] = useState(false);
+  const [isTeam7ModalOpen, setIsTeam7ModalOpen] = useState(false);
+  const [ramenFeedback, setRamenFeedback] = useState<string | null>(null);
+  const [team7Feedback, setTeam7Feedback] = useState<string | null>(null);
   const [raidResult, setRaidResult] = useState<{
     stars: number;
     destruction: number;
@@ -394,6 +398,11 @@ export default function VillageBuilder({
 
     if (clicked) {
       setSelectedBuilding(clicked);
+      if (clicked.type === 'ichiraku_ramen') {
+        setIsRamenModalOpen(true);
+      } else if (clicked.type === 'team7_posts') {
+        setIsTeam7ModalOpen(true);
+      }
       animeAudio.playButtonClick();
     } else {
       setSelectedBuilding(null);
@@ -854,6 +863,18 @@ export default function VillageBuilder({
       bIcon = '💣';
       bAtk = 50;
       bRange = 5.0;
+    } else if (type === 'ichiraku_ramen') {
+      bName = 'Ichiraku Ramen Stand (一楽ラーメン)';
+      bHp = 900;
+      bColor = '#ea580c';
+      bIcon = '🍜';
+      bProd = 25;
+      bRes = 'chakra';
+    } else if (type === 'team7_posts') {
+      bName = 'Team 7 Sparring Posts (第7班・修練場)';
+      bHp = 750;
+      bColor = '#84cc16';
+      bIcon = '🪵';
     }
 
     const newBuilding: BuildingInstance = {
@@ -1465,7 +1486,35 @@ export default function VillageBuilder({
                 </div>
 
                 {/* Owner Actions */}
-                <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-end">
+                  {selectedBuilding.type === 'ichiraku_ramen' && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsRamenModalOpen(true);
+                        animeAudio.playButtonClick();
+                      }}
+                      className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:brightness-110 text-slate-950 font-black text-xs flex items-center justify-center gap-1.5 shadow-md cursor-pointer animate-pulse"
+                    >
+                      <span>🍜</span>
+                      <span>Eat Ramen Feast</span>
+                    </button>
+                  )}
+
+                  {selectedBuilding.type === 'team7_posts' && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsTeam7ModalOpen(true);
+                        animeAudio.playButtonClick();
+                      }}
+                      className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:brightness-110 text-slate-950 font-black text-xs flex items-center justify-center gap-1.5 shadow-md cursor-pointer animate-pulse"
+                    >
+                      <span>🔔</span>
+                      <span>Spar with Kakashi</span>
+                    </button>
+                  )}
+
                   {isOwner ? (
                     <>
                       <button
@@ -1837,6 +1886,52 @@ export default function VillageBuilder({
                 className="mt-4 w-full py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs cursor-pointer"
               >
                 Construct (💰 250 Berries)
+              </button>
+            </div>
+
+            {/* 7. ICHIRAKU RAMEN STAND - CANONICAL KONOHA LANDMARK */}
+            <div className="bg-[#0b1226]/90 border border-orange-500/50 rounded-3xl p-5 shadow-xl flex flex-col justify-between relative overflow-hidden">
+              <span className="absolute top-3 right-3 text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-300 border border-orange-500/40">
+                KONOHA ICON
+              </span>
+              <div>
+                <div className="text-3xl mb-2">🍜</div>
+                <h4 className="text-sm font-bold text-white flex items-center gap-1.5">
+                  <span>Ichiraku Ramen Stand</span>
+                  <span className="text-[10px] text-amber-400 font-normal">一楽ラーメン</span>
+                </h4>
+                <p className="text-xs text-slate-400 mt-1">Old Man Teuchi &amp; Ayame&apos;s legendary noodle shop. Feasts restore Chakra, grants Hero EXP and boosts troop morale!</p>
+                <div className="text-xs text-orange-400 font-semibold mt-2">🍥 +25 Chakra / min &bull; 900 HP</div>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleConstructBuilding('ichiraku_ramen', 140, 'berries')}
+                className="mt-4 w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 hover:brightness-110 text-white font-bold text-xs cursor-pointer shadow-md"
+              >
+                Construct (💰 140 Berries)
+              </button>
+            </div>
+
+            {/* 8. TEAM 7 SPARRING POSTS - BELL TEST LANDMARK */}
+            <div className="bg-[#0b1226]/90 border border-emerald-500/40 rounded-3xl p-5 shadow-xl flex flex-col justify-between relative overflow-hidden">
+              <span className="absolute top-3 right-3 text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                TEAM 7 DOJO
+              </span>
+              <div>
+                <div className="text-3xl mb-2">🪵</div>
+                <h4 className="text-sm font-bold text-white flex items-center gap-1.5">
+                  <span>Team 7 Sparring Posts</span>
+                  <span className="text-[10px] text-emerald-400 font-normal">第7班・修練場</span>
+                </h4>
+                <p className="text-xs text-slate-400 mt-1">The three wooden training logs with Kakashi&apos;s bells. Practice shuriken targeting and bell test reflex drills!</p>
+                <div className="text-xs text-emerald-400 font-semibold mt-2">🔔 Shinobi Training Post &bull; 750 HP</div>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleConstructBuilding('team7_posts', 90, 'berries')}
+                className="mt-4 w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:brightness-110 text-white font-bold text-xs cursor-pointer shadow-md"
+              >
+                Construct (💰 90 Berries)
               </button>
             </div>
           </div>
@@ -2869,6 +2964,271 @@ export default function VillageBuilder({
             setShowNarutoStoryModal(true);
           }}
         />
+      )}
+
+      {/* ICHIRAKU RAMEN STAND INTERACTIVE FEAST MODAL */}
+      {isRamenModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="w-full max-w-xl bg-gradient-to-b from-[#131b2e] to-[#070b14] border-2 border-orange-500/50 rounded-3xl p-5 sm:p-7 shadow-2xl relative overflow-hidden">
+            {/* Header / Banner */}
+            <div className="flex items-center justify-between pb-4 border-b border-orange-500/20">
+              <div className="flex items-center gap-3">
+                <span className="text-3xl p-2.5 rounded-2xl bg-orange-500/20 border border-orange-500/40">🍜</span>
+                <div>
+                  <h3 className="text-lg sm:text-xl font-black text-white flex items-center gap-2">
+                    <span>Ichiraku Ramen Stand</span>
+                    <span className="text-xs font-mono text-amber-400 font-normal">一楽ラーメン</span>
+                  </h3>
+                  <p className="text-xs text-slate-400">Old Man Teuchi &amp; Ayame&apos;s Soul-Warming Kitchen</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsRamenModalOpen(false);
+                  setRamenFeedback(null);
+                }}
+                className="w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center text-sm cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Chef Teuchi Dialogue */}
+            <div className="my-4 p-3.5 rounded-2xl bg-orange-950/30 border border-orange-500/30 flex items-start gap-3">
+              <span className="text-2xl shrink-0">👨‍🍳</span>
+              <p className="text-xs text-orange-200/90 leading-relaxed italic">
+                &ldquo;Welcome back from your mission, Naruto! Dig in while the broth is piping hot — nothing fuels the Will of Fire like a giant bowl of miso chashu!&rdquo;
+              </p>
+            </div>
+
+            {ramenFeedback && (
+              <div className="mb-4 p-3 rounded-xl bg-emerald-950/60 border border-emerald-500/50 text-xs text-emerald-300 font-bold text-center animate-in fade-in">
+                {ramenFeedback}
+              </div>
+            )}
+
+            {/* Ramen Menu Items */}
+            <div className="space-y-3">
+              {/* Menu Item 1: Miso Chashu */}
+              <div className="p-3.5 rounded-2xl bg-[#0b1226]/80 border border-orange-500/30 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">🍜</span>
+                  <div>
+                    <h4 className="text-sm font-bold text-white">Miso Chashu Ramen (味噌チャーシュー)</h4>
+                    <p className="text-xs text-slate-400">Tender pork belly slices in rich fermented miso broth.</p>
+                    <span className="text-[11px] font-mono font-bold text-cyan-300">Reward: +250 Pure Chakra</span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (villageState.berries < 40) {
+                      setRamenFeedback('❌ Not enough Berries! Complete missions to earn more ryo.');
+                      return;
+                    }
+                    const updated = {
+                      ...villageState,
+                      berries: villageState.berries - 40,
+                      chakra: Math.min(villageState.maxStorage, villageState.chakra + 250)
+                    };
+                    onUpdateVillage(updated);
+                    animeAudio.playButtonClick();
+                    setRamenFeedback('✨ *Slurp!* Delicious! +250 Chakra added to your reserves!');
+                  }}
+                  className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 hover:brightness-110 text-white font-black text-xs shrink-0 cursor-pointer shadow-md"
+                >
+                  Order (40 💰)
+                </button>
+              </div>
+
+              {/* Menu Item 2: Hokage Mega Pork */}
+              <div className="p-3.5 rounded-2xl bg-[#0b1226]/80 border border-amber-500/30 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">🍥</span>
+                  <div>
+                    <h4 className="text-sm font-bold text-white">Hokage Mega Extra-Pork (特大豚骨)</h4>
+                    <p className="text-xs text-slate-400">Triple pork noodles mountain topped with double narutomaki.</p>
+                    <span className="text-[11px] font-mono font-bold text-amber-300">Reward: +200 Hero EXP for {activeHero.name}</span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (villageState.berries < 70) {
+                      setRamenFeedback('❌ Not enough Berries! Complete missions to earn more ryo.');
+                      return;
+                    }
+                    const currentLevels = { ...(villageState.heroLevels || {}) };
+                    const nextExp = (currentLevels[activeHero.id] || 1) + 1;
+                    currentLevels[activeHero.id] = nextExp;
+                    const updated = {
+                      ...villageState,
+                      berries: villageState.berries - 70,
+                      heroLevels: currentLevels
+                    };
+                    onUpdateVillage(updated);
+                    animeAudio.playButtonClick();
+                    setRamenFeedback(`🔥 Power surging! ${activeHero.name} gained EXP and leveled up to Lv. ${nextExp}!`);
+                  }}
+                  className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-600 to-yellow-500 text-slate-950 font-black text-xs shrink-0 cursor-pointer shadow-md hover:brightness-110"
+                >
+                  Order (70 💰)
+                </button>
+              </div>
+
+              {/* Menu Item 3: Ayame's Sweet Dango & Green Tea */}
+              <div className="p-3.5 rounded-2xl bg-[#0b1226]/80 border border-emerald-500/30 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">🍵</span>
+                  <div>
+                    <h4 className="text-sm font-bold text-white">Ayame&apos;s Sweet Dango &amp; Tea (お団子とお茶)</h4>
+                    <p className="text-xs text-slate-400">Three-color mochi skewer served with freshly brewed green tea.</p>
+                    <span className="text-[11px] font-mono font-bold text-emerald-300">Reward: +100 Chakra &amp; Shinobi Morale</span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (villageState.berries < 25) {
+                      setRamenFeedback('❌ Not enough Berries!');
+                      return;
+                    }
+                    const updated = {
+                      ...villageState,
+                      berries: villageState.berries - 25,
+                      chakra: Math.min(villageState.maxStorage, villageState.chakra + 100)
+                    };
+                    onUpdateVillage(updated);
+                    animeAudio.playButtonClick();
+                    setRamenFeedback('🍡 Sweet & refreshing! Troops feel energized! +100 Chakra!');
+                  }}
+                  className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:brightness-110 text-white font-black text-xs shrink-0 cursor-pointer shadow-md"
+                >
+                  Order (25 💰)
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TEAM 7 SPARRING POSTS INTERACTIVE DOJO MODAL */}
+      {isTeam7ModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="w-full max-w-xl bg-gradient-to-b from-[#131b2e] to-[#070b14] border-2 border-emerald-500/50 rounded-3xl p-5 sm:p-7 shadow-2xl relative overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between pb-4 border-b border-emerald-500/20">
+              <div className="flex items-center gap-3">
+                <span className="text-3xl p-2.5 rounded-2xl bg-emerald-500/20 border border-emerald-500/40">🪵</span>
+                <div>
+                  <h3 className="text-lg sm:text-xl font-black text-white flex items-center gap-2">
+                    <span>Team 7 Sparring Ground</span>
+                    <span className="text-xs font-mono text-emerald-400 font-normal">第7班・鈴の演習場</span>
+                  </h3>
+                  <p className="text-xs text-slate-400">Three Wooden Posts &bull; Kakashi&apos;s Bell Test Sanctuary</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsTeam7ModalOpen(false);
+                  setTeam7Feedback(null);
+                }}
+                className="w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center text-sm cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Kakashi Dialogue */}
+            <div className="my-4 p-3.5 rounded-2xl bg-emerald-950/30 border border-emerald-500/30 flex items-start gap-3">
+              <span className="text-2xl shrink-0">🥷</span>
+              <p className="text-xs text-emerald-200/90 leading-relaxed italic">
+                &ldquo;You want these bells? Come at me with the intent to kill. If you don&apos;t practice your teamwork and jutsu discipline, you won&apos;t even graze a single chime.&rdquo;
+                <span className="block mt-1 font-mono font-bold text-slate-400">— Kakashi Hatake</span>
+              </p>
+            </div>
+
+            {team7Feedback && (
+              <div className="mb-4 p-3 rounded-xl bg-emerald-950/60 border border-emerald-500/50 text-xs text-emerald-300 font-bold text-center animate-in fade-in">
+                {team7Feedback}
+              </div>
+            )}
+
+            {/* Sparring Drills */}
+            <div className="space-y-3">
+              {/* Drill 1: Shuriken Target Practice */}
+              <div className="p-3.5 rounded-2xl bg-[#0b1226]/80 border border-emerald-500/30 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">🎯</span>
+                  <div>
+                    <h4 className="text-sm font-bold text-white">Target Practice Drill (手裏剣修練)</h4>
+                    <p className="text-xs text-slate-400">Drill basic kunai throwing arcs against the wooden trunks.</p>
+                    <span className="text-[11px] font-mono font-bold text-emerald-300">Reward: Instantly recruits +3 Leaf Genin Troops</span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (villageState.chakra < 30) {
+                      setTeam7Feedback('❌ Not enough Chakra to focus shuriken accuracy!');
+                      return;
+                    }
+                    const trained = { ...(villageState.trainedTroops || {}) };
+                    trained['leaf_genin'] = (trained['leaf_genin'] || 0) + 3;
+                    const updated = {
+                      ...villageState,
+                      chakra: villageState.chakra - 30,
+                      trainedTroops: trained
+                    };
+                    onUpdateVillage(updated);
+                    animeAudio.playButtonClick();
+                    setTeam7Feedback('🎯 Bullseye! 3 Leaf Shinobi Genin successfully trained and added to barracks!');
+                  }}
+                  className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:brightness-110 text-white font-black text-xs shrink-0 cursor-pointer shadow-md"
+                >
+                  Train (30 🌀)
+                </button>
+              </div>
+
+              {/* Drill 2: Bell Snatch Trial */}
+              <div className="p-3.5 rounded-2xl bg-[#0b1226]/80 border border-cyan-500/30 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">🔔</span>
+                  <div>
+                    <h4 className="text-sm font-bold text-white">Bell Snatch Reflex Bout (鈴奪取試験)</h4>
+                    <p className="text-xs text-slate-400">Coordinated sneak assault against Kakashi&apos;s Substitution Jutsu.</p>
+                    <span className="text-[11px] font-mono font-bold text-cyan-300">Reward: +180 Hero EXP &bull; Will of Fire</span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (villageState.chakra < 50) {
+                      setTeam7Feedback('❌ Not enough Chakra to perform body-flicker substitution!');
+                      return;
+                    }
+                    const currentLevels = { ...(villageState.heroLevels || {}) };
+                    const nextExp = (currentLevels[activeHero.id] || 1) + 1;
+                    currentLevels[activeHero.id] = nextExp;
+                    const updated = {
+                      ...villageState,
+                      chakra: villageState.chakra - 50,
+                      heroLevels: currentLevels
+                    };
+                    onUpdateVillage(updated);
+                    animeAudio.playButtonClick();
+                    setTeam7Feedback(`🔔 *Chime!* You nearly touched the bells! ${activeHero.name} grew stronger and reached Lv. ${nextExp}!`);
+                  }}
+                  className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-500 hover:brightness-110 text-white font-black text-xs shrink-0 cursor-pointer shadow-md"
+                >
+                  Spar (50 🌀)
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

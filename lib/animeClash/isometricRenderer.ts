@@ -85,6 +85,396 @@ export function draw3DBox(
 }
 
 /**
+ * Grand Hokage Rock Monument Backdrop (火影岩 - Hokage-iwa)
+ * Spans across the upper horizon overlooking the Hidden Leaf Village with
+ * meticulously sculpted stone faces of the 4 iconic Hokage:
+ * 1. Hashirama Senju (First Hokage / 初代火影)
+ * 2. Tobirama Senju (Second Hokage / 二代目火影)
+ * 3. Hiruzen Sarutobi (Third Hokage / 三代目火影)
+ * 4. Minato Namikaze (Fourth Hokage / 四代目火影)
+ */
+export function drawHokageMonument(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  originX: number,
+  originY: number,
+  weatherMode: 'day' | 'twilight' | 'night' | 'rain' = 'night',
+  animTime: number = 0
+) {
+  ctx.save();
+
+  const isNight = weatherMode === 'night';
+  const isTwilight = weatherMode === 'twilight';
+  const isRain = weatherMode === 'rain';
+
+  // Weather-Reactive Mountain Cliff Palette
+  const rockDark = isNight ? '#0b1626' : isTwilight ? '#31172a' : isRain ? '#111e22' : '#453225';
+  const rockMid = isNight ? '#1e293b' : isTwilight ? '#582b48' : isRain ? '#1f3338' : '#785b46';
+  const rockLight = isNight ? '#334155' : isTwilight ? '#8a4b6e' : isRain ? '#325056' : '#a8856a';
+  const rockHighlight = isNight ? '#64748b' : isTwilight ? '#f59e0b' : isRain ? '#47737c' : '#d5b392';
+  const pineGreen = isNight ? '#062820' : isTwilight ? '#271924' : isRain ? '#0d2822' : '#14532d';
+
+  // 1. Massive Mountain Cliff Range Silhouette
+  ctx.beginPath();
+  ctx.moveTo(0, 115);
+  ctx.lineTo(0, 36);
+  ctx.lineTo(80, 24);
+  ctx.lineTo(160, 16);
+  ctx.lineTo(240, 12);
+  ctx.lineTo(330, 8);
+  ctx.lineTo(410, 6);
+  ctx.lineTo(490, 8);
+  ctx.lineTo(580, 14);
+  ctx.lineTo(660, 20);
+  ctx.lineTo(740, 28);
+  ctx.lineTo(width, 42);
+  ctx.lineTo(width, 115);
+  ctx.closePath();
+
+  const cliffGrad = ctx.createLinearGradient(0, 0, 0, 115);
+  cliffGrad.addColorStop(0, rockLight);
+  cliffGrad.addColorStop(0.5, rockMid);
+  cliffGrad.addColorStop(1, rockDark);
+  ctx.fillStyle = cliffGrad;
+  ctx.fill();
+
+  // Mountain Top Edge Rim Highlight
+  ctx.strokeStyle = rockHighlight;
+  ctx.lineWidth = 1.8;
+  ctx.stroke();
+
+  // 2. Pine Forest Silhouettes perched on Top Ridge
+  ctx.fillStyle = pineGreen;
+  const ridgePines = [
+    { x: 35, y: 30, s: 7 }, { x: 70, y: 23, s: 9 }, { x: 120, y: 18, s: 8 },
+    { x: 175, y: 14, s: 10 }, { x: 285, y: 10, s: 9 }, { x: 365, y: 7, s: 11 },
+    { x: 445, y: 7, s: 10 }, { x: 535, y: 11, s: 11 }, { x: 625, y: 17, s: 9 },
+    { x: 700, y: 24, s: 8 }, { x: 775, y: 35, s: 7 }
+  ];
+  ridgePines.forEach((p) => {
+    ctx.beginPath();
+    ctx.moveTo(p.x, p.y - p.s * 1.6);
+    ctx.lineTo(p.x + p.s, p.y);
+    ctx.lineTo(p.x - p.s, p.y);
+    ctx.closePath();
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(p.x, p.y - p.s * 2.4);
+    ctx.lineTo(p.x + p.s * 0.7, p.y - p.s * 0.8);
+    ctx.lineTo(p.x - p.s * 0.7, p.y - p.s * 0.8);
+    ctx.closePath();
+    ctx.fill();
+  });
+
+  // 3. Vertical Rock Striations & Mountain Fissures
+  ctx.strokeStyle = rockDark;
+  ctx.lineWidth = 1.2;
+  const fissures = [105, 185, 275, 385, 495, 605, 690];
+  fissures.forEach((fx) => {
+    ctx.beginPath();
+    ctx.moveTo(fx, 15);
+    ctx.lineTo(fx - 4, 45);
+    ctx.lineTo(fx + 3, 75);
+    ctx.lineTo(fx - 2, 105);
+    ctx.stroke();
+  });
+
+  // 4. Four Hokage Carved Stone Faces Helper
+  const drawFaceContour = (
+    cx: number,
+    cy: number,
+    jpName: string,
+    renderDetails: () => void
+  ) => {
+    ctx.save();
+    // Soft drop shadow / depth occlusion under carved face
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+    ctx.beginPath();
+    ctx.ellipse(cx, cy + 30, 24, 10, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Base Stone Head Shape
+    ctx.fillStyle = rockMid;
+    ctx.beginPath();
+    ctx.ellipse(cx, cy + 8, 19, 23, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Specific facial and hair stone carvings
+    renderDetails();
+
+    // Carved Name Tag Below Face (Japanese Kanji)
+    ctx.font = 'bold 7.5px sans-serif';
+    ctx.fillStyle = rockHighlight;
+    ctx.textAlign = 'center';
+    ctx.fillText(jpName, cx, cy + 39);
+
+    ctx.restore();
+  };
+
+  // 1st Hokage: Hashirama Senju (初代火影・千手柱間)
+  drawFaceContour(205, 36, '初代・柱間', () => {
+    // Long Stone Hair flowing on both sides
+    ctx.fillStyle = rockDark;
+    ctx.beginPath();
+    ctx.moveTo(190, 24);
+    ctx.quadraticCurveTo(183, 42, 187, 56);
+    ctx.lineTo(193, 54);
+    ctx.quadraticCurveTo(190, 38, 196, 26);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(220, 24);
+    ctx.quadraticCurveTo(227, 42, 223, 56);
+    ctx.lineTo(217, 54);
+    ctx.quadraticCurveTo(220, 38, 214, 26);
+    ctx.closePath();
+    ctx.fill();
+
+    // Headband Across Forehead
+    ctx.fillStyle = rockLight;
+    ctx.fillRect(195, 23, 20, 6);
+    ctx.strokeStyle = rockDark;
+    ctx.lineWidth = 0.8;
+    ctx.strokeRect(195, 23, 20, 6);
+
+    // Carved Leaf Swirl on Headband
+    ctx.beginPath();
+    ctx.arc(205, 26, 2, 0, Math.PI * 1.5);
+    ctx.stroke();
+
+    // Stern Eyebrows & Eyes
+    ctx.strokeStyle = rockDark;
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(198, 33);
+    ctx.lineTo(203, 34);
+    ctx.moveTo(207, 34);
+    ctx.lineTo(212, 33);
+    ctx.stroke();
+
+    // Eye slits
+    ctx.fillStyle = rockDark;
+    ctx.fillRect(199, 36, 4, 2);
+    ctx.fillRect(207, 36, 4, 2);
+
+    // Nose & Strong Jaw/Mouth
+    ctx.strokeStyle = rockDark;
+    ctx.beginPath();
+    ctx.moveTo(205, 34);
+    ctx.lineTo(204, 40);
+    ctx.lineTo(207, 40);
+    ctx.moveTo(201, 44);
+    ctx.lineTo(209, 44);
+    ctx.stroke();
+  });
+
+  // 2nd Hokage: Tobirama Senju (二代目火影・千手扉間)
+  drawFaceContour(340, 32, '二代・扉間', () => {
+    // Spiky Layered Stone Hair
+    ctx.fillStyle = rockLight;
+    const spikes = [
+      { x: 326, y: 21 }, { x: 333, y: 14 }, { x: 340, y: 12 },
+      { x: 347, y: 14 }, { x: 354, y: 21 }
+    ];
+    ctx.beginPath();
+    ctx.moveTo(324, 27);
+    spikes.forEach((sp) => ctx.lineTo(sp.x, sp.y));
+    ctx.lineTo(356, 27);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = rockDark;
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+
+    // Happuri Forehead Protector with Cheek Flaps
+    ctx.fillStyle = rockHighlight;
+    ctx.beginPath();
+    ctx.rect(330, 22, 20, 6);
+    ctx.fill();
+    ctx.stroke();
+
+    // Cheek Guards (Triangular downward plates)
+    ctx.beginPath();
+    ctx.moveTo(330, 26);
+    ctx.lineTo(327, 41);
+    ctx.lineTo(331, 37);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(350, 26);
+    ctx.lineTo(353, 41);
+    ctx.lineTo(349, 37);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Fierce Narrowed Eyes & Cheek Slash Marks
+    ctx.strokeStyle = rockDark;
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(333, 32);
+    ctx.lineTo(338, 34);
+    ctx.moveTo(342, 34);
+    ctx.lineTo(347, 32);
+    ctx.stroke();
+
+    // Red/Dark Clan Cheek Markings
+    ctx.strokeStyle = isNight ? '#991b1b' : '#dc2626';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(332, 37);
+    ctx.lineTo(335, 40);
+    ctx.moveTo(348, 37);
+    ctx.lineTo(345, 40);
+    ctx.moveTo(340, 43);
+    ctx.lineTo(340, 47);
+    ctx.stroke();
+  });
+
+  // 3rd Hokage: Hiruzen Sarutobi (三代目火影・猿飛ヒルゼン)
+  drawFaceContour(475, 27, '三代・ヒルゼン', () => {
+    // Grand Hokage Triangular Hat (Flared red & white rim)
+    ctx.fillStyle = '#dc2626';
+    ctx.beginPath();
+    ctx.moveTo(475, 5);
+    ctx.lineTo(497, 22);
+    ctx.lineTo(453, 22);
+    ctx.closePath();
+    ctx.fill();
+
+    // White Hat Cloth Drape
+    ctx.fillStyle = '#f8fafc';
+    ctx.fillRect(457, 20, 36, 4);
+
+    // Kanji "火" on Hat Center
+    ctx.font = 'bold 8px serif';
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'center';
+    ctx.fillText('火', 475, 17);
+
+    // Aging Face Lines & Wise Eyes
+    ctx.strokeStyle = rockDark;
+    ctx.lineWidth = 0.9;
+    ctx.beginPath();
+    // Wrinkles
+    ctx.moveTo(468, 26);
+    ctx.lineTo(472, 27);
+    ctx.moveTo(478, 27);
+    ctx.lineTo(482, 26);
+    // Crow's feet
+    ctx.moveTo(466, 31);
+    ctx.lineTo(469, 31);
+    ctx.moveTo(481, 31);
+    ctx.lineTo(484, 31);
+    ctx.stroke();
+
+    // Pointed Goatee Beard on Chin
+    ctx.fillStyle = rockLight;
+    ctx.beginPath();
+    ctx.moveTo(472, 42);
+    ctx.lineTo(475, 47);
+    ctx.lineTo(478, 42);
+    ctx.closePath();
+    ctx.fill();
+
+    // Little Pipe with Animated Smoke
+    ctx.strokeStyle = '#78350f';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(477, 40);
+    ctx.lineTo(483, 43);
+    ctx.stroke();
+
+    const smokePhase = ((animTime * 1.5) % 2) / 2;
+    ctx.fillStyle = `rgba(241, 245, 249, ${0.4 * (1 - smokePhase)})`;
+    ctx.beginPath();
+    ctx.arc(484 + Math.sin(animTime * 2.5) * 3, 41 - smokePhase * 10, 2 + smokePhase * 3, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  // 4th Hokage: Minato Namikaze (四代目火影・波風ミナト)
+  drawFaceContour(610, 33, '四代・ミナト', () => {
+    // Wild Spiky Bangs jutting outwards
+    ctx.fillStyle = rockHighlight;
+    const mSpikes = [
+      { x: 593, y: 21 }, { x: 590, y: 31 },
+      { x: 598, y: 15 }, { x: 608, y: 11 }, { x: 618, y: 12 },
+      { x: 628, y: 17 }, { x: 631, y: 25 }, { x: 627, y: 33 }
+    ];
+    ctx.beginPath();
+    ctx.moveTo(595, 31);
+    mSpikes.forEach((sp) => ctx.lineTo(sp.x, sp.y));
+    ctx.lineTo(625, 31);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = rockDark;
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+
+    // Forehead Band
+    ctx.fillStyle = rockLight;
+    ctx.fillRect(600, 24, 20, 5);
+    ctx.strokeStyle = rockDark;
+    ctx.strokeRect(600, 24, 20, 5);
+
+    // Sharp Dynamic Side Bangs framing jaw
+    ctx.fillStyle = rockHighlight;
+    ctx.beginPath();
+    ctx.moveTo(596, 27);
+    ctx.lineTo(592, 41);
+    ctx.lineTo(598, 37);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(624, 27);
+    ctx.lineTo(628, 41);
+    ctx.lineTo(622, 37);
+    ctx.closePath();
+    ctx.fill();
+
+    // Sharp Confident Eyes & Youthful Jaw
+    ctx.strokeStyle = rockDark;
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(603, 32);
+    ctx.lineTo(608, 33);
+    ctx.moveTo(612, 33);
+    ctx.lineTo(617, 32);
+    ctx.moveTo(606, 42);
+    ctx.lineTo(614, 42);
+    ctx.stroke();
+
+    // High Standing Collar (Hokage Haori)
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.moveTo(598, 46);
+    ctx.lineTo(594, 54);
+    ctx.lineTo(626, 54);
+    ctx.lineTo(622, 46);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = '#dc2626';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  });
+
+  // 5. Rolling Mountain Mist Layer at the Cliff Base
+  const mistGrad = ctx.createLinearGradient(0, 80, 0, 115);
+  mistGrad.addColorStop(0, 'rgba(0, 0, 0, 0)');
+  mistGrad.addColorStop(0.5, isNight ? 'rgba(15, 23, 42, 0.45)' : 'rgba(255, 255, 255, 0.25)');
+  mistGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+  ctx.fillStyle = mistGrad;
+  ctx.fillRect(0, 80, width, 35);
+
+  ctx.restore();
+}
+
+/**
  * 1. Draw 2.5D Isometric Floating Sanctuary Island with 3D Rock Cliff Strata,
  * Beveled Grass Tiles, Cobblestone Paths, Torii Gate & Weather VFX
  */
@@ -123,6 +513,9 @@ export function drawIsoTerrain(
   }
   ctx.fillStyle = bgGrad;
   ctx.fillRect(0, 0, width, height);
+
+  // Grand Hokage Rock Monument Backdrop overlooking the village
+  drawHokageMonument(ctx, width, height, originX, originY, weatherMode, animTime);
 
   // Soft Island Plateau Drop Shadow on the Abyss below
   ctx.save();
@@ -1119,6 +1512,216 @@ export function drawIsoBuilding(
         ctx.arc(cloneX + 4, cloneY - 10, 5 * (1 - smokePhase / 0.15), 0, Math.PI * 2);
         ctx.fill();
       }
+      break;
+    }
+
+    case 'ichiraku_ramen': {
+      // 🍜 Master Ichiraku Ramen Stand (一楽ラーメン)
+      // Raised cedar wood deck
+      draw3DBox(ctx, cx, cy, 46, 26, 8, '#78350f', '#451a03', '#92400e');
+
+      // 3 Red Vinyl Dining Bar Stools
+      const stoolOffsets = [-12, 0, 12];
+      stoolOffsets.forEach((sx) => {
+        ctx.strokeStyle = '#1e293b';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(cx + sx, cy + 10);
+        ctx.lineTo(cx + sx, cy + 16);
+        ctx.stroke();
+
+        ctx.fillStyle = '#dc2626';
+        ctx.beginPath();
+        ctx.ellipse(cx + sx, cy + 10, 5, 3, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#fbbf24';
+        ctx.lineWidth = 0.8;
+        ctx.stroke();
+      });
+
+      // Wooden Dining Counter
+      draw3DBox(ctx, cx, cy - 8, 38, 16, 12, '#b45309', '#78350f', '#d97706');
+
+      // 2 Ceramic Steaming Ramen Bowls on counter
+      const bowlPositions = [cx - 7, cx + 7];
+      bowlPositions.forEach((bx, bIdx) => {
+        ctx.fillStyle = '#f8fafc';
+        ctx.beginPath();
+        ctx.ellipse(bx, cy - 14, 5, 3, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#0284c7';
+        ctx.lineWidth = 0.8;
+        ctx.stroke();
+
+        ctx.fillStyle = '#f59e0b';
+        ctx.beginPath();
+        ctx.ellipse(bx, cy - 14.5, 3.5, 2, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#ec4899';
+        ctx.beginPath();
+        ctx.arc(bx - 1, cy - 15, 1.2, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#064e3b';
+        ctx.fillRect(bx + 1, cy - 17, 1.5, 3);
+
+        // Animated Hot Broth Steam Spirals
+        for (let s = 0; s < 3; s++) {
+          const sTime = animTime * 2.2 + s * 0.9 + bIdx * 1.4;
+          const sProg = (sTime % 2.5) / 2.5;
+          const sx = bx + Math.sin(sTime * 2.8) * 4;
+          const sy = cy - 17 - sProg * 22;
+          const sAlpha = (1 - sProg) * 0.55;
+          ctx.fillStyle = `rgba(255, 255, 255, ${sAlpha})`;
+          ctx.beginPath();
+          ctx.arc(sx, sy, 1.5 + sProg * 3.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      });
+
+      // Corner Timber Posts holding the roof
+      ctx.fillStyle = '#78350f';
+      ctx.fillRect(cx - 20, cy - 36, 3, 30);
+      ctx.fillRect(cx + 17, cy - 36, 3, 30);
+
+      // Hanging Split Noren Fabric Curtains with Calligraphy
+      const norenSway = Math.sin(animTime * 2.5) * 2;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(cx - 19, cy - 28, 17, 13);
+      ctx.fillRect(cx + 2, cy - 28, 17, 13);
+
+      ctx.fillStyle = '#dc2626';
+      ctx.fillRect(cx - 19, cy - 28, 17, 2.5);
+      ctx.fillRect(cx + 2, cy - 28, 17, 2.5);
+
+      ctx.font = 'bold 7px sans-serif';
+      ctx.fillStyle = '#dc2626';
+      ctx.textAlign = 'center';
+      ctx.fillText('一楽', cx - 10 + norenSway * 0.3, cy - 20);
+      ctx.fillText('拉麺', cx + 11 + norenSway * 0.3, cy - 20);
+
+      // Sloping Green Ceramic Tiled Roof (Kawara)
+      ctx.fillStyle = '#166534';
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - 44);
+      ctx.lineTo(cx + 26, cy - 30);
+      ctx.quadraticCurveTo(cx, cy - 25, cx - 26, cy - 30);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = '#22c55e';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // Swaying Red Paper Lantern (提灯)
+      const lanternSway = Math.sin(animTime * 3) * 3;
+      const lx = cx + 22 + lanternSway;
+      const ly = cy - 22;
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(cx + 22, cy - 30);
+      ctx.lineTo(lx, ly);
+      ctx.stroke();
+
+      ctx.fillStyle = '#ef4444';
+      ctx.shadowColor = '#f97316';
+      ctx.shadowBlur = 12;
+      ctx.beginPath();
+      ctx.ellipse(lx, ly + 6, 5, 7, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      ctx.font = 'bold 6px sans-serif';
+      ctx.fillStyle = '#ffffff';
+      ctx.textAlign = 'center';
+      ctx.fillText('麺', lx, ly + 8);
+      break;
+    }
+
+    case 'team7_posts': {
+      // 🪵 Team 7 Three Wooden Sparring Posts (第7班・鈴の演習)
+      ctx.fillStyle = '#713f12';
+      ctx.beginPath();
+      ctx.ellipse(cx, cy + 3, 26, 14, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 3 Wooden Logs in Triangular Formation
+      const posts = [
+        { ox: -12, oy: 2, h: 26, w: 7, rope: false },
+        { ox: 12, oy: 4, h: 24, w: 7, rope: false },
+        { ox: 0, oy: -6, h: 36, w: 9, rope: true } // Center Main Post
+      ];
+
+      posts.forEach((p) => {
+        const px = cx + p.ox;
+        const py = cy + p.oy;
+
+        ctx.fillStyle = '#854d0e';
+        ctx.fillRect(px - p.w / 2, py - p.h, p.w, p.h);
+
+        ctx.fillStyle = '#59300a';
+        ctx.fillRect(px - p.w / 2, py - p.h, p.w * 0.35, p.h);
+
+        ctx.fillStyle = '#a16207';
+        ctx.beginPath();
+        ctx.ellipse(px, py - p.h, p.w / 2, p.w / 4, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#451a03';
+        ctx.lineWidth = 0.8;
+        ctx.stroke();
+
+        ctx.fillStyle = '#94a3b8';
+        ctx.beginPath();
+        ctx.moveTo(px + p.w / 2 - 1, py - p.h * 0.6);
+        ctx.lineTo(px + p.w / 2 + 5, py - p.h * 0.6 - 3);
+        ctx.lineTo(px + p.w / 2 + 3, py - p.h * 0.6 + 4);
+        ctx.closePath();
+        ctx.fill();
+
+        if (p.rope) {
+          ctx.fillStyle = '#d97706';
+          ctx.fillRect(px - p.w / 2, py - p.h * 0.55, p.w, 6);
+          ctx.strokeStyle = '#78350f';
+          ctx.lineWidth = 0.8;
+          ctx.strokeRect(px - p.w / 2, py - p.h * 0.55, p.w, 6);
+
+          ctx.strokeStyle = '#cbd5e1';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(px - p.w / 2, py - p.h * 0.7);
+          ctx.lineTo(px - p.w / 2 - 8, py - p.h * 0.7 - 4);
+          ctx.stroke();
+
+          // Two Hanging Silver Bells on Crimson String
+          const bellSway = Math.sin(animTime * 3.5) * 3;
+          ctx.strokeStyle = '#dc2626';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(px, py - p.h * 0.55);
+          ctx.lineTo(px - 4 + bellSway * 0.7, py - p.h * 0.35);
+          ctx.moveTo(px, py - p.h * 0.55);
+          ctx.lineTo(px + 4 + bellSway, py - p.h * 0.3);
+          ctx.stroke();
+
+          const bells = [
+            { bx: px - 4 + bellSway * 0.7, by: py - p.h * 0.35 },
+            { bx: px + 4 + bellSway, by: py - p.h * 0.3 }
+          ];
+          bells.forEach((bl) => {
+            ctx.fillStyle = '#e2e8f0';
+            ctx.shadowColor = '#f8fafc';
+            ctx.shadowBlur = 6;
+            ctx.beginPath();
+            ctx.arc(bl.bx, bl.by, 2.5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(bl.bx - 0.7, bl.by + 1.2, 1.4, 1);
+          });
+        }
+      });
       break;
     }
 

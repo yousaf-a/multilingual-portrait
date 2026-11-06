@@ -662,6 +662,38 @@ export default function VillageBuilder({
     });
   };
 
+  const handleTrainMaxTroop = (troopId: string, cost: number, resType: 'chakra' | 'berries' | 'reishi') => {
+    const spaceRemaining = Math.max(0, armyCampCap - totalTroopsCount);
+    if (spaceRemaining <= 0) {
+      alert(`Army Camp is already full (${totalTroopsCount}/${armyCampCap} units)!`);
+      return;
+    }
+
+    const availableRes = resType === 'chakra' ? villageState.chakra : resType === 'berries' ? villageState.berries : villageState.reishi;
+    const affordableCount = Math.floor(availableRes / cost);
+    const toTrain = Math.min(spaceRemaining, affordableCount);
+
+    if (toTrain <= 0) {
+      alert(`Not enough ${resType} to train any more units!`);
+      return;
+    }
+
+    const currentTroops = villageState.trainedTroops || {};
+    const newTroops = {
+      ...currentTroops,
+      [troopId]: (currentTroops[troopId] || 0) + toTrain
+    };
+
+    onUpdateVillage({
+      ...villageState,
+      chakra: resType === 'chakra' ? villageState.chakra - cost * toTrain : villageState.chakra,
+      berries: resType === 'berries' ? villageState.berries - cost * toTrain : villageState.berries,
+      reishi: resType === 'reishi' ? villageState.reishi - cost * toTrain : villageState.reishi,
+      trainedTroops: newTroops
+    });
+    animeAudio.playButtonClick();
+  };
+
   // Launch Real-Time Village Raid Assault
   const handleLaunchSyndicateRaid = () => {
     if (totalTroopsCount < 4) {
@@ -2004,34 +2036,46 @@ export default function VillageBuilder({
             {TROOPS_CATALOG.map((troop) => {
               const count = villageState.trainedTroops?.[troop.id] || 0;
               const resIcon = troop.resourceType === 'chakra' ? '🌀' : troop.resourceType === 'berries' ? '💰' : '🔮';
+              const roleTag =
+                troop.id.includes('genin') ? '🎯 Ranged Shuriken • Rapid Fire'
+                : troop.id.includes('brawler') ? '🛡️ Armored Tank • Frontline Shield'
+                : troop.id.includes('shinigami') ? '⚔️ Zanpakuto • Wall Piercing'
+                : '🔮 Mystic Magic • Shield Bypass';
 
               return (
                 <div
                   key={troop.id}
-                  className="p-4 rounded-3xl bg-[#0e172f] border border-[#1e3a6a] flex flex-col justify-between hover:border-red-500/50 transition"
+                  className="p-4 rounded-3xl bg-gradient-to-b from-[#0c162f] to-[#070d1e] border border-cyan-500/30 flex flex-col justify-between hover:border-cyan-400/60 shadow-lg transition"
                 >
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-3xl">{troop.icon}</span>
-                      <span className="text-xs font-mono font-bold px-2.5 py-0.5 rounded-full bg-slate-800 text-cyan-300 border border-slate-700">
+                      <div className="w-12 h-12 rounded-2xl bg-black/60 border border-white/10 flex items-center justify-center text-3xl shadow">
+                        {troop.icon}
+                      </div>
+                      <span className="text-xs font-mono font-black px-2.5 py-1 rounded-full bg-cyan-950 text-cyan-300 border border-cyan-500/40 shadow-sm">
                         {count} Ready
                       </span>
                     </div>
-                    <h4 className="text-sm font-bold text-white">{troop.name}</h4>
+
+                    <h4 className="text-sm font-black text-white">{troop.name}</h4>
+                    <span className="text-[10px] font-mono text-amber-400 font-bold block mt-0.5">
+                      {roleTag}
+                    </span>
                     <p className="text-[11px] text-slate-400 mt-1 leading-snug">{troop.desc}</p>
-                    <div className="mt-2 text-xs text-slate-300 space-y-0.5">
+
+                    <div className="mt-3 p-2 rounded-xl bg-black/40 border border-white/5 text-xs text-slate-300 space-y-1">
                       <div className="flex justify-between">
-                        <span className="text-slate-400">Combat Power:</span>
-                        <span className="text-red-400 font-bold">⚔️ {troop.attack} ATK &bull; {troop.hp} HP</span>
+                        <span className="text-slate-400 text-[11px]">Combat Power:</span>
+                        <span className="text-red-400 font-bold font-mono">⚔️ {troop.attack} ATK &bull; {troop.hp} HP</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-slate-400">Training Cost:</span>
-                        <span className="text-amber-300 font-bold">{resIcon} {troop.cost}</span>
+                        <span className="text-slate-400 text-[11px]">Training Cost:</span>
+                        <span className="text-amber-300 font-bold font-mono">{resIcon} {troop.cost}</span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="mt-4 flex gap-2">
+                  <div className="mt-4 flex items-center gap-1.5">
                     <button
                       type="button"
                       onClick={() => handleTrainTroop(troop.id, 1, troop.cost, troop.resourceType)}
@@ -2048,36 +2092,52 @@ export default function VillageBuilder({
                     >
                       +5
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => handleTrainMaxTroop(troop.id, troop.cost, troop.resourceType)}
+                      disabled={totalTroopsCount >= armyCampCap}
+                      className="py-2 px-3 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 disabled:opacity-40 text-amber-300 font-bold text-xs border border-amber-500/40 transition cursor-pointer"
+                      title="Train maximum possible"
+                    >
+                      Max
+                    </button>
                   </div>
                 </div>
               );
             })}
           </div>
 
-          {/* Raid Target Card & Battle Launcher */}
-          <div className="p-5 rounded-3xl bg-gradient-to-br from-[#1c0e2a] via-[#100b24] to-[#070b16] border border-red-500/40 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-5">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-2xl bg-red-950/80 border-2 border-red-500 flex items-center justify-center text-3xl shadow-[0_0_20px_rgba(239,68,68,0.5)]">
-                ☠️
+          {/* Canonical Outpost Raid Target Selector & Launcher */}
+          <div className="p-5 sm:p-6 rounded-3xl bg-gradient-to-br from-[#1a0f2e] via-[#0d071d] to-[#050814] border-2 border-red-500/50 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-5">
+            <div className="flex items-center gap-4 flex-1">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-red-950 to-slate-900 border-2 border-red-500 flex items-center justify-center text-3xl shadow-[0_0_25px_rgba(239,68,68,0.5)] shrink-0">
+                🌊
               </div>
               <div>
-                <span className="text-[10px] font-bold text-red-400 uppercase tracking-widest block">
-                  SYNDICATE FORWARD COMPOUND &bull; SECTOR 7
-                </span>
-                <h4 className="text-lg font-black text-white mt-0.5">Neo-Shibuya Plunder Outpost</h4>
-                <div className="flex items-center gap-3 text-xs text-slate-300 mt-1">
-                  <span>💰 Plunder: <strong>650 - 1,100 Berries</strong></span>
-                  <span>🌀 Plunder: <strong>500 - 850 Chakra</strong></span>
-                  <span>🛡️ Fortifications: <strong>Heavy Cannons + Mortar</strong></span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-black text-red-400 uppercase tracking-widest px-2 py-0.5 rounded-full bg-red-950/80 border border-red-500/40 font-mono">
+                    CHAPTER 1 CANONICAL TARGET &bull; SECTOR 1
+                  </span>
+                  <span className="text-[10px] font-mono text-emerald-400 font-bold">
+                    RECOMMENDED LEVEL 1
+                  </span>
+                </div>
+                <h4 className="text-lg sm:text-xl font-black text-white mt-1">
+                  Rogue Mist Mercenary Compound (Land of Waves)
+                </h4>
+                <div className="flex flex-wrap items-center gap-3 text-xs text-slate-300 mt-1 font-mono">
+                  <span>💰 Plunder: <strong className="text-amber-300">850 Berries</strong></span>
+                  <span>🌀 Plunder: <strong className="text-cyan-300">600 Chakra</strong></span>
+                  <span>🛡️ Fortifications: <strong className="text-rose-400">Palisade Walls + Mist Bomb Cannon</strong></span>
                 </div>
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-2.5 w-full md:w-auto">
+            <div className="flex flex-col sm:flex-row gap-2.5 w-full md:w-auto shrink-0">
               <button
                 type="button"
                 onClick={() => setIsArenaRaidActive(true)}
-                className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-red-600 via-rose-600 to-amber-500 hover:brightness-110 text-white font-black text-sm shadow-[0_0_25px_rgba(239,68,68,0.7)] flex items-center justify-center gap-2 transition cursor-pointer"
+                className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-red-600 via-rose-600 to-amber-500 hover:brightness-110 text-white font-black text-sm shadow-[0_0_30px_rgba(239,68,68,0.7)] flex items-center justify-center gap-2 transition cursor-pointer transform hover:scale-105 active:scale-95"
               >
                 <Sword size={18} />
                 <span>Launch 2.5D Animated Marching Raid</span>

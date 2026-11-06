@@ -293,6 +293,149 @@ class FreeAnimeAudioEngine {
     noise.start(now);
   }
 
+  // 8B. FIRE STYLE: GRAND FIREBALL (火遁・豪火球の術)
+  playFireballRoar() {
+    const ctx = this.getAudioContext();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+
+    // Ignition deep boom
+    const boomOsc = ctx.createOscillator();
+    const boomGain = ctx.createGain();
+    boomOsc.type = 'sine';
+    boomOsc.frequency.setValueAtTime(110, now);
+    boomOsc.frequency.exponentialRampToValueAtTime(32, now + 0.45);
+    boomGain.gain.setValueAtTime(0.5, now);
+    boomGain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+    boomOsc.connect(boomGain);
+    boomGain.connect(ctx.destination);
+    boomOsc.start(now);
+    boomOsc.stop(now + 0.5);
+
+    // Roaring flame noise
+    const bufferSize = ctx.sampleRate * 0.45;
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = Math.random() * 2 - 1;
+    }
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(350, now);
+    filter.frequency.linearRampToValueAtTime(1100, now + 0.15);
+    filter.frequency.exponentialRampToValueAtTime(120, now + 0.45);
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.45, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(ctx.destination);
+    noise.start(now);
+  }
+
+  // 8C. HYŪGA GENTLE FIST CHAKRA STRIKE (八卦六十四掌)
+  playGentleFistStrike() {
+    const ctx = this.getAudioContext();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+
+    // Sharp chakra ping
+    const pingOsc = ctx.createOscillator();
+    const pingGain = ctx.createGain();
+    pingOsc.type = 'sine';
+    pingOsc.frequency.setValueAtTime(1600, now);
+    pingOsc.frequency.exponentialRampToValueAtTime(650, now + 0.14);
+    pingGain.gain.setValueAtTime(0.4, now);
+    pingGain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+    pingOsc.connect(pingGain);
+    pingGain.connect(ctx.destination);
+    pingOsc.start(now);
+    pingOsc.stop(now + 0.16);
+
+    // Sub burst
+    const subOsc = ctx.createOscillator();
+    const subGain = ctx.createGain();
+    subOsc.type = 'triangle';
+    subOsc.frequency.setValueAtTime(240, now);
+    subOsc.frequency.exponentialRampToValueAtTime(60, now + 0.12);
+    subGain.gain.setValueAtTime(0.35, now);
+    subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+    subOsc.connect(subGain);
+    subGain.connect(ctx.destination);
+    subOsc.start(now);
+    subOsc.stop(now + 0.14);
+  }
+
+  // 8D. RAPID KUNAI & SHURIKEN WHISTLE (手裏剣・クナイ)
+  playKunaiThrow() {
+    const ctx = this.getAudioContext();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+
+    const bufferSize = ctx.sampleRate * 0.18;
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = Math.random() * 2 - 1;
+    }
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(1800, now);
+    filter.frequency.linearRampToValueAtTime(3200, now + 0.08);
+    filter.frequency.exponentialRampToValueAtTime(1400, now + 0.18);
+    filter.Q.value = 4.5;
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.35, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(ctx.destination);
+    noise.start(now);
+  }
+
+  // 8E. TOAD VANGUARD COLOSSAL CLEAVER SMASH (ガマの大太刀)
+  playToadCleaverSmash() {
+    const ctx = this.getAudioContext();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+
+    // Metallic heavy blade impact
+    const bladeOsc = ctx.createOscillator();
+    const bladeGain = ctx.createGain();
+    bladeOsc.type = 'sawtooth';
+    bladeOsc.frequency.setValueAtTime(450, now);
+    bladeOsc.frequency.exponentialRampToValueAtTime(80, now + 0.28);
+    bladeGain.gain.setValueAtTime(0.45, now);
+    bladeGain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+    bladeOsc.connect(bladeGain);
+    bladeGain.connect(ctx.destination);
+    bladeOsc.start(now);
+    bladeOsc.stop(now + 0.3);
+
+    // Deep earthquake ground thud
+    const thudOsc = ctx.createOscillator();
+    const thudGain = ctx.createGain();
+    thudOsc.type = 'sine';
+    thudOsc.frequency.setValueAtTime(140, now);
+    thudOsc.frequency.exponentialRampToValueAtTime(28, now + 0.42);
+    thudGain.gain.setValueAtTime(0.65, now);
+    thudGain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+    thudOsc.connect(thudGain);
+    thudGain.connect(ctx.destination);
+    thudOsc.start(now);
+    thudOsc.stop(now + 0.45);
+  }
+
   // 9. AMBIENT SHONEN PROLOGUE BGM LOOP
   private bgmInterval: NodeJS.Timeout | null = null;
   private isBgmPlaying = false;

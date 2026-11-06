@@ -715,11 +715,12 @@ export default function VillageBuilder({
         berriesLooted: berriesPlunder,
         chakraLooted: chakraPlunder,
         log: [
-          `⚔️ ${activeHero.name} breached the outer perimeter wall!`,
-          `🥷 Shinobi swarm bypassed cannon fire with Body Flicker jutsu.`,
-          `🏴‍☠️ Straw Hat brawlers demolished the Syndicate Berry Vault!`,
-          `🔮 Kido casters shattered enemy barrier spires with Hado #88.`,
-          `🏆 100% Core Destruction! Base liberated from Syndicate control!`
+          `⚔️ ${activeHero.name} breached the rogue perimeter with Wind Style Rasengan!`,
+          `🥷 Leaf Genin squad pinned down snipers with rapid Kunai Storm.`,
+          `🔥 Chunin Fireball Specialists scorched palisade barriers with Grand Fireball Jutsu!`,
+          `👁️ Hyūga Gentle Fist strikers disabled defensive chakra nodes with 8 Trigrams 64 Palms!`,
+          `🐸 Mount Myoboku Toad Vanguard cleaved through the enemy vault with giant iron cleavers!`,
+          `🏆 100% Outpost Annihilation! The Land of Fire borders remain secure!`
         ]
       });
 
@@ -728,10 +729,10 @@ export default function VillageBuilder({
         berries: Math.min(villageState.maxStorage, villageState.berries + berriesPlunder),
         chakra: Math.min(villageState.maxStorage, villageState.chakra + chakraPlunder),
         trainedTroops: {
-          konoha_ninja: Math.max(0, (villageState.trainedTroops?.konoha_ninja || 0) - 3),
-          strawhat_brawler: Math.max(0, (villageState.trainedTroops?.strawhat_brawler || 0) - 2),
-          shinigami_patrol: Math.max(0, (villageState.trainedTroops?.shinigami_patrol || 0) - 2),
-          black_bulls_mage: Math.max(0, (villageState.trainedTroops?.black_bulls_mage || 0) - 1)
+          konoha_genin: Math.max(0, (villageState.trainedTroops?.konoha_genin || 0) - 3),
+          fire_chunin: Math.max(0, (villageState.trainedTroops?.fire_chunin || 0) - 2),
+          hyuga_striker: Math.max(0, (villageState.trainedTroops?.hyuga_striker || 0) - 1),
+          toad_vanguard: Math.max(0, (villageState.trainedTroops?.toad_vanguard || 0) - 1)
         }
       });
     }, 1600);
@@ -2037,10 +2038,16 @@ export default function VillageBuilder({
               const count = villageState.trainedTroops?.[troop.id] || 0;
               const resIcon = troop.resourceType === 'chakra' ? '🌀' : troop.resourceType === 'berries' ? '💰' : '🔮';
               const roleTag =
-                troop.id.includes('genin') ? '🎯 Ranged Shuriken • Rapid Fire'
-                : troop.id.includes('brawler') ? '🛡️ Armored Tank • Frontline Shield'
-                : troop.id.includes('shinigami') ? '⚔️ Zanpakuto • Wall Piercing'
-                : '🔮 Mystic Magic • Shield Bypass';
+                troop.id === 'konoha_genin' ? '🎯 Ranged Shuriken • Rapid Fire'
+                : troop.id === 'fire_chunin' ? '🔥 Grand Fireball • Scorching AOE'
+                : troop.id === 'hyuga_striker' ? '⚡ Gentle Fist • Defense Pierce'
+                : '🐸 Toad Cleaver • Frontline Tank & Wall Crusher';
+
+              const jutsuKanji =
+                troop.id === 'konoha_genin' ? '木ノ葉忍術 • 忍具の連撃'
+                : troop.id === 'fire_chunin' ? '火遁・豪火球の術'
+                : troop.id === 'hyuga_striker' ? '日向流 • 八卦六十四掌'
+                : '妙木山 • ガマ鉄拳太刀';
 
               return (
                 <div
@@ -2060,6 +2067,9 @@ export default function VillageBuilder({
                     <h4 className="text-sm font-black text-white">{troop.name}</h4>
                     <span className="text-[10px] font-mono text-amber-400 font-bold block mt-0.5">
                       {roleTag}
+                    </span>
+                    <span className="text-[9px] font-mono text-cyan-300/80 font-bold block mt-0.5 tracking-wide">
+                      {jutsuKanji}
                     </span>
                     <p className="text-[11px] text-slate-400 mt-1 leading-snug">{troop.desc}</p>
 

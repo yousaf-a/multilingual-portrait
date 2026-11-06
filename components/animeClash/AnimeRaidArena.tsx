@@ -49,7 +49,7 @@ interface RaidUnit {
   attack: number;
   speed: number;
   range: number;
-  projectileType: 'shuriken' | 'fist' | 'getsuga' | 'magic';
+  projectileType: 'shuriken' | 'fireball' | 'gentle_fist' | 'toad_slam' | 'fist' | 'cannonball';
   color: string;
   isHero?: boolean;
 }
@@ -75,7 +75,7 @@ interface Projectile {
   y: number;
   targetX: number;
   targetY: number;
-  type: 'shuriken' | 'fist' | 'getsuga' | 'magic' | 'cannonball';
+  type: 'shuriken' | 'fireball' | 'gentle_fist' | 'toad_slam' | 'fist' | 'cannonball';
   progress: number;
   color: string;
 }
@@ -104,30 +104,10 @@ export default function AnimeRaidArena({
   const activeHero = HEROES_CATALOG[villageState.activeHeroId] || HEROES_CATALOG.naruto;
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  // Available Targets (Default friends + custom imported friends)
+  // Available Targets (Default canonical Naruto adversary bases + custom imported)
   const allFriendTargets: FriendProfile[] = [
-    {
-      id: 'target_mist_compound',
-      name: 'Rogue Mist Mercenary Outpost',
-      tag: '#MIST-CHAPTER-1',
-      level: 1,
-      trophies: 280,
-      activeHeroId: 'naruto',
-      heroLevel: 1,
-      berriesLoot: 850,
-      chakraLoot: 600,
-      buildings: [
-        { id: 'm_core', type: 'command_core', name: 'Mercenary Outpost HQ', level: 1, x: 5, y: 5, hp: 1200, maxHp: 1200, color: '#dc2626', icon: '🏯' },
-        { id: 'm_mor', type: 'paper_mortar', name: 'Mist Bomb Cannon', level: 1, x: 3, y: 5, hp: 550, maxHp: 550, attack: 55, range: 5.5, color: '#f59e0b', icon: '💥' },
-        { id: 'm_stor', type: 'berry_treasury', name: 'Stolen Loot Cache', level: 1, x: 7, y: 5, hp: 600, maxHp: 600, productionRate: 60, color: '#f59e0b', icon: '💰' },
-        { id: 'm_w1', type: 'defense_wall', name: 'Palisade Barrier', level: 1, x: 4, y: 4, hp: 650, maxHp: 650, color: '#475569', icon: '🧱' },
-        { id: 'm_w2', type: 'defense_wall', name: 'Palisade Barrier', level: 1, x: 6, y: 4, hp: 650, maxHp: 650, color: '#475569', icon: '🧱' },
-        { id: 'm_w3', type: 'defense_wall', name: 'Palisade Barrier', level: 1, x: 4, y: 6, hp: 650, maxHp: 650, color: '#475569', icon: '🧱' },
-        { id: 'm_w4', type: 'defense_wall', name: 'Palisade Barrier', level: 1, x: 6, y: 6, hp: 650, maxHp: 650, color: '#475569', icon: '🧱' }
-      ]
-    },
-    ...(villageState.customFriends || []),
-    ...DEFAULT_FRIEND_BASES
+    ...DEFAULT_FRIEND_BASES,
+    ...(villageState.customFriends || [])
   ];
 
   const [selectedTarget, setSelectedTarget] = useState<FriendProfile>(
@@ -151,23 +131,39 @@ export default function AnimeRaidArena({
   };
 
   const buildDefendingHeroFromProfile = (target: FriendProfile): DefendingHero => {
-    const heroInfo = HEROES_CATALOG[target.activeHeroId] || HEROES_CATALOG.naruto;
+    const isMist = target.id.includes('mist');
+    const isSound = target.id.includes('sound');
+    const isRain = target.id.includes('rain') || target.id.includes('akatsuki');
+
+    const heroName = isMist ? 'Zabuza Mercenary Captain'
+      : isSound ? 'Sound Four Enforcer'
+      : isRain ? 'Akatsuki Rain Commander'
+      : `${target.name.split(' ')[0]} Champion`;
+
+    const heroAvatar = isMist ? '⚔️' : isSound ? '🐍' : isRain ? '🌧️' : '🥷';
+    const heroQuote = isMist
+      ? 'You Leaf brats will never make it past the Great Naruto Bridge!'
+      : isSound
+      ? 'Lord Orochimaru will feast upon your chakra!'
+      : 'Know true pain. This world shall know reckoning.';
+
     const coreBuilding = target.buildings.find((b) => b.type === 'command_core');
     const heroHp = (target.heroLevel || 1) * 350 + 850;
+
     return {
       id: `def_hero_${target.id}`,
-      name: `${target.name.split(' ')[0]}'s Champion`,
-      heroId: heroInfo.id,
-      avatar: heroInfo.avatar,
+      name: heroName,
+      heroId: target.activeHeroId || 'naruto',
+      avatar: heroAvatar,
       x: coreBuilding ? coreBuilding.x : 5,
       y: coreBuilding ? coreBuilding.y + 1 : 6,
       hp: heroHp,
       maxHp: heroHp,
       attack: (target.heroLevel || 1) * 25 + 65,
       range: 2.5,
-      color: heroInfo.color,
+      color: isMist ? '#0284c7' : isSound ? '#7c3aed' : '#ef4444',
       defeated: false,
-      quote: heroInfo.quote
+      quote: heroQuote
     };
   };
 
@@ -187,9 +183,12 @@ export default function AnimeRaidArena({
   const [heroUltimateReady, setHeroUltimateReady] = useState(true);
   const [isGameFast, setIsGameFast] = useState(false);
 
-  const [availableTroops, setAvailableTroops] = useState(
-    villageState.trainedTroops || { konoha_genin: 12, strawhat_brawler: 4, shinigami_patrol: 4, black_bulls_mage: 2 }
-  );
+  const [availableTroops, setAvailableTroops] = useState<Record<string, number>>(() => {
+    if (villageState.trainedTroops && Object.values(villageState.trainedTroops).some((v) => v > 0)) {
+      return { ...villageState.trainedTroops };
+    }
+    return { konoha_genin: 8, fire_chunin: 4, hyuga_striker: 2, toad_vanguard: 2 };
+  });
 
   const [lootEarned, setLootEarned] = useState({ berries: 0, chakra: 0 });
   const [destructionPct, setDestructionPct] = useState(0);
@@ -292,6 +291,20 @@ export default function AnimeRaidArena({
 
     const tData = TROOPS_CATALOG.find((t) => t.id === troopKey) || TROOPS_CATALOG[0];
 
+    const getTroopProjectileType = (id: string): 'shuriken' | 'fireball' | 'gentle_fist' | 'toad_slam' | 'fist' => {
+      if (id === 'fire_chunin') return 'fireball';
+      if (id === 'hyuga_striker') return 'gentle_fist';
+      if (id === 'toad_vanguard') return 'toad_slam';
+      return 'shuriken';
+    };
+
+    const getTroopAuraColor = (id: string): string => {
+      if (id === 'fire_chunin') return '#f97316';
+      if (id === 'hyuga_striker') return '#06b6d4';
+      if (id === 'toad_vanguard') return '#22c55e';
+      return '#38bdf8';
+    };
+
     const newUnit: RaidUnit = {
       id: `unit_${Date.now()}_${Math.random()}`,
       troopId: tData.id,
@@ -305,12 +318,8 @@ export default function AnimeRaidArena({
       attack: tData.attack,
       speed: tData.speed,
       range: tData.range,
-      projectileType:
-        tData.id.includes('genin') ? 'shuriken'
-        : tData.id.includes('brawler') ? 'fist'
-        : tData.id.includes('shinigami') ? 'getsuga'
-        : 'magic',
-      color: tData.resourceType === 'chakra' ? '#06b6d4' : tData.resourceType === 'berries' ? '#f59e0b' : '#a855f7'
+      projectileType: getTroopProjectileType(tData.id),
+      color: getTroopAuraColor(tData.id)
     };
 
     setDeployedUnits((prev) => [...prev, newUnit]);
@@ -319,7 +328,15 @@ export default function AnimeRaidArena({
       [troopKey]: Math.max(0, (prev[troopKey] || 0) - 1)
     }));
 
-    freeAnimeAudio.playJutsuWhoosh();
+    if (tData.id === 'fire_chunin') {
+      freeAnimeAudio.playFireballRoar();
+    } else if (tData.id === 'hyuga_striker') {
+      freeAnimeAudio.playGentleFistStrike();
+    } else if (tData.id === 'toad_vanguard') {
+      freeAnimeAudio.playToadCleaverSmash();
+    } else {
+      freeAnimeAudio.playKunaiThrow();
+    }
   };
 
   // ============================================================
@@ -384,6 +401,20 @@ export default function AnimeRaidArena({
     const newTroopsRemaining = { ...availableTroops };
     const unitsToAdd: RaidUnit[] = [];
 
+    const getTroopProjectileType = (id: string): 'shuriken' | 'fireball' | 'gentle_fist' | 'toad_slam' | 'fist' => {
+      if (id === 'fire_chunin') return 'fireball';
+      if (id === 'hyuga_striker') return 'gentle_fist';
+      if (id === 'toad_vanguard') return 'toad_slam';
+      return 'shuriken';
+    };
+
+    const getTroopAuraColor = (id: string): string => {
+      if (id === 'fire_chunin') return '#f97316';
+      if (id === 'hyuga_striker') return '#06b6d4';
+      if (id === 'toad_vanguard') return '#22c55e';
+      return '#38bdf8';
+    };
+
     Object.keys(newTroopsRemaining).forEach((troopKey) => {
       const count = newTroopsRemaining[troopKey] || 0;
       const tData = TROOPS_CATALOG.find((t) => t.id === troopKey) || TROOPS_CATALOG[0];
@@ -405,12 +436,8 @@ export default function AnimeRaidArena({
           attack: tData.attack,
           speed: tData.speed,
           range: tData.range,
-          projectileType:
-            tData.id.includes('genin') ? 'shuriken'
-            : tData.id.includes('brawler') ? 'fist'
-            : tData.id.includes('shinigami') ? 'getsuga'
-            : 'magic',
-          color: tData.resourceType === 'chakra' ? '#06b6d4' : tData.resourceType === 'berries' ? '#f59e0b' : '#a855f7'
+          projectileType: getTroopProjectileType(tData.id),
+          color: getTroopAuraColor(tData.id)
         });
       }
 
@@ -598,13 +625,31 @@ export default function AnimeRaidArena({
           if (Math.random() < 0.05 * speedRef.current) {
             if (isAttackingHero && dHero) {
               dHero.hp = Math.max(0, dHero.hp - unit.attack);
-              freeAnimeAudio.playSwordClash();
+
+              // Play canonical jutsu audio
+              if (unit.troopId === 'fire_chunin') {
+                freeAnimeAudio.playFireballRoar();
+              } else if (unit.troopId === 'hyuga_striker') {
+                freeAnimeAudio.playGentleFistStrike();
+              } else if (unit.troopId === 'toad_vanguard') {
+                freeAnimeAudio.playToadCleaverSmash();
+              } else if (unit.troopId === 'konoha_genin') {
+                freeAnimeAudio.playKunaiThrow();
+              } else {
+                freeAnimeAudio.playSwordClash();
+              }
+
+              const popupPrefix =
+                unit.troopId === 'fire_chunin' ? '🔥'
+                : unit.troopId === 'hyuga_striker' ? '⚡'
+                : unit.troopId === 'toad_vanguard' ? '🗡️'
+                : '🌪️';
 
               curPopups.push({
                 x: toIso(dHero.x, dHero.y, originX, originY).x,
                 y: toIso(dHero.x, dHero.y, originX, originY).y - 20,
-                text: `-${unit.attack}`,
-                color: '#ef4444',
+                text: `${popupPrefix} -${unit.attack}`,
+                color: unit.color,
                 life: 1.0
               });
 
@@ -619,13 +664,31 @@ export default function AnimeRaidArena({
               const target = curBuildings.find((b) => !b.destroyed && Math.hypot(b.x - targetX, b.y - targetY) < 0.8);
               if (target) {
                 target.hp = Math.max(0, target.hp - unit.attack);
-                freeAnimeAudio.playSwordClash();
+
+                // Play canonical jutsu audio
+                if (unit.troopId === 'fire_chunin') {
+                  freeAnimeAudio.playFireballRoar();
+                } else if (unit.troopId === 'hyuga_striker') {
+                  freeAnimeAudio.playGentleFistStrike();
+                } else if (unit.troopId === 'toad_vanguard') {
+                  freeAnimeAudio.playToadCleaverSmash();
+                } else if (unit.troopId === 'konoha_genin') {
+                  freeAnimeAudio.playKunaiThrow();
+                } else {
+                  freeAnimeAudio.playSwordClash();
+                }
+
+                const popupPrefix =
+                  unit.troopId === 'fire_chunin' ? '🔥'
+                  : unit.troopId === 'hyuga_striker' ? '⚡'
+                  : unit.troopId === 'toad_vanguard' ? '🗡️'
+                  : '🌪️';
 
                 curPopups.push({
                   x: toIso(target.x, target.y, originX, originY).x,
                   y: toIso(target.x, target.y, originX, originY).y - 25,
-                  text: `-${unit.attack}`,
-                  color: '#fbbf24',
+                  text: `${popupPrefix} -${unit.attack}`,
+                  color: unit.color,
                   life: 0.9
                 });
 
@@ -688,20 +751,78 @@ export default function AnimeRaidArena({
 
       setHeroClashActive(isClashing);
 
-      // 4. Update & Draw Projectiles with Animated Trails
+      // 4. Update & Draw Projectiles with Authentic Anime Jutsu Visuals
       for (let i = curProjs.length - 1; i >= 0; i--) {
         const pr = curProjs[i];
-        pr.progress += dt * 4.2;
+        pr.progress += dt * 4.4;
         const curX = pr.x + (pr.targetX - pr.x) * pr.progress;
         const curY = pr.y + (pr.targetY - pr.y) * pr.progress;
 
-        ctx.fillStyle = pr.color;
-        ctx.shadowColor = pr.color;
-        ctx.shadowBlur = 8;
-        ctx.beginPath();
-        ctx.arc(curX, curY, 4, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.shadowBlur = 0;
+        if (pr.type === 'fireball') {
+          // Blazing Fire Style: Grand Fireball (火遁・豪火球の術)
+          ctx.save();
+          const grad = ctx.createRadialGradient(curX, curY, 1, curX, curY, 11);
+          grad.addColorStop(0, '#ffffff');
+          grad.addColorStop(0.25, '#fef08a');
+          grad.addColorStop(0.65, '#f97316');
+          grad.addColorStop(1, 'rgba(220, 38, 38, 0)');
+          ctx.fillStyle = grad;
+          ctx.beginPath();
+          ctx.arc(curX, curY, 11, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Trailing ember sparks
+          ctx.fillStyle = '#f59e0b';
+          ctx.beginPath();
+          ctx.arc(curX - (pr.targetX - pr.x) * 0.06, curY - (pr.targetY - pr.y) * 0.06, 3, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        } else if (pr.type === 'gentle_fist') {
+          // Hyūga Gentle Fist Azure Chakra Needle Thrust (八卦六十四掌)
+          ctx.save();
+          ctx.strokeStyle = '#38bdf8';
+          ctx.lineWidth = 3.5;
+          ctx.shadowColor = '#67e8f9';
+          ctx.shadowBlur = 10;
+          ctx.beginPath();
+          ctx.moveTo(curX - (pr.targetX - pr.x) * 0.09, curY - (pr.targetY - pr.y) * 0.09);
+          ctx.lineTo(curX, curY);
+          ctx.stroke();
+
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.arc(curX, curY, 4, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        } else if (pr.type === 'toad_slam') {
+          // Mount Myoboku Toad Iron Cleaver Arc (ガマの大太刀)
+          ctx.save();
+          ctx.translate(curX, curY);
+          ctx.rotate(now * 0.015);
+          ctx.strokeStyle = '#e2e8f0';
+          ctx.lineWidth = 3;
+          ctx.shadowColor = '#22c55e';
+          ctx.shadowBlur = 6;
+          ctx.beginPath();
+          ctx.arc(0, 0, 8, -Math.PI * 0.6, Math.PI * 0.6);
+          ctx.stroke();
+          ctx.fillStyle = '#16a34a';
+          ctx.fillRect(-2, -2, 4, 4);
+          ctx.restore();
+        } else {
+          // Spinning Shuriken & Kunai Storm (手裏剣・クナイ)
+          ctx.save();
+          ctx.translate(curX, curY);
+          ctx.rotate(now * 0.025);
+          ctx.fillStyle = '#cbd5e1';
+          ctx.fillRect(-5, -1.2, 10, 2.4);
+          ctx.fillRect(-1.2, -5, 2.4, 10);
+          ctx.fillStyle = '#38bdf8';
+          ctx.beginPath();
+          ctx.arc(0, 0, 1.8, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
 
         if (pr.progress >= 1) {
           curProjs.splice(i, 1);
@@ -818,26 +939,50 @@ export default function AnimeRaidArena({
           ctx.fillStyle = '#fbbf24';
           ctx.fillText('NARUTO', cx, cy - 38);
         } else {
-          // Shinobi Unit Token
-          ctx.fillStyle = u.color;
+          // Shinobi Squad Unit Token with Clan Aura & Specialty Border
+          ctx.save();
+          // Chakra Foot Aura
+          ctx.fillStyle =
+            u.troopId === 'fire_chunin' ? 'rgba(249, 115, 22, 0.35)'
+            : u.troopId === 'hyuga_striker' ? 'rgba(6, 182, 212, 0.4)'
+            : u.troopId === 'toad_vanguard' ? 'rgba(34, 197, 94, 0.35)'
+            : 'rgba(56, 189, 248, 0.35)';
           ctx.beginPath();
-          ctx.arc(cx, cy - 12, 10, 0, Math.PI * 2);
+          ctx.arc(cx, cy - 14, 14, 0, Math.PI * 2);
           ctx.fill();
-          ctx.strokeStyle = '#ffffff';
-          ctx.lineWidth = 1.5;
+
+          // Token base
+          ctx.fillStyle = '#0f172a';
+          ctx.beginPath();
+          ctx.arc(cx, cy - 14, 11, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = u.color;
+          ctx.lineWidth = 2;
           ctx.stroke();
 
-          ctx.font = '11px serif';
+          ctx.font = '12px serif';
           ctx.textAlign = 'center';
-          ctx.fillText(u.icon, cx, cy - 8);
+          ctx.fillText(u.icon, cx, cy - 9);
+
+          // Squad Tag
+          const squadLabel =
+            u.troopId === 'fire_chunin' ? 'CHUNIN'
+            : u.troopId === 'hyuga_striker' ? 'HYŪGA'
+            : u.troopId === 'toad_vanguard' ? 'TOAD'
+            : 'GENIN';
+
+          ctx.font = 'bold 7px sans-serif';
+          ctx.fillStyle = u.color;
+          ctx.fillText(squadLabel, cx, cy - 28);
+          ctx.restore();
         }
 
         // Unit HP Bar
         const pct = Math.max(0, u.hp / u.maxHp);
         ctx.fillStyle = 'rgba(0,0,0,0.6)';
-        ctx.fillRect(cx - 10, cy - (u.isHero ? 34 : 24), 20, 3);
+        ctx.fillRect(cx - 10, cy - (u.isHero ? 34 : 25), 20, 3);
         ctx.fillStyle = '#22c55e';
-        ctx.fillRect(cx - 10, cy - (u.isHero ? 34 : 24), 20 * pct, 3);
+        ctx.fillRect(cx - 10, cy - (u.isHero ? 34 : 25), 20 * pct, 3);
       });
 
       // 8. Draw Floating Damage Numbers

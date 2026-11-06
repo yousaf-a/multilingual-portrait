@@ -99,9 +99,9 @@ export default function BattleArena({
   // Troop Deployment stock
   const [troopStock, setTroopStock] = useState<Record<string, number>>({
     konoha_genin: 8,
-    strawhat_brawler: 4,
-    shinigami_patrol: 3,
-    black_bulls_mage: 2
+    fire_chunin: 4,
+    hyuga_striker: 3,
+    toad_vanguard: 2
   });
 
   const [selectedDeployTroop, setSelectedDeployTroop] = useState<string>('konoha_genin');

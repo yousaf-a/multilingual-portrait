@@ -131,21 +131,29 @@ export default function AnimeRaidArena({
   };
 
   const buildDefendingHeroFromProfile = (target: FriendProfile): DefendingHero => {
+    const isBandit = target.id.includes('bandit');
     const isMist = target.id.includes('mist');
     const isSound = target.id.includes('sound');
-    const isRain = target.id.includes('rain') || target.id.includes('akatsuki');
+    const isRain = target.id.includes('rain') && !target.id.includes('pain');
+    const isPain = target.id.includes('pain') || target.id.includes('stronghold');
 
-    const heroName = isMist ? 'Zabuza Mercenary Captain'
+    const heroName = isBandit ? 'Outlaw Bandit Chief'
+      : isMist ? 'Zabuza Mercenary Captain'
       : isSound ? 'Sound Four Enforcer'
       : isRain ? 'Akatsuki Rain Commander'
+      : isPain ? 'Deva Path Pain Avatar'
       : `${target.name.split(' ')[0]} Champion`;
 
-    const heroAvatar = isMist ? '⚔️' : isSound ? '🐍' : isRain ? '🌧️' : '🥷';
-    const heroQuote = isMist
+    const heroAvatar = isBandit ? '🪓' : isMist ? '⚔️' : isSound ? '🐍' : isRain ? '🌧️' : isPain ? '⛩️' : '🥷';
+    const heroQuote = isBandit
+      ? 'Hand over your supplies, Leaf genin! These borders belong to us!'
+      : isMist
       ? 'You Leaf brats will never make it past the Great Naruto Bridge!'
       : isSound
       ? 'Lord Orochimaru will feast upon your chakra!'
-      : 'Know true pain. This world shall know reckoning.';
+      : isRain
+      ? 'Rain washes away all sin. Do not interfere with Akatsuki.'
+      : 'Shinra Tensei. The world shall know true pain.';
 
     const coreBuilding = target.buildings.find((b) => b.type === 'command_core');
     const heroHp = (target.heroLevel || 1) * 350 + 850;
@@ -161,7 +169,7 @@ export default function AnimeRaidArena({
       maxHp: heroHp,
       attack: (target.heroLevel || 1) * 25 + 65,
       range: 2.5,
-      color: isMist ? '#0284c7' : isSound ? '#7c3aed' : '#ef4444',
+      color: isMist ? '#0284c7' : isSound ? '#7c3aed' : isBandit ? '#b45309' : '#ef4444',
       defeated: false,
       quote: heroQuote
     };
@@ -492,9 +500,19 @@ export default function AnimeRaidArena({
     }
 
     // Add visual damage popups
+    const ultimateLabel =
+      activeHero.id === 'sasuke' ? '⚡ CHIDORI -520!'
+      : activeHero.id === 'kakashi' ? '⚡ RAIKIRI -500!'
+      : activeHero.id === 'jiraiya' ? '🐸 SAGE RASENGAN -550!'
+      : activeHero.id === 'tsunade' ? '💥 HEAVENLY FOOT -600!'
+      : activeHero.id === 'minato' ? '⚡ FLYING RAIJIN -520!'
+      : '🌀 RASENGAN -450 AOE!';
+
+    const ultimateColor = activeHero.color || '#38bdf8';
+
     setDamagePopups((prev) => [
       ...prev,
-      { x: 420, y: 200, text: '💥 RASENGAN -450 AOE!', color: '#38bdf8', life: 1.8 }
+      { x: 420, y: 200, text: ultimateLabel, color: ultimateColor, life: 1.8 }
     ]);
   };
 
@@ -1237,7 +1255,7 @@ export default function AnimeRaidArena({
             }`}
           >
             <Flame size={14} />
-            <span>{heroUltimateReady ? '🌀 Hero Ultimate: Rasengan' : 'Ultimate Expended'}</span>
+            <span>{heroUltimateReady ? `🌀 ${activeHero.name.split(' ')[0]} Ultimate: ${activeHero.ultimateName.split('(')[0]}` : 'Ultimate Expended'}</span>
           </button>
         </div>
 

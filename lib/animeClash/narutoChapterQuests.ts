@@ -273,7 +273,7 @@ export const CHAPTER_1_NARUTO_QUESTS: ChapterQuest[] = [
       attack: 120,
       specialSkill: 'Water Dragon Jutsu & Silent Killing'
     },
-    rewards: { berries: 1000, chakra: 900, reishi: 250, heroXp: 450, unlockBuildingKey: 'paper_mortar' }
+    rewards: { berries: 1000, chakra: 900, reishi: 250, heroXp: 450, unlockBuildingKey: 'paper_mortar', unlockHeroId: 'sasuke', specialPerk: 'UNLOCK HERO: Sasuke Uchiha (Chidori & Fire Style)' }
   },
   {
     id: 'naruto_q7',
@@ -513,7 +513,7 @@ export const CHAPTER_1_NARUTO_QUESTS: ChapterQuest[] = [
       attack: 190,
       specialSkill: '8 Trigrams 64 Palms & Rotation'
     },
-    rewards: { berries: 3200, chakra: 2800, reishi: 1300, heroXp: 1600 }
+    rewards: { berries: 3200, chakra: 2800, reishi: 1300, heroXp: 1600, unlockHeroId: 'kakashi', specialPerk: 'UNLOCK HERO: Kakashi Hatake (Copy Ninja / Sharingan)' }
   },
   {
     id: 'naruto_q14',
@@ -693,7 +693,7 @@ export const CHAPTER_1_NARUTO_QUESTS: ChapterQuest[] = [
       { id: 'q18_t2', description: 'Construct 1 Ninja Academy Training Ground (Upgrade to Lv. 3)', type: 'upgrade', targetKey: 'dojo', targetCount: 3 },
       { id: 'q18_t3', description: 'Store at least 3,500 Chakra in reserves', type: 'special', targetCount: 3500 }
     ],
-    rewards: { berries: 5800, chakra: 5000, reishi: 2500, heroXp: 3300, specialPerk: 'Tsunade Healing Seal' }
+    rewards: { berries: 5800, chakra: 5000, reishi: 2500, heroXp: 3300, unlockHeroId: 'jiraiya', specialPerk: 'UNLOCK HERO: Jiraiya the Toad Sage (Ultra-Big Ball Rasengan)' }
   },
   {
     id: 'naruto_q19',
@@ -766,7 +766,7 @@ export const CHAPTER_1_NARUTO_QUESTS: ChapterQuest[] = [
       { id: 'q20_t2', description: 'Train a vanguard of 30 Elite Chunin Defenders', type: 'train', targetKey: 'shinobi', targetCount: 30 },
       { id: 'q20_t3', description: 'Store at least 4,500 Chakra in village reserves', type: 'special', targetCount: 4500 }
     ],
-    rewards: { berries: 7000, chakra: 6000, reishi: 3000, heroXp: 4200, specialPerk: 'Wind Style Rasenshuriken' }
+    rewards: { berries: 7000, chakra: 6000, reishi: 3000, heroXp: 4200, unlockHeroId: 'tsunade', specialPerk: 'UNLOCK HERO: Lady Tsunade (5th Hokage / Heavenly Foot of Pain)' }
   },
 
   // ==========================================

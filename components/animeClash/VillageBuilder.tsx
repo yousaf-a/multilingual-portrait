@@ -129,7 +129,8 @@ export default function VillageBuilder({
   const [heroInteractionQuote, setHeroInteractionQuote] = useState<string | null>(null);
   const [isRaiding, setIsRaiding] = useState(false);
   const [isArenaRaidActive, setIsArenaRaidActive] = useState(false);
-  const [selectedRaidFriend, setSelectedRaidFriend] = useState<FriendProfile | null>(null);
+  const [selectedRaidFriend, setSelectedRaidFriend] = useState<FriendProfile | null>(() => DEFAULT_FRIEND_BASES[1] || DEFAULT_FRIEND_BASES[0]);
+  const [selectedMissionRank, setSelectedMissionRank] = useState<'D' | 'C' | 'B' | 'A' | 'S'>('C');
   const [heroUnlockCelebration, setHeroUnlockCelebration] = useState<HeroData | null>(null);
   const [copiedCodeToast, setCopiedCodeToast] = useState(false);
   const [importFriendCodeInput, setImportFriendCodeInput] = useState('');
@@ -2140,50 +2141,134 @@ export default function VillageBuilder({
             })}
           </div>
 
-          {/* Canonical Outpost Raid Target Selector & Launcher */}
-          <div className="p-5 sm:p-6 rounded-3xl bg-gradient-to-br from-[#1a0f2e] via-[#0d071d] to-[#050814] border-2 border-red-500/50 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-5">
-            <div className="flex items-center gap-4 flex-1">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-red-950 to-slate-900 border-2 border-red-500 flex items-center justify-center text-3xl shadow-[0_0_25px_rgba(239,68,68,0.5)] shrink-0">
-                🌊
+          {/* Official Hokage Shinobi Mission Desk (火影の忍務発令所) */}
+          <div className="flex flex-col gap-3 p-4 sm:p-5 rounded-3xl bg-gradient-to-br from-[#0c1328] via-[#080d1d] to-[#040711] border border-cyan-500/40 shadow-2xl">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">📜</span>
+                <div>
+                  <h4 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
+                    <span>Hokage Shinobi Mission Desk</span>
+                    <span className="text-[10px] font-mono font-normal text-amber-400">火影執務室・忍務選定所</span>
+                  </h4>
+                  <p className="text-[11px] text-slate-400">
+                    Select an official ninja mission rank (D to S) and deploy your trained squad to plunder essential supplies!
+                  </p>
+                </div>
               </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-black text-red-400 uppercase tracking-widest px-2 py-0.5 rounded-full bg-red-950/80 border border-red-500/40 font-mono">
-                    CHAPTER 1 CANONICAL TARGET &bull; SECTOR 1
-                  </span>
-                  <span className="text-[10px] font-mono text-emerald-400 font-bold">
-                    RECOMMENDED LEVEL 1
-                  </span>
-                </div>
-                <h4 className="text-lg sm:text-xl font-black text-white mt-1">
-                  Rogue Mist Mercenary Compound (Land of Waves)
-                </h4>
-                <div className="flex flex-wrap items-center gap-3 text-xs text-slate-300 mt-1 font-mono">
-                  <span>💰 Plunder: <strong className="text-amber-300">850 Berries</strong></span>
-                  <span>🌀 Plunder: <strong className="text-cyan-300">600 Chakra</strong></span>
-                  <span>🛡️ Fortifications: <strong className="text-rose-400">Palisade Walls + Mist Bomb Cannon</strong></span>
-                </div>
+
+              {/* Mission Rank Tabs: D, C, B, A, S */}
+              <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-black/60 border border-white/10 overflow-x-auto">
+                {[
+                  { rank: 'D', label: 'D-Rank', sub: 'Genin' },
+                  { rank: 'C', label: 'C-Rank', sub: 'Chunin' },
+                  { rank: 'B', label: 'B-Rank', sub: 'Jonin' },
+                  { rank: 'A', label: 'A-Rank', sub: 'ANBU' },
+                  { rank: 'S', label: 'S-Rank', sub: 'Forbidden' }
+                ].map((item) => {
+                  const isSelected = selectedMissionRank === item.rank;
+                  return (
+                    <button
+                      key={item.rank}
+                      type="button"
+                      onClick={() => {
+                        setSelectedMissionRank(item.rank as any);
+                        const targetId =
+                          item.rank === 'D' ? 'target_bandit_camp'
+                          : item.rank === 'C' ? 'target_mist_compound'
+                          : item.rank === 'B' ? 'target_sound_base'
+                          : item.rank === 'A' ? 'target_akatsuki_rain'
+                          : 'target_pain_stronghold';
+                        const match = DEFAULT_FRIEND_BASES.find((b) => b.id === targetId) || DEFAULT_FRIEND_BASES[0];
+                        setSelectedRaidFriend(match);
+                        animeAudio.playButtonClick();
+                      }}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer flex flex-col items-center ${
+                        isSelected
+                          ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 shadow-md ring-2 ring-amber-400'
+                          : 'text-slate-300 hover:text-white hover:bg-white/5'
+                      }`}
+                    >
+                      <span>{item.label}</span>
+                      <span className="text-[9px] font-mono opacity-80 uppercase">{item.sub}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-2.5 w-full md:w-auto shrink-0">
-              <button
-                type="button"
-                onClick={() => setIsArenaRaidActive(true)}
-                className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-red-600 via-rose-600 to-amber-500 hover:brightness-110 text-white font-black text-sm shadow-[0_0_30px_rgba(239,68,68,0.7)] flex items-center justify-center gap-2 transition cursor-pointer transform hover:scale-105 active:scale-95"
-              >
-                <Sword size={18} />
-                <span>Launch 2.5D Animated Marching Raid</span>
-              </button>
-              <button
-                type="button"
-                onClick={handleLaunchSyndicateRaid}
-                disabled={isRaiding || totalTroopsCount < 4}
-                className="px-4 py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-slate-200 text-xs font-bold border border-white/10 flex items-center justify-center gap-1.5 transition cursor-pointer"
-              >
-                <span>{isRaiding ? 'Deploying...' : 'Quick Auto-Raid'}</span>
-              </button>
-            </div>
+            {/* Active Selected Mission Brief Card */}
+            {(() => {
+              const activeMission =
+                selectedRaidFriend ||
+                DEFAULT_FRIEND_BASES.find((b) =>
+                  selectedMissionRank === 'D' ? b.id === 'target_bandit_camp'
+                  : selectedMissionRank === 'C' ? b.id === 'target_mist_compound'
+                  : selectedMissionRank === 'B' ? b.id === 'target_sound_base'
+                  : selectedMissionRank === 'A' ? b.id === 'target_akatsuki_rain'
+                  : b.id === 'target_pain_stronghold'
+                ) || DEFAULT_FRIEND_BASES[0];
+
+              const rankBadge =
+                selectedMissionRank === 'D' ? { badge: 'D-RANK • GENIN SCOUTING', jp: 'Ｄランク任務 • 国境野盗掃討', avatar: '⛺', border: 'border-emerald-500/50' }
+                : selectedMissionRank === 'C' ? { badge: 'C-RANK • CHUNIN ESCORT', jp: 'Ｃランク任務 • 波の国霧暗殺者', avatar: '🌊', border: 'border-blue-500/50' }
+                : selectedMissionRank === 'B' ? { badge: 'B-RANK • JONIN STRIKE', jp: 'Ｂランク任務 • 音隠れ呪印基地', avatar: '🐍', border: 'border-purple-500/50' }
+                : selectedMissionRank === 'A' ? { badge: 'A-RANK • ANBU BLACK OPS', jp: 'Ａランク任務 • 雨隠れ暁前哨', avatar: '🌧️', border: 'border-rose-500/50' }
+                : { badge: 'S-RANK • FORBIDDEN RAID', jp: 'Ｓランク極秘任務 • 暁総本山六道', avatar: '⛩️', border: 'border-amber-500/60' };
+
+              return (
+                <div className={`p-4 sm:p-5 rounded-2xl bg-black/40 border ${rankBadge.border} flex flex-col md:flex-row items-center justify-between gap-4`}>
+                  <div className="flex items-center gap-3.5 flex-1">
+                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-slate-900 to-black border border-white/20 flex items-center justify-center text-3xl shadow-lg shrink-0">
+                      {rankBadge.avatar}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-mono font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                          {rankBadge.badge}
+                        </span>
+                        <span className="text-[10px] font-mono text-cyan-300/90 font-bold">
+                          {rankBadge.jp}
+                        </span>
+                      </div>
+                      <h4 className="text-base sm:text-lg font-black text-white mt-1">
+                        {activeMission.name}
+                      </h4>
+                      <div className="flex flex-wrap items-center gap-3 text-xs text-slate-300 mt-1 font-mono">
+                        <span>💰 Plunder: <strong className="text-amber-300">+{activeMission.berriesLoot} Berries</strong></span>
+                        <span>🌀 Plunder: <strong className="text-cyan-300">+{activeMission.chakraLoot} Chakra</strong></span>
+                        <span>🛡️ Fortifications: <strong className="text-rose-400">{activeMission.buildings.length} Structures</strong></span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row gap-2.5 w-full md:w-auto shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedRaidFriend(activeMission);
+                        setIsArenaRaidActive(true);
+                      }}
+                      className="px-6 py-3 rounded-2xl bg-gradient-to-r from-red-600 via-rose-600 to-amber-500 hover:brightness-110 text-white font-black text-xs sm:text-sm shadow-[0_0_25px_rgba(239,68,68,0.6)] flex items-center justify-center gap-2 transition cursor-pointer transform hover:scale-105 active:scale-95"
+                    >
+                      <Sword size={16} />
+                      <span>Launch 2.5D Animated Marching Raid</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedRaidFriend(activeMission);
+                        handleLaunchSyndicateRaid();
+                      }}
+                      disabled={isRaiding || totalTroopsCount < 4}
+                      className="px-4 py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-slate-200 text-xs font-bold border border-white/10 flex items-center justify-center gap-1.5 transition cursor-pointer"
+                    >
+                      <span>{isRaiding ? 'Deploying...' : 'Quick Auto-Raid'}</span>
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
 
           {/* Raid Result Modal / Banner */}
